@@ -54,7 +54,7 @@ Router should point DNS to 192.168.1.239 for whole-network ad blocking.
 
 | Service | Container | Port | Network | Notes |
 |---------|-----------|------|---------|-------|
-| OpenCloud | opencloud | 9200 | homelab | Cloud storage, URL: cloud.matiasmassetti.com |
+| OpenCloud | opencloud | 9200 | homelab | Cloud storage, URL: cloud.matiasmassetti.com, data on NAS via /mnt/opencloud |
 | Nextcloud | nextcloud | 8090 | homelab | Personal cloud, mounts /mnt/nas |
 | Nextcloud DB | nextcloud-db | — (3306 internal) | homelab | MariaDB 10.11 |
 | Image Server | image-server | 4010 | homelab | Static file server for /opt/images |

@@ -52,13 +52,13 @@
 │   ├── sonarr/
 │   ├── unbound/
 │   └── uptime-kuma/
-├── data/                          # Service data (OpenCloud, etc.)
+├── data/                          # Service data (OpenCloud data moved to /mnt/opencloud)
 ├── backups/                       # Docker config backups
 ├── downloads/                     # Legacy download dir
 └── filebrowser/                   # File Browser app data
 ```
 
-## `/mnt/nas/` — NAS Mount (Synology DS423 at 192.168.1.119)
+## `/mnt/nas/` — NAS SMB Mount (Synology DS423 at 192.168.1.119)
 
 ```
 /mnt/nas/
@@ -82,6 +82,21 @@
 │   ├── Backup notebok vieja/      (183MB)
 │   └── Backup notebook vieja teladoc 17 oct 2024/
 └── #recycle/                      # Synology recycle bin
+```
+
+## `/mnt/nas-nfs/` — NAS NFS Mount (192.168.1.119:/volume1/Media)
+
+```
+/mnt/nas-nfs/
+└── opencloud-data/
+    └── opencloud.img              # ext4 image file for OpenCloud data
+```
+
+## `/mnt/opencloud/` — OpenCloud Data (loop mount)
+
+```
+/mnt/opencloud/                    # Loop mount of /mnt/nas-nfs/opencloud-data/opencloud.img (ext4)
+└── (OpenCloud application data)   # Mapped to /var/lib/opencloud in container
 ```
 
 ## `/DATA/` — Seagate 4TB USB (Legacy)

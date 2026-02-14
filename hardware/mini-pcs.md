@@ -36,6 +36,12 @@ nvme0n1           931.5G
 sda               3.6T   (Seagate 4TB USB)
 ├── sda1          200M   (vfat, unused)
 └── sda2          3.6T   /DATA/Media (exfat, UUID=AC85-7883)
+
+/mnt/nas-nfs/                    NFS mount (192.168.1.119:/volume1/Media)
+└── opencloud-data/
+    └── opencloud.img            ext4 image file
+
+/mnt/opencloud/                  Loop mount of opencloud.img (ext4)
 ```
 
 ## Performance Notes

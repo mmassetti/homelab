@@ -14,7 +14,9 @@
 
 ### NAS — Synology DS423
 - **IP**: 192.168.1.119 | **OS**: DSM 7.x | 4-bay, currently 1x WD Red Pro 14TB
-- **Mount**: `//192.168.1.119/Media` → `/mnt/nas` via SMB/CIFS (fstab, `_netdev`)
+- **SMB Mount**: `//192.168.1.119/Media` → `/mnt/nas` via SMB/CIFS (fstab, `_netdev`) — media
+- **NFS Mount**: `192.168.1.119:/volume1/Media` → `/mnt/nas-nfs` (fstab, `_netdev`) — OpenCloud data
+- **Loop Mount**: `/mnt/nas-nfs/opencloud-data/opencloud.img` → `/mnt/opencloud` (ext4, loop) — OpenCloud container volume
 - **No redundancy yet** — 2nd drive planned June 2026
 - SHR pool, Btrfs filesystem
 
@@ -63,7 +65,7 @@ Config base: `/opt/docker/configs/<service>/`
 ### Cloud & Storage (docker_homelab network)
 | Service | Port | Notes |
 |---------|------|-------|
-| opencloud | 9200 | cloud.matiasmassetti.com |
+| opencloud | 9200 | cloud.matiasmassetti.com, data on NAS via /mnt/opencloud |
 | nextcloud | 8090 | Personal cloud, mounts /mnt/nas |
 | nextcloud-db | 3306 | MariaDB 10.11 |
 | image-server | 4010 | Static files from /opt/images |
@@ -101,7 +103,9 @@ Config base: `/opt/docker/configs/<service>/`
 |------|----------|
 | `/opt/docker/docker-compose.yml` | Main homelab compose |
 | `/opt/docker/configs/<svc>/` | Per-service Docker configs |
-| `/mnt/nas/` | NAS mount (Peliculas, Series, Music, downloads, Libros, Backups) |
+| `/mnt/nas/` | NAS SMB mount (Peliculas, Series, Music, downloads, Libros, Backups) |
+| `/mnt/nas-nfs/` | NAS NFS mount (OpenCloud ext4 image file) |
+| `/mnt/opencloud/` | Loop mount of OpenCloud ext4 image (container volume) |
 | `/mnt/nas/Google Drive 4-10-2024/` | Google Drive backup (278GB, pending migration) |
 | `/DATA/Media/` | Seagate 4TB USB (legacy, 99% full) |
 | `/opt/images/` | Shared images dir (Nextcloud + image-server) |

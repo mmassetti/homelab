@@ -28,16 +28,16 @@
 - **Usable**: ~12.7TB (single 14TB drive)
 - **Future**: Add 1-2 more drives in June 2026 for SHR redundancy
 
-## Shares & Mount
+## Shares & Mounts
 
-The NAS is mounted on the mini PC via SMB/CIFS:
+The NAS is mounted on the mini PC via two protocols:
+
+### SMB/CIFS Mount (`/mnt/nas/`) — Media
 
 ```
 # /etc/fstab entry
 //192.168.1.119/Media /mnt/nas cifs credentials=/root/.nascreds,uid=1000,gid=1000,_netdev,echo_interval=60,actimeo=30 0 0
 ```
-
-### Mount Contents (`/mnt/nas/`)
 
 | Path | Purpose |
 |------|---------|
@@ -45,6 +45,22 @@ The NAS is mounted on the mini PC via SMB/CIFS:
 | `/mnt/nas/Series/` | TV Shows (Sonarr → Jellyfin) |
 | `/mnt/nas/Music/` | Music (Lidarr → Jellyfin) |
 | `/mnt/nas/downloads/` | qBittorrent download directory |
+
+### NFS Mount (`/mnt/nas-nfs/`) — OpenCloud Data
+
+```
+# /etc/fstab entries
+192.168.1.119:/volume1/Media /mnt/nas-nfs nfs defaults,_netdev 0 0
+/mnt/nas-nfs/opencloud-data/opencloud.img /mnt/opencloud ext4 loop,defaults,_netdev 0 0
+```
+
+OpenCloud data is stored in an ext4 image file (`opencloud.img`) on the NAS, loop-mounted at `/mnt/opencloud`. This avoids filesystem compatibility issues between Docker and the NAS's native Btrfs/SMB.
+
+| Path | Purpose |
+|------|---------|
+| `/mnt/nas-nfs/` | NFS mount of NAS volume |
+| `/mnt/nas-nfs/opencloud-data/opencloud.img` | ext4 image file for OpenCloud |
+| `/mnt/opencloud/` | Loop mount of the ext4 image (used by OpenCloud container) |
 
 ## Backup Strategy
 
