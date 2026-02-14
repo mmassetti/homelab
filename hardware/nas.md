@@ -54,7 +54,18 @@ The NAS is mounted on the mini PC via two protocols:
 /mnt/nas-nfs/opencloud-data/opencloud.img /mnt/opencloud ext4 loop,defaults,_netdev 0 0
 ```
 
-OpenCloud data is stored in an ext4 image file (`opencloud.img`) on the NAS, loop-mounted at `/mnt/opencloud`. This avoids filesystem compatibility issues between Docker and the NAS's native Btrfs/SMB.
+OpenCloud data is stored in a **2TB sparse ext4 image file** (`opencloud.img`) on the NAS, loop-mounted at `/mnt/opencloud`. This avoids filesystem compatibility issues (symlinks, xattr) between Docker and the NAS's native Btrfs/SMB.
+
+To resize the image (e.g. to 3TB):
+```bash
+docker compose -f /opt/docker/docker-compose.yml stop opencloud
+sudo umount /mnt/opencloud
+truncate -s 3T /mnt/nas-nfs/opencloud-data/opencloud.img
+sudo e2fsck -f /mnt/nas-nfs/opencloud-data/opencloud.img
+sudo resize2fs /mnt/nas-nfs/opencloud-data/opencloud.img
+sudo mount /mnt/opencloud
+docker compose -f /opt/docker/docker-compose.yml start opencloud
+```
 
 | Path | Purpose |
 |------|---------|
