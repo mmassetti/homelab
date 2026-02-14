@@ -111,7 +111,14 @@ Config base: `/opt/docker/configs/<service>/`
 - Compose files: main stack in `/opt/docker/`, projects in their own dirs
 - Config: `/opt/docker/configs/<service>/`
 - Decisions: `~/homelab/decisions/log.md`
-- Update this file when infrastructure changes
+
+## IMPORTANT: Keep Docs in Sync
+Whenever you make infrastructure changes (add/remove containers, change ports, modify
+network config, update mounts, add services, change compose files, etc.), you MUST also:
+1. Update the relevant file(s) in this repo (services.md, network.md, hardware/, etc.)
+2. Update THIS file (CLAUDE.md) if the change affects the high-level summary
+3. Add a decision record to `decisions/log.md` for significant architectural choices
+4. Commit the doc changes alongside or immediately after the infrastructure change
 
 ## Tailscale Devices
 - homelab (100.118.87.121) — always on, exit node
