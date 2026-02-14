@@ -101,11 +101,12 @@ Config base: `/opt/docker/configs/<service>/`
 |------|----------|
 | `/opt/docker/docker-compose.yml` | Main homelab compose |
 | `/opt/docker/configs/<svc>/` | Per-service Docker configs |
-| `/opt/docker/downloads/` | Legacy download dir |
-| `/mnt/nas/` | NAS mount (Peliculas, Series, Music, downloads) |
+| `/mnt/nas/` | NAS mount (Peliculas, Series, Music, downloads, Libros, Backups) |
+| `/mnt/nas/Google Drive 4-10-2024/` | Google Drive backup (278GB, pending migration) |
 | `/DATA/Media/` | Seagate 4TB USB (legacy, 99% full) |
 | `/opt/images/` | Shared images dir (Nextcloud + image-server) |
-| `~/Code/` | Development projects |
+| `~/Code/` | All development projects (7 repos) |
+| `~/homelab/file-structure.md` | Full file tree documentation |
 
 ## Conventions
 - Compose files: main stack in `/opt/docker/`, projects in their own dirs
