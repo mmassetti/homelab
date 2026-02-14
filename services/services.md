@@ -1,0 +1,84 @@
+# Services
+
+All services run on the mini PC (192.168.1.239) via Docker.
+Main compose file: `/opt/docker/docker-compose.yml`
+Config base: `/opt/docker/configs/<service>/`
+
+## ARR Stack (Media Automation)
+
+All ARR services use Hotio images, share `arr_network`, and use common env (PUID=1000, PGID=1000, TZ=America/Argentina/Buenos_Aires).
+
+| Service | Container | Port | Image | Config | Volumes |
+|---------|-----------|------|-------|--------|---------|
+| Jellyfin | jellyfin | 8096 | ghcr.io/hotio/jellyfin | /opt/docker/configs/jellyfin | /mnt/nas/Peliculas, /mnt/nas/Series, /mnt/nas/Music |
+| Radarr | radarr | 7878 | ghcr.io/hotio/radarr | /opt/docker/configs/radarr | /mnt/nas/downloads, /mnt/nas/Peliculas |
+| Sonarr | sonarr | 8989 | ghcr.io/hotio/sonarr | /opt/docker/configs/sonarr | /mnt/nas/downloads, /mnt/nas/Series |
+| Lidarr | lidarr | 8686 | ghcr.io/hotio/lidarr | /opt/docker/configs/lidarr | /mnt/nas/downloads, /mnt/nas/Music |
+| Bazarr | bazarr | 6767 | ghcr.io/hotio/bazarr | /opt/docker/configs/bazarr | /mnt/nas/Series, /mnt/nas/Peliculas |
+| qBittorrent | qbittorrent | 8080 (web), 6881 (torrent) | ghcr.io/hotio/qbittorrent | /opt/docker/configs/qbittorrent | /mnt/nas/downloads |
+| Prowlarr | prowlarr | 9696 | ghcr.io/hotio/prowlarr | /opt/docker/configs/prowlarr | — |
+| FlareSolverr | flaresolverr | 8191 | ghcr.io/flaresolverr/flaresolverr | — | — |
+| Jellyseerr | jellyseerr | 5055 | fallenbagel/jellyseerr | /opt/docker/configs/jellyseerr | — |
+| Profilarr | profilarr | 6868 | santiagosayshey/profilarr | /opt/docker/configs/profilarr | — |
+
+### Media Flow
+
+```
+Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (download)
+  → auto-rename/move to NAS → Bazarr (subtitles: Spanish + English) → Jellyfin (auto-scan)
+```
+
+## DNS Stack (Pi-hole + Unbound)
+
+Dedicated `dns_network` (172.30.0.0/24).
+
+| Service | Container | Port | IP (dns_network) | Notes |
+|---------|-----------|------|-------------------|-------|
+| Unbound | unbound | 5335 (internal) | 172.30.0.2 | Recursive DNS resolver |
+| Pi-hole | pihole | 53 (DNS), 8888 (web UI) | 172.30.0.3 | DNS sinkhole, upstream → Unbound |
+
+Pi-hole is the DNS server for the entire network (containers use 192.168.1.239 as DNS).
+Router should point DNS to 192.168.1.239 for whole-network ad blocking.
+
+## Infrastructure
+
+| Service | Container | Port | Network | Notes |
+|---------|-----------|------|---------|-------|
+| Cloudflare Tunnel | cloudflared | — | homelab | Exposes services to internet, no port forwarding needed |
+| Homarr | homarr | 7575 | homelab | Dashboard, mounts docker.sock |
+| Uptime Kuma | uptime-kuma | 3001 | homelab | Service monitoring |
+| Glances | glances | — | host network | System monitoring (web: `-w` flag) |
+| Netdata | netdata | 19999 | homelab | Advanced monitoring |
+
+## Cloud & Storage
+
+| Service | Container | Port | Network | Notes |
+|---------|-----------|------|---------|-------|
+| OpenCloud | opencloud | 9200 | homelab | Cloud storage, URL: cloud.matiasmassetti.com |
+| Nextcloud | nextcloud | 8090 | homelab | Personal cloud, mounts /mnt/nas |
+| Nextcloud DB | nextcloud-db | — (3306 internal) | homelab | MariaDB 10.11 |
+| Image Server | image-server | 4010 | homelab | Static file server for /opt/images |
+
+## Project Containers (Separate Compose Files)
+
+| Service | Container | Port | Compose File | Notes |
+|---------|-----------|------|--------------|-------|
+| USA 2026 | usa2026 | 3000 | ~/Code/usa-2026/docker-compose.yml | FIFA World Cup trip planner |
+| CEN Dashboard | cen-dashboard-cen-dashboard-1 | 3003 | ~/Code/cen-dashboard/docker-compose.yml | Dashboard app |
+| Media Tracker DB | media_tracker_db | 5432 | ~/media-tracker-db/docker-compose.yml | PostgreSQL 16 |
+| Scraper Autoentrada | — | — | ~/Code/scraper-autoentrada/docker-compose.yml | Ticket scraper bot |
+| Reporte Minoritario | — | — | ~/Code/reporteminoritario-transcript-fetcher/docker-compose.yml | Podcast transcript AI |
+
+## Docker Networks
+
+| Network | Subnet | Purpose |
+|---------|--------|---------|
+| arr_network | (bridge, auto) | ARR stack services |
+| docker_homelab | (bridge, auto) | Infrastructure + cloud services |
+| dns_network | 172.30.0.0/24 | Pi-hole + Unbound |
+| media_tracker_network | 172.21.0.0/16 | Media tracker project |
+
+## Docker Named Volumes
+
+- `nextcloud-db` — MariaDB data for Nextcloud
+- `nextcloud-app` — Nextcloud application data
