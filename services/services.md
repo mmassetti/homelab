@@ -59,6 +59,30 @@ Router should point DNS to 192.168.1.239 for whole-network ad blocking.
 | Nextcloud DB | nextcloud-db | — (3306 internal) | homelab | MariaDB 10.11 |
 | Image Server | image-server | 4010 | homelab | Static file server for /opt/images |
 
+## OpenClaw (AI Agent)
+
+Separate compose file: `/opt/docker/configs/openclaw/docker-compose.yml`
+Dedicated `openclaw_network` (172.31.0.0/24), isolated from all other stacks.
+
+| Service | Container | Port | Image | Config | Notes |
+|---------|-----------|------|-------|--------|-------|
+| OpenClaw Gateway | openclaw-gateway | 127.0.0.1:18789, 127.0.0.1:18790 | openclaw:local (built from source) | /opt/docker/configs/openclaw | AI agent with Telegram integration |
+
+### Security Hardening
+- **Ports**: Bound to `127.0.0.1` only — not accessible from LAN or internet
+- **Filesystem**: `read_only: true` with `tmpfs: /tmp`
+- **Capabilities**: `cap_drop: ALL`, `cap_add: NET_BIND_SERVICE`
+- **Privileges**: `no-new-privileges: true`
+- **Network**: Isolated `openclaw_network`, not connected to arr/dns/homelab networks
+- **Sandbox**: Agent commands run in throwaway containers (`openclaw-sandbox-bookworm-slim`) with `network: none`
+- **Telegram**: Outbound polling only, user ID allowlisted
+- **Docker socket**: Mounted for sandbox spawning (trade-off, mitigated by read-only fs + no-new-privileges)
+- **NOT exposed via Cloudflare Tunnel** — access Web UI via SSH tunnel only
+
+### Access
+- **Primary**: Telegram bot (`@clauditomassetti_bot`)
+- **Web UI**: `ssh -L 18789:127.0.0.1:18789 matias@192.168.1.239` then open `http://127.0.0.1:18789`
+
 ## Project Containers (Separate Compose Files)
 
 | Service | Container | Port | Compose File | Notes |
@@ -77,6 +101,7 @@ Router should point DNS to 192.168.1.239 for whole-network ad blocking.
 | docker_homelab | (bridge, auto) | Infrastructure + cloud services |
 | dns_network | 172.30.0.0/24 | Pi-hole + Unbound |
 | media_tracker_network | 172.21.0.0/16 | Media tracker project |
+| openclaw_network | 172.31.0.0/24 | OpenClaw AI agent (isolated) |
 
 ## Docker Named Volumes
 

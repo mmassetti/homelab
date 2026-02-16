@@ -84,6 +84,13 @@ Config base: `/opt/docker/configs/<service>/`
 | status.matiasmassetti.com | :3001 (Uptime Kuma) |
 | cloud.matiasmassetti.com | :9200 (OpenCloud) |
 
+### OpenClaw (openclaw_network: 172.31.0.0/24) — Separate compose: `/opt/docker/configs/openclaw/docker-compose.yml`
+| Service | Port | Notes |
+|---------|------|-------|
+| openclaw-gateway | 127.0.0.1:18789, 127.0.0.1:18790 | AI agent, localhost-only, hardened (read_only, cap_drop ALL, no-new-privileges) |
+
+**Security**: Docker socket mounted (sandbox spawning), Telegram polling (outbound only), user ID allowlisted. NOT exposed via Cloudflare Tunnel.
+
 ## Project Containers (separate compose files)
 | Project | Port | Compose |
 |---------|------|---------|

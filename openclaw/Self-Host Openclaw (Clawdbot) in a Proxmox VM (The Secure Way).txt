@@ -1,0 +1,331 @@
+00:00: This new AI agent amassed over 60,000
+00:03: stars on GitHub in only three days. The
+00:06: internet is going crazy over cloudbots
+00:08: and everybody seems to be buying Mac
+00:10: minis probably because you can easily
+00:12: run local AI models on the neural engine
+00:15: in the Apple silicon chips. But as home
+00:18: labers, of course, we already have a
+00:20: server sitting at home. So I looked into
+00:22: what it takes to set up Cloudbot on
+00:23: Proxmox. But first, what makes Cloudbot
+00:26: different? I have to be honest, I was a
+00:29: bit skeptical at first because nowadays
+00:30: you read about new AI tools and agents
+00:33: [music] and chatbots every other week,
+00:35: but I think I can show you with an
+00:37: example. So, if I were to ask Chat GPT
+00:39: [music] to check my disk space, it's
+00:43: just going to come back to us with some
+00:45: random commands.
+00:47: It doesn't even know what system we're
+00:49: running on or what environment it's
+00:51: running in. But as you will see in a
+00:54: minute, Cloudbot is not only aware of
+00:57: that, but can do much more.
+01:03: All right. Yeah, this is awesome.
+01:06: Cloudbot has shell access on your
+01:08: system. It has [music] access to your
+01:10: file system. It has a persistent
+01:12: memories between sessions. [music] You
+01:14: can connect it with many different chat
+01:16: applications or voice agents or web
+01:20: interfaces. You can even [music] extend
+01:23: it with many skills and plugins. So
+01:25: yeah, it's very powerful and that's
+01:27: exactly why we need to be careful. This
+01:30: security researcher found hundreds of
+01:32: cloudbot gateways exposed to the
+01:34: internet without any form of
+01:35: authentication.
+01:38: And yes, these are AI agents with shell
+01:41: access open to anyone.
+01:44: Let's not be one of those people. I'm
+01:46: going to go through this step by step
+01:48: and I will explain every security
+01:50: decision that I've made along the way.
+01:52: I'm going to create a new virtual
+01:55: machine
+01:56: and I'll call it cloudbot.
+02:00: For the operating system, [music] I'm
+02:02: choosing Ubuntu 24.
+02:06: Now, this is our first security
+02:07: decision. I'm choosing to create a
+02:10: virtual machine and not an alexe
+02:12: container. So typically I like to use
+02:14: alexe containers because they're very
+02:16: lightweight and one of the reasons that
+02:18: they are lightweight is that they share
+02:20: the kernel with the host system. Now in
+02:23: the event if cloudbot might get
+02:25: compromised in an alexe container they
+02:28: might be able to reach the host system
+02:30: proxmox and if that happens we'll be in
+02:32: a bad place. virtual machines have
+02:35: hypervisor isolation which means that if
+02:38: an attacker gets through and [music]
+02:39: owns the VM we can just delete it and
+02:42: move on. In this way our Proxmox host
+02:46: stays safe. So I'll mostly be [music]
+02:49: using the defaults here but I do want a
+02:52: modern chipset. We need the QMU agent.
+02:57: 32 gigs is fine. Let's do a couple of
+03:00: cores.
+03:03: And I want the host type, which means
+03:07: we'll get all the CPU features. We can
+03:11: use a bit more memory.
+03:13: And definitely don't want to balloon
+03:16: this since Cloudbot is a node package.
+03:20: Um, you never know what it's going to
+03:21: pull in and how much memory it's going
+03:23: to use. So, let's just be safe here.
+03:28: And this is all good.
+03:31: Great. We have our installer here. Just
+03:34: going to go ahead. Now, I'm using pretty
+03:37: much all of the uh defaults for Ubuntu.
+03:40: Now, this is the only thing that's
+03:42: noteworthy. Actually, I'm installing the
+03:44: Open SSH server because well, the
+03:48: console in this browser is not ideal and
+03:50: I want to be able to use my own terminal
+03:52: later. Great. Our system is running
+03:54: which means I should be able to connect
+03:56: to it from my terminal. So I managed to
+04:00: SSH into my machine. And first things
+04:03: first, let's perform some updates
+04:06: especially uh those juicy security
+04:09: packages.
+04:15: Our next security decision is to create
+04:17: a dedicated Cloudbot user on the system.
+04:20: We definitely do not want to use the
+04:22: root user here. If something goes wrong,
+04:24: the attacker will essentially be stuck
+04:26: in this user sandbox environment.
+04:29: So, let's switch to the cloudbot user.
+04:34: And there was one gotcha that I found
+04:37: when I tried this first, and that is
+04:40: that the service didn't start without
+04:42: exporting the current user ID [music]
+04:45: into this environment variable. Now,
+04:48: Cloudbot is indeed a node package and it
+04:50: pulls in all its dependencies and the
+04:52: skills that you add and the plugins as
+04:54: node dependencies as well. So, in order
+04:57: to give the node compiler a bit more
+04:59: breathing room, I will add a swap file
+05:02: just to make sure that the compilation
+05:04: succeeds.
+05:17: All right, that looks good. Time to
+05:19: install cloudbot. But first, we need to
+05:22: install node.
+05:26: I'm just adding the repository here and
+05:30: then
+05:33: going to install NodeJS.
+05:36: That was quick. Now, time to install
+05:39: cloudbot globally.
+05:50: So we have Cloudbot installed and I will
+05:52: be using Telegram to interact with it.
+05:54: So before I start the Cloudbot
+05:56: configuration, I need to set up a bot
+05:58: for Telegram which will only take a
+06:00: minute.
+06:04: Cloudbot.
+06:11: All right. And so we have our um API
+06:13: token here. Of course, we need to copy
+06:15: that for the configuration later. We
+06:18: also need to set the privacy settings
+06:23: um and disable the group privacy and
+06:25: this will allow the bot to read all the
+06:28: messages and not just mentions to us.
+06:31: We also need your user ID from Telegram
+06:34: and for that we can use the user info
+06:36: bot. So I'm just copying that one as
+06:39: well. Cloudbot is installed and our
+06:42: Telegram bot is ready. So now we can
+06:44: configure everything. And thankfully
+06:46: Cloudbot comes with a really nice
+06:47: onboarding wizard.
+06:56: I'm choosing the manual configuration
+07:03: and I'll be using my Antropic API key.
+07:08: Of
+07:11: course, we're using Opus 4.5.
+07:15: And this is another key security
+07:17: decision. The loop back option for the
+07:19: gateway binds will make sure it's only
+07:21: accessible from within the virtual
+07:23: machine. [music]
+07:24: So, no ports opened to the network nor
+07:27: the internet. H without open ports to
+07:31: the internet, how does Cloudbot actually
+07:33: receives messages? Well, that's a good
+07:36: question. Cloudbot doesn't exactly sit
+07:39: and wait for new messages to come in.
+07:42: Instead, it pulls the services of the
+07:45: clients or Telegram in our case every
+07:48: few seconds for new messages. So every
+07:50: few seconds, it will reach out to the
+07:52: Telegram servers to ask for new content.
+07:55: So whenever I send a message through the
+07:57: telegram app, the telegram app will send
+07:59: it to the telegram server and instead of
+08:02: having the server send it to our
+08:04: cloudbot instance, cloudbot actually
+08:07: keeps asking for messages. So it's all
+08:10: outgoing requests instead of incoming.
+08:19: So at this point, I'll only be using
+08:22: this server locally. Um, so I'm not
+08:24: going to be adding tail scale.
+08:30: Yes, we want the Telegram app.
+08:34: Now, this is taking a minute. I assume
+08:36: it's pulling in some packages and
+08:38: compiling them.
+08:40: Right. So, this is the [music] token
+08:42: that we saved from before.
+08:47: I'm not setting any up. Um, I'm not
+08:49: setting up any others right now.
+08:52: And we do want a default of pairing.
+08:55: I'll actually skip the
+08:58: skills and hooks for now. And it seems
+09:01: to report that the system user services
+09:05: are unavailable.
+09:07: I guess we can do that ourselves. Cool.
+09:11: The onboarding completed and Cloudbot is
+09:13: configured. But I did get a weird
+09:15: message about the service not being
+09:17: available at the end. And without this,
+09:20: I don't think Cloudbot will be available
+09:21: once we log out or reboot the server. So
+09:24: I will set up that service manually. So
+09:27: this should keep the service running
+09:30: after log out
+09:33: and this should create the system demon.
+09:38: Yep.
+09:42: Now just let's just enable them and
+09:46: let's see the current status.
+09:48: Whoops.
+09:53: Yeah, looks great.
+09:57: Cloudbot comes with a built-in security
+10:00: audit. So, that's pretty cool. I'm going
+10:02: to run that now.
+10:06: All right. So, all right. This one is
+10:08: not important to me at this point since
+10:11: we're only using it locally. But
+10:14: I had this earlier, too. I think there
+10:16: is a bug in the install script since the
+10:18: token was not created.
+10:22: Um actually let me configure that
+10:26: manually.
+10:30: Yeah. Um this is what we did initially,
+10:35: right? And it used to be blank. Um but
+10:37: clearly it didn't generate anything. Now
+10:40: it does.
+10:42: So that seems [music] better. Let's try
+10:45: that
+10:48: audit again.
+10:51: Right. So, we fixed one. There's
+10:53: something about the permissions.
+10:56: Actually, Plowbot should be able to fix
+10:58: that
+11:00: itself.
+11:03: Great. So, I think we're in a good
+11:05: place. One more layer of security is the
+11:08: pairing mechanism that the Clawbot uses
+11:11: or with the integration such as
+11:12: Telegram. And by default, a Telegram
+11:15: bot, if you know the username, anybody
+11:18: can essentially message it. But
+11:19: thankfully, Cloudbot won't immediately
+11:22: respond to them or allow them to take
+11:24: any actions. Instead, they'll be sent a
+11:26: pairing code, and we'll use that pairing
+11:29: code and enter it in our terminal on our
+11:32: server to approve them. Okay, so I found
+11:35: my bot,
+11:37: and all right, immediately we got our
+11:40: pairing code right here.
+11:49: Okay, let's see if this works. Hi there.
+11:52: Um, Who are you?
+12:05: Okay.
+12:18: Okay. Um,
+12:34: okay.
+12:43: Great. Yeah,
+12:45: I'm not used to this. Typically, when
+12:47: you ask an AI agent what the current
+12:48: date is, it will come up with some weird
+12:51: date from like last year or January 24
+12:54: or something, I suppose, when the model
+12:56: was created. But this actually proves
+12:58: that Cloudbot knows the environment is
+13:01: operating in, [music] which is a Linux
+13:03: server in the UTC time zone.
+13:06: But yeah, let's try something more
+13:08: interesting. Give me a nicely formatted
+13:12: overview
+13:14: of this server. Think CPU,
+13:19: memory, and disk usage.
+13:28: Well, I meant to say server, but let's
+13:29: see what it's
+13:31: all right. Yeah,
+13:34: that seems uh pretty cool.
+13:38: So, what are the largest files since the
+13:42: disc is getting up there?
+13:48: So, it knows what server we are talking
+13:51: about.
+13:57: And yeah, this is pretty cool. So it
+14:00: actually retains [music] the context of
+14:03: the uh like the previous messages.
+14:06: It knows what what I'm referring to. And
+14:08: yeah, of course, the npm cache is quite
+14:11: large, but I guess I messed up something
+14:14: with the swap files in the installation.
+14:17: Okay, let's try something dangerous.
+14:19: Yes, clean up the mpm cache.
+14:33: All right. Yeah, this is awesome. Uh,
+14:37: let's try to access the internet.
+14:44: This is so much fun.
+14:59: All right. Um,
+15:02: I guess I'm making a video about
+15:03: Clawbot, but it's called Moldbot now.
+15:07: Um, I found out just in time.
+15:11: Oh, man. This is hilarious. So, yeah,
+15:13: this is I'm so excited. This is what
+15:16: makes um Moldbot, I suppose I should
+15:18: say, so different from other AI
+15:20: chatbots. We built an AI agent that's
+15:23: hosted on our own server and it's an
+15:25: actual agent. It can do things. It's not
+15:28: an AI chatbot and we can access it from
+15:31: anywhere on our phone and we did it
+15:33: securely. We have a virtual machine
+15:36: that's isolated by the hypervisor
+15:38: instead of an alexc. We have a dedicated
+15:42: user sandbox. The gateway is bound to
+15:44: the local host, so only outgoing
+15:46: connections. And we [music] have a
+15:48: pairing process for new users. So with
+15:52: all of this, we're not one of those
+15:54: hundreds of users that expose their
+15:56: instance to the internet. So I've worked
+15:58: with AI tools intensively over the past
+16:01: few years, and there have been these
+16:03: instances where I feel like, okay, this
+16:06: is different. Something is going on
+16:09: here. And this definitely feels like one
+16:12: of those moments. I mean, just the fact
+16:14: that it's able to figure out that itself
+16:17: rebranded by reading the hackin news
+16:20: headlines is pretty funny. But apart
+16:22: from that, there are so many interfaces
+16:24: to this tool already. You can use
+16:27: [music] any chat app imaginable to
+16:30: connect with it. I'm just using Telegram
+16:33: because it's quite easy to set up. And
+16:35: right now I am using my entropic API
+16:38: key, but with Olama you can actually use
+16:41: your own local model and that just
+16:43: sounds perfect to me. So I'll be
+16:45: exploring that and I can't wait to try
+16:47: out these skills to build cool home
+16:49: automations and other crazy workflows.
+16:52: So do subscribe if you want to see more.
+16:54: Thanks for watching.

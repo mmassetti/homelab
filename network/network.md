@@ -81,3 +81,13 @@ Tailscale manages DNS (resolv.conf points to 100.100.100.100).
 
 No custom firewall rules on the mini PC (ufw not configured).
 All external access goes through Cloudflare Tunnel — no ports exposed to the internet.
+
+## Docker Networks
+
+| Network | Subnet | Purpose |
+|---------|--------|---------|
+| arr_network | (bridge, auto) | ARR stack services |
+| docker_homelab | (bridge, auto) | Infrastructure + cloud services |
+| dns_network | 172.30.0.0/24 | Pi-hole + Unbound |
+| media_tracker_network | 172.21.0.0/16 | Media tracker project |
+| openclaw_network | 172.31.0.0/24 | OpenClaw AI agent (isolated, no cross-network access) |

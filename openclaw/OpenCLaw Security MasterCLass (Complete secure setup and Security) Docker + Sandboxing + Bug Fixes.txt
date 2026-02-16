@@ -1,0 +1,1074 @@
+00:07: some of your comments on our last video
+00:10: about OpenClaw and they weren't about
+00:12: features, they were about one thing,
+00:16: security.
+00:18: Is this actually safe on a VPS? But what
+00:21: if I get hacked? Are the free models
+00:23: safe? Can someone hack my WhatsApp
+00:25: through this thing? Shell access to my
+00:27: computer? And honestly, these are the
+00:30: right questions to ask. So, let me
+00:32: answer them. By the end of this video,
+00:34: you'll know exactly how to deploy
+00:36: OpenClaw with security tight enough that
+00:38: these questions become irrelevant.
+00:41: This is the complete OpenClaw security
+00:43: masterass you were looking for. By the
+00:46: end, you'll have a practically
+00:47: unhackable bot with enterprisegrade
+00:49: Docker lockdown, network quarantine, and
+00:52: sandbox execution. All running on $0 per
+00:55: month using free ZAI tokens from Open
+00:58: Router. You're getting full setup, every
+01:01: command explained, web UI, and Telegram
+01:04: gateways with bug fixes everyone hits
+01:06: and institution level security that
+01:08: costs companies thousands. Learning to
+01:11: securely deploy and harden OpenClaw
+01:13: isn't just useful. It's a 200K plus year
+01:16: skill set. Whether you're looking to
+01:18: land an AI infrastructure role or
+01:20: automate your business with AI agents,
+01:22: this is the foundation. Quick ask,
+01:24: subscribe, like, and join the community
+01:26: in the link below for all the scripts,
+01:28: configs, and ongoing support.
+01:31: Now, let's get right [music] into it.
+01:35: All right, quick refresher on how open
+01:38: claw actually works because
+01:40: understanding the architecture helps you
+01:42: understand where things can go wrong.
+01:45: Here's the flow. You send a message from
+01:47: your phone through Telegram, WhatsApp,
+01:50: Discord, whatever you've connected. That
+01:53: message hits the gateway. This is the
+01:55: heart of Open Claw. It's a service
+01:57: running on port 18789,
+02:00: and it's basically the control center
+02:02: for everything. The gateway sends your
+02:05: message to an AI brain, Claude, GPT,
+02:08: whatever model you've configured. The AI
+02:11: decides what to do and can use tools,
+02:13: shell commands, file access, browser
+02:16: control, sending messages back. Simple
+02:19: enough, right? Now, here's where
+02:21: security comes in. There are three
+02:23: vulnerability zones in this system.
+02:26: Security zone one, the gateway itself,
+02:30: port 18789.
+02:32: If someone can reach this port, they can
+02:35: potentially control your bot. And I'll
+02:37: tell you right now, security researchers
+02:40: found over 30,000 OpenClaw instances
+02:43: exposed to the public internet with zero
+02:46: authentication. Don't be one of them.
+02:49: Security zone 2, the channels, your
+02:53: telegram, your WhatsApp. Who can
+02:55: actually send messages to your bot? If
+02:57: the answer is anyone, you have a
+03:00: problem. Security zone three, the tools.
+03:04: What can your bot actually do? Can it
+03:07: delete files, run any shell command,
+03:09: send messages to anyone? The more power
+03:12: you give it, the more damage a
+03:13: compromised bot can cause. Each of these
+03:17: zones is a potential entry point for
+03:20: things to go wrong. And in this video,
+03:23: we're going to secure all three. But
+03:25: first, a warning about something that's
+03:27: been happening that you need to know
+03:29: about. Okay, stop for a second. This is
+03:33: important. Open claw does not require
+03:36: any VS code extension. Let me repeat
+03:38: that. You do not need to install
+03:41: anything in VS Code. You do not need a
+03:44: browser extension. You do not need any
+03:46: separate helper apps. Why am I telling
+03:49: you this? Because there was a fake
+03:51: extension called Claudebot Agent that
+03:53: appeared on the VS Code marketplace. It
+03:56: claimed to give you AI coding features.
+03:59: What it actually did? It dropped a
+04:01: remote access Trojan onto your machine.
+04:04: Actual malware. Until you understand
+04:06: what you're installing, stick to the
+04:08: defaults. Just this week, security
+04:11: researchers found malware in Claw Hub's
+04:13: top downloaded skill, real malware
+04:15: stealing API keys. Until you understand
+04:18: what you're installing, stick to the
+04:20: defaults or join our school community
+04:22: for community support and early
+04:24: warnings. Link in the description. Here
+04:27: are the only official sources for
+04:29: OpenClaw. The website openclaw.ai.
+04:33: The documentation docs.openclaw.ai.
+04:37: The GitHub github.com/openclaw/openclaw.
+04:42: That's it. If anyone in a YouTube video,
+04:45: a Discord server, a Reddit post tells
+04:48: you to install a VS Code extension, a
+04:50: browser extension, or some random tool
+04:53: for OpenClaw. Don't. It's not real.
+04:56: verify everything at the official
+04:58: sources. Okay, with that out of the way,
+05:02: let's talk about the actual security
+05:04: framework.
+05:05: I'm going to break open claw security
+05:08: into two main categories. This will make
+05:11: everything easier to understand. Column
+05:14: one, hardware security. This is about
+05:17: where you run OpenClaw and how it's
+05:20: isolated from everything else.
+05:22: >> [snorts]
+05:22: >> Are you running it on a dedicated
+05:24: device, a VPS, your daily laptop? Each
+05:29: of these has different implications.
+05:32: Column two, software security. This is
+05:35: about how OpenClaw itself is configured.
+05:38: The gateway settings, who can message
+05:41: your bot, what tools are enabled, what
+05:44: guard rails you put in place. Here's the
+05:46: thing. If your hardware security is
+05:49: wrong, your software security almost
+05:51: doesn't matter. Someone with access to
+05:54: your machine can bypass everything. So,
+05:57: we're going to start with hardware, get
+06:00: the foundation right, and then lock down
+06:02: the software.
+06:04: All right, first scenario. You want to
+06:07: run Open Claw at home using dedicated
+06:09: hardware. That could be a Mac Mini, a
+06:12: Raspberry Pi, or an old laptop.
+06:14: basically a device that does nothing
+06:16: except run open claw. Or maybe instead
+06:19: of spending $600 on a Mac Mini or
+06:22: learning your way around a $150
+06:24: Raspberry Pi, you can just grab a cheap
+06:27: used laptop from eBay. There are tons of
+06:30: old machines out there. With 8 GB of
+06:32: RAM, you're totally fine. And you can
+06:35: even get away with 4 GB for this use
+06:37: case. A $40 old laptop from eBay will do
+06:41: the job perfectly well. Just make sure
+06:43: to wipe the hard drive completely and
+06:45: install a fresh operating system if you
+06:48: want to be 100% cautious. Or if
+06:51: installing a new operating system feels
+06:53: too technical, you can get a mini PC on
+06:55: Amazon for as low as around $190.
+06:58: It's a brand new system that's basically
+07:01: plugandplay with a very small learning
+07:03: curve.
+07:06: This is the safest home option. And
+07:09: here's why. One, there are no personal
+07:13: files on the device, no documents, no
+07:16: photos, no browser passwords. If the bot
+07:19: goes rogue, there's nothing sensitive to
+07:22: access. Two, you can put it on an
+07:25: isolated network, VLAN, guest network,
+07:28: completely separate from your main
+07:30: devices.
+07:32: Three, if something goes
+07:34: catastrophically wrong, the blast radius
+07:36: is limited to that one device. Your main
+07:39: computer, your NAS, your smartome, all
+07:42: untouched.
+07:45: Now, if you're going this route, here's
+07:47: how to set up the network properly.
+07:51: Put the device on a separate VLAN or
+07:54: guest network. Most modern routers
+07:56: support this. UniFi, PFSense, even some
+08:00: consumer routers. Block this device from
+08:03: accessing your main network. That means
+08:05: no talking to your NAS, your smart home
+08:08: hub, your other computers.
+08:10: Allow outbound connections to the AI
+08:13: APIs, Anthropic, OpenAI, whatever you're
+08:16: using. Block inbound connections from
+08:19: the internet to ports 18789
+08:22: and 18790.
+08:25: Now, let me show you the exact
+08:27: step-by-step setup for the most common
+08:30: consumer routers. The process is similar
+08:32: for others. Just look for the same
+08:35: settings. To access your router
+08:37: settings, open your browser and type one
+08:39: of these addresses. TPLink 92168.1.1
+08:44: or TPLink wifi.net.
+08:47: Netgear 192168.1.1
+08:51: or routerloin.net.
+08:54: ASUS 192.168.1.1
+08:58: or router.asus.com,
+09:01: Xfinity 10.0.0.1
+09:04: or check the sticker on the bottom of
+09:06: your router for the exact address and
+09:09: default login. For an example, let's do
+09:12: the router security hardening on a
+09:14: TPLink router. The router user pass
+09:17: combo are usually on a sticker on the
+09:19: back of the router and they are usually
+09:22: admin admin. Here, let's change your
+09:25: router's password and the wireless
+09:27: network's name first. This is the single
+09:30: most important thing you should do.
+09:32: After you logged into your router like
+09:34: an absolute boss by typing the word
+09:37: admin for the username and then get this
+09:40: another admin for the password, go to
+09:43: the top menu and just click on the
+09:44: advanced option on the top menu. Then
+09:47: click on system from the left menu all
+09:49: the way at the bottom of the page. Then
+09:52: from the drop- down menu, select
+09:54: administration. In the administration
+09:57: page, you can see the option to change
+09:58: your password right at the top. Use it
+10:01: to set a strong new password for your
+10:03: router login. Then hit the save button
+10:05: to make sure the changes are locked in.
+10:08: To change your username, click on the
+10:10: wireless option in the left side menu.
+10:12: Then click on wireless settings option
+10:14: from the drop- down menu. On this page,
+10:17: you can change the name of your wireless
+10:19: network's name or set a new password for
+10:22: the wireless network for your Wi-Fi.
+10:26: While you're in wireless settings, look
+10:28: at the security option. Select WPA3
+10:32: personal plus WPA2 PSK AES if your
+10:36: router offers it and obviously change
+10:39: the default Wi-Fi password while you're
+10:41: here. Now, here's where we isolate Open
+10:44: Claw. On the bottom of the page in the
+10:47: wireless settings page, you can see the
+10:49: option to enable the guest network.
+10:51: Enable it. Use the same WPA3 plus WPA2
+10:55: security setting and give it a name like
+10:57: OpenClaw IoT or IoT isolated. After
+11:01: that, you need to set a different
+11:02: password than your main network. This is
+11:05: important. Do not forget to set up
+11:07: separate name and pass pair for the
+11:09: guest network.
+11:11: Now go to the advanced tab. Then click
+11:14: wireless in the left sidebar menu and
+11:17: select guest network from the drop down.
+11:21: In the guest network page, you'll see
+11:23: two check boxes. This is the setting.
+11:26: This is why we're doing all of this. If
+11:28: allow guests to access my local network
+11:30: is checked, your guest network is just a
+11:33: different Wi-Fi name. Devices on it can
+11:36: still reach your NAS, your computers,
+11:39: your smartome devices. The whole point
+11:41: of the guest network is defeated. When
+11:44: this is unchecked, devices on the guest
+11:46: network still can reach the internet.
+11:49: So, Open Claw can talk to Claude and
+11:51: Open AI, but they cannot touch anything
+11:54: else on your home network. The same goes
+11:56: for allow guests to see each other. You
+11:59: don't want devices on the guest network
+12:01: talking to each other either. You don't
+12:03: want OpenClaw, the Terminator, accessing
+12:05: your kid's iPad just because they're on
+12:08: the same Wi-Fi network. If you're using
+12:11: OpenClaw on dedicated hardware, this
+12:13: setup that we just talked about, meaning
+12:15: dedicated device plus guest Wi-Fi,
+12:18: provides reasonable security. But what
+12:21: if you don't have dedicated hardware and
+12:23: want to run OpenClaw on your personal PC
+12:25: or daily carry laptop? In that case, I'm
+12:28: going to be honest with you. This is the
+12:30: risky option. Why? Because OpenClaw runs
+12:33: with your permissions. Whatever you can
+12:36: access, it can access. your documents,
+12:38: your downloads, your SSH keys, your
+12:41: browser cookies, everything. If someone
+12:44: tricks your bot through a prompt
+12:45: injection attack or if you install a
+12:47: malicious skill, that attacker now has
+12:49: access to your digital life. But I know
+12:52: some of you are going to do this anyway,
+12:54: so let's at least do it safely. So,
+12:57: let's get into the solution. Most people
+13:00: think the solution is Docker. Run Open
+13:03: Claw inside a container, but Docker
+13:05: alone doesn't fully solve this.
+13:08: See, when you run a Docker container
+13:09: with -ash network bridge, the container
+13:12: uses your computer's network connection,
+13:15: if your computer is on your main home
+13:17: network, the container can potentially
+13:20: see and reach other devices on that
+13:22: network too. Your NAS, your kid's iPad,
+13:25: your smart TV. So even with Docker, if
+13:29: Open Claw gets compromised, it could
+13:31: scan your local network and find other
+13:34: devices.
+13:36: The real solution for daily drivers is
+13:39: to combine both approaches. One, put
+13:42: your computer on the guest network when
+13:44: running OpenClaw. Two, run openclaw
+13:47: inside Docker for file system isolation.
+13:51: Three, when you need local network
+13:53: access, stop openclaw and switch back to
+13:56: your main network.
+13:58: Yes, using a guest Wi-Fi with a separate
+14:01: username and password is inconvenient.
+14:03: Yes, you'll lose access to your printer
+14:05: and NAS while OpenClaw runs on the guest
+14:08: network, but think about the
+14:09: alternative. Open Claw finding your
+14:11: family's devices on the network and
+14:13: potentially accessing or uploading their
+14:15: data. That's way worse than temporarily
+14:18: not being able to print. It's a
+14:21: trade-off. Security versus convenience.
+14:24: For a daily driver running an AI agent
+14:26: with shell access, I'd choose security.
+14:29: Here's the workflow. When you want to
+14:31: use openclaw, one, connect your computer
+14:34: to the guest network. Two, start the
+14:36: docker container. Three, use openclaw.
+14:40: When you need printer naz local network
+14:42: access, one, stop the docker container.
+14:45: Two, switch back to your main network.
+14:48: Three, do your printing, file transfers,
+14:50: etc. Four, switch back to guest network
+14:52: when you want open claw again.
+14:56: Let's begin. assuming you have Docker
+14:58: installed or if not watch my previous
+15:01: video N8N for free where I show
+15:03: step-by-step Docker installation then
+15:06: come back. Also, we're going to run
+15:09: commands using the built-in command line
+15:11: on your device. On Mac Linux, it's
+15:13: called Terminal. On Windows, it's
+15:15: command prompt or PowerShell. So, next
+15:18: open up your terminal. Once your
+15:20: terminal is open, let's check your
+15:22: Docker version by typing this inside the
+15:24: terminal. Docker version- format open
+15:28: single quote double open
+15:30: brace.server.ver version double close
+15:32: brace close single quote. If you're on
+15:35: Docker Desktop 4.29 or older, update
+15:38: Docker first. Since OpenClaw evolves so
+15:41: rapidly, there's no official OpenClaw
+15:44: OpenClaw image on DockerHub yet. This
+15:47: means we need to build the image
+15:48: ourselves from source code.
+15:51: In your terminal, run gitclone
+15:55: https/github.com/openclaw/openclaw.git.
+16:02: If you don't have git installed, Mac
+16:05: will prompt you to install it. On Linux,
+16:07: run pseudoapp install git first, then
+16:11: cdopenclaw.
+16:13: Now run the docker setup script
+16:15: dot/doccker-
+16:17: setup.sh.
+16:19: This script does several things
+16:20: automatically. It builds a local docker
+16:23: image called openclaw local. It creates
+16:27: the data directories for you at home
+16:29: named openclaw and a workspace folder
+16:32: inside the openclaw folder. That folder
+16:35: is for docker compose with proper volume
+16:37: mounting.
+16:39: The wizard will ask you a series of
+16:41: questions. For this strictly secure
+16:44: setup, we want to start with the
+16:46: defaults and then lock them down
+16:48: manually. Some of these questions can be
+16:50: tricky, so pay attention and follow
+16:52: along. Here's what to choose. Now,
+16:55: choose yes to the security warning by
+16:58: using your left arrow key and then
+16:59: pressing enter. For onboarding mode, you
+17:02: need to choose quick start, meaning just
+17:05: press enter. From model selection, use
+17:08: the down arrow to find open router and
+17:11: press enter. This is the secret to
+17:13: keeping our monthly cost at $0 thanks to
+17:17: their free tier models. Press enter to
+17:20: choose open router. Now pay attention
+17:23: when it asks for off method. Just press
+17:25: enter so you can enter your open router
+17:28: API key for open claw. If you don't have
+17:31: one, pause this video. I have a complete
+17:34: guide on how to get a free open router
+17:36: account and even a free AWS instance in
+17:39: my previous video titled Open Claw for
+17:43: free in its thumbnail. Once you have the
+17:45: Open Router API token, paste it in here.
+17:48: After you paste the token, you'll see an
+17:51: endless list of model names. For our
+17:53: zero monthly fee setup, the best model
+17:56: is by Z AI at the bottom of the list.
+17:59: Scroll down until you find set aigm
+18:02: 4.5-air
+18:04: colon free. The next question is about
+18:07: what channel to choose to talk to
+18:09: openclaw. We are going to set up the
+18:12: gateway channel after we secure the
+18:14: hardware. So for now, choose the last
+18:17: option, skip for now. Next, it asks if
+18:21: we want to configure skills now. choose
+18:24: yes, not because we want the skills
+18:26: themselves yet, but because we want the
+18:29: infrastructure that comes with it,
+18:31: specifically getting homebrew and npm
+18:34: set up correctly inside the container.
+18:37: You'll see why this matters in a minute.
+18:39: Next, choose yes. This sets up homebrew,
+18:42: a package manager that lets us install
+18:44: extra tools like git or wget easily.
+18:48: Then for the node manager, select npm.
+18:52: While docker usually relies on aptget or
+18:55: ap for system packages, openclaw uses
+18:58: npm to install skills at the user level.
+19:01: This lets us add features later without
+19:04: needing root access. For install missing
+19:07: skill dependencies, choose skit for now.
+19:11: Use the spacebar to select it, then
+19:13: enter to confirm. But why? because we
+19:17: need to add several layers of security
+19:19: hardening like access restrictions and
+19:21: sandboxing before we let this bot
+19:24: install anything else. Security first.
+19:27: By the way, now that I think about it,
+19:30: this tutorial is so robust on security,
+19:33: it might just cure your cold while
+19:35: watching it. Make sure you stick around
+19:37: for the full dose. Then, predictably, it
+19:40: will ask about specific skills. We are
+19:43: going to choose the default no by
+19:45: pressing enter. Keep pressing enter to
+19:48: decline everything. Go places, local
+19:51: places, nano banana pro, notion, etc. By
+19:55: the way, these names might change. The
+19:57: only thing consistent about openclaw is
+19:59: that it changes all the time. Trust me,
+20:02: keeping a tutorial up to date is a
+20:04: full-time job. Just keep saying no until
+20:07: the wizard finishes.
+20:09: Now, let's get back to the build. Open
+20:13: Claw changes incredibly fast. I had to
+20:16: rewrite this script 45 times. YouTube
+20:19: videos are static, but my community
+20:21: isn't. Plus, there are downloadable
+20:24: files with all the code and instructions
+20:26: from this video. It's important to
+20:28: connect with others who are exploring
+20:30: OpenClaw responsibly. Join my school
+20:33: community, learn from experienced users,
+20:36: and get the most out of your setup
+20:38: without wasting money. There's a 7-day
+20:41: free trial. So, honestly, just join.
+20:44: Grab the verified code, get access to
+20:47: the $3 per month Claude Opus level
+20:49: intelligent GLM model link and secure
+20:52: your setup. There's zero risk. The links
+20:55: in the description. Next, it asks if you
+20:58: want to enable ZSH shell. This is for
+21:02: SSH access. Say no. We do not want to
+21:06: expose that kind of access. We are
+21:09: perfectly fine with the secure gateway
+21:11: channels like the web UI and Telegram
+21:14: that we will set up in a moment. And
+21:16: with that, the setup is complete. You
+21:20: should see a red message saying
+21:22: onboarding complete. Use the dashboard
+21:24: link above to control Open Claw. It will
+21:28: print a dashboard link. Note, valid
+21:31: links might look like
+21:33: https127.0.0.118789
+21:39: or https127.0.0.118789
+21:47: token equals some random string. If
+21:50: yours is missing the token at the end,
+21:52: don't panic. We will get that token
+21:54: later when we set up the gateways. If
+21:57: you're asking how do I know, this is my
+21:59: 20th install of Open Claw in the past
+22:02: couple of days. Everything changes
+22:04: constantly. But don't worry, I designed
+22:07: this tutorial to handle every situation
+22:09: you encounter. Now, the wizard should
+22:12: exit and drop you back to your terminal
+22:14: prompt. You will see openclaw percent or
+22:17: similar. If it isn't sending you back,
+22:19: hit control + C to force it. Finally, to
+22:23: ensure all those new settings take
+22:25: effect, we need to restart the stack.
+22:27: Run this command inside the terminal.
+22:30: Docker compose down and docker compose
+22:33: upd. The setup script creates a working
+22:36: configuration, but for a local fortress,
+22:39: we need secure configuration.
+22:42: We are going to edit two files to lock
+22:44: this down completely. Since we are
+22:47: manually editing dockermpose.yiml,
+22:50: do not run docker setup.sh again in the
+22:53: future. It will overwrite your security
+22:56: flags. If you update OpenClaw, just get
+22:59: pull rebuild the image and keep your
+23:02: modified config. Also, hit the subscribe
+23:05: button before I forget to ask you and
+23:08: join our school community. We are having
+23:10: a 7 days free trial running right now. I
+23:14: will post all of the codes and
+23:16: instructions to this video in multiple
+23:18: docs and PDFs inside the openclaw class
+23:21: in the school community.
+23:23: Before we proceed, we need to secure
+23:26: against two critical exploits discovered
+23:28: by Ubrew. Threat number one, volume 210,
+23:33: the hidden script attack. Avoid clawhub,
+23:36: the public skill registry. A flaw in
+23:39: older versions lets plugins run hidden
+23:42: npm scripts during installation. Hackers
+23:46: use this to silently execute malware
+23:48: like password stealers the moment you
+23:50: click install. Open claw is dragging
+23:53: patches for this. But until confirmed,
+23:56: do not install plugins. Do not install
+24:00: skills from clawhub. Threat number two,
+24:04: van 188. The default admin flaw. A logic
+24:09: bug allows anyone to become admin just
+24:12: by not asking for permission. If an
+24:15: attacker connects without specifying a
+24:17: scope, they get full admin rights by
+24:19: default. The January 30th patch v2026129
+24:25: fixes this. Let's verify your version
+24:29: immediately. Run this command.
+24:33: It will give you the version of your
+24:35: open claw. If that number is lower than
+24:38: 2026129,
+24:40: you are vulnerable.
+24:43: To fix it, we force a pull of the latest
+24:46: secure image docker compose pull open
+24:48: claw gateway docker compose up-d.
+24:53: Once again, I will provide all the codes
+24:56: that you see in this video in our school
+24:58: community.
+25:00: The four locking down ports verify the
+25:02: wizard synced passwords correctly. Often
+25:05: it generates a mismatch between the
+25:07: gateway usingv
+25:10: and the CLI using openclaw.json.
+25:13: If commands fail with unauthorized
+25:16: error, this is the reason. Here is how
+25:18: to ensure the both gateway tokens match.
+25:21: First, we need to get the master token.
+25:23: Type this in the terminal gp token.v.
+25:27: Then copy the string after open claw
+25:30: gateway token. Make sure you type the
+25:32: commands exactly as shown or just
+25:35: download the PDF guide from the link in
+25:37: the description. For example, here if
+25:39: you do not type the word token in all
+25:41: caps, the command would not work. Two,
+25:45: next, let us check the CLI config in
+25:48: openclaw.json to see if both tokens
+25:51: match. If they do not match, we will
+25:54: replace the config token with the one we
+25:56: just got from the env file. So, type
+25:59: this in the terminal.
+26:00: nano.openclaw.openclaw.json.
+26:04: This command allows us to use the nano
+26:06: text editor to make changes inside the
+26:08: openclaw.json file. Use your arrow keys
+26:11: to find token dot dot. If it differs
+26:14: from the token you copied from the env
+26:16: file, delete the old value and paste the
+26:19: correct one inside the quotes. Three.
+26:22: Now save the changes you just made to
+26:24: the openclaw.json file and exit safely
+26:27: by using control o entertrl x. Now we
+26:32: lock down the container privileges. Open
+26:35: the compose file using the nano text
+26:38: editor by typing this into the terminal.
+26:40: nano docker-compose.yiml.
+26:43: YML task one, we lock down the ports.
+26:47: First, scroll to the ports section using
+26:50: your arrow keys. We need to force both
+26:53: the gateway 18789 and the browser
+26:56: control 18790 services to listen only on
+27:00: localhost. This prevents anyone else on
+27:03: the land from connecting. Change the
+27:06: ports section to look exactly like this.
+27:09: ports
+27:13: 127.0.0.118789-127.0.0.1879018790.
+27:27: If you see 0.0.0, change it. It must say
+27:31: 127.0.0.1.
+27:34: While we are still inside
+27:36: dockermpose.yiml,
+27:38: YML. We need to make two more changes.
+27:42: First, find the volume section and add
+27:45: this line to the list under the word
+27:47: volumes. minus var run docker sock colon
+27:52: var run docker sock. That line gives the
+27:56: gateway access to docker's control
+27:58: socket. It's a security trade-off, but
+28:01: it's what allows the system to spawn
+28:03: those throwaway sandbox containers
+28:05: later. Without it, the sandbox won't
+28:08: work. Just make sure you are back at the
+28:10: main indentation level. We're going to
+28:12: add strict security flags. And for the
+28:15: final change to docker compose yiml
+28:20: before we close the text editor, we will
+28:23: make the container file system read
+28:26: only. This ensures that even if a hacker
+28:28: gets in, they can't install persistent
+28:31: malware. But there is a catch. If we
+28:34: lock the whole file system, the app will
+28:36: crash. It needs somewhere to write its
+28:39: temporary runtime files. The solution is
+28:43: a tmpfs mount. Think of it as a logical
+28:46: scratch pad in memory. It lets the app
+28:49: write what it needs to run, but because
+28:51: it lives in RAM, nothing is ever saved
+28:54: permanently to your desk. It is the
+28:57: perfect balance of security and
+28:59: function. Caution. Indentation matters.
+29:03: YAML theyml file that we are editing
+29:06: right now is syntax sensitive. Make sure
+29:09: the lines align perfectly. The following
+29:12: code had two spaces indentation before
+29:14: the first character. Add these lines
+29:17: carefully right after the line we just
+29:19: added. Read only true tmpfs
+29:24: /tmp
+29:26: security opt no new privileges true.
+29:29: Capdrop all capad netbind service. What
+29:34: we just did hardens the gateway
+29:36: container itself. But right now your
+29:39: agents tools, shell commands, file edits
+29:42: still execute inside this same
+29:44: container. In step nine, we will fix
+29:47: that with agent sandboxing which spins
+29:50: up separate throwaway containers for
+29:52: every tool execution. That's the real
+29:55: isolation layer. Save and exit. Control
+29:58: O. Enter. Crl X. Now that our config is
+30:02: secure, let's start it up. Note the
+30:05: docker setup.sh script we ran earlier
+30:08: already built the image for us. So we
+30:10: need to just launch it using the
+30:12: following command. Docker compose up-d.
+30:16: You might see yellow warnings like warn
+30:19: the clawed web cookie variable is not
+30:22: set. Ignore these. They are normal
+30:25: warnings for variables we aren't using.
+30:27: Also, you might encounter some common
+30:30: errors while setting up OpenClaw on
+30:32: Docker. Here are three of the most
+30:34: common ones. Error one, pull access
+30:38: denied for OpenClaw. Repository does not
+30:40: exist. Cause: The image wasn't built
+30:43: automatically. Fix, you need to build it
+30:46: manually.
+30:48: Error two, failed to read Docker file.
+30:51: No such file or directory. Cause you are
+30:54: in the wrong folder. Eg your home
+30:57: folder. Fix. Go into the project folder
+31:00: first.
+31:01: Error three. Dial TCP lookup registry
+31:05: 1.doccker.io.
+31:07: No such host. Cause docker desktop lost
+31:10: internet connection. This is a common
+31:12: bug for Docker itself in general. Fix.
+31:16: Restart the Docker Desktop app. Since
+31:18: the last two errors solutions don't need
+31:21: any further explanation, we only need to
+31:24: discuss the solution to error number
+31:26: one. Meaning, if the script didn't build
+31:29: the image, we do it manually. This is
+31:32: the official fallback method by using
+31:34: the following commands. cdt
+31:37: tilda/openclaw.
+31:40: docker build-topenclaw
+31:42: local period. Then we try the docker
+31:45: compose up-d command again.
+31:49: This time it should work. Now let's test
+31:52: to see if our docker installation works
+31:54: properly by checking to see if it is
+31:57: listening locally by typing this in the
+31:59: command line. docker ps. Find the
+32:02: gateway container usually named openclaw
+32:05: gateway 1. Look at its ports column. It
+32:09: should now say 127.0.0.18789. 0.118789.
+32:15: If it says 0.0.0.0,
+32:18: go back and fix your config. Now, let's
+32:21: check if our bot is alive. Refresher.
+32:24: Open claw commands normally run locally.
+32:27: Since we are inside Docker, we must use
+32:29: Docker Compose Exec format instead of
+32:32: the usual OpenClaw commands. Here is how
+32:35: we need to augment them to run inside
+32:37: the container. formula docker compose
+32:40: exec plus service plus command.
+32:44: Now type this into the terminal to check
+32:46: the status of our open claw gateway.
+32:49: docker compose exec openclaw gateway
+32:52: node index.js status. The command breaks
+32:55: down like this. Because inside the
+32:58: container openclaw runs as a nodejs app,
+33:01: we invoke node index.js and pass status
+33:05: as the command parameter.
+33:08: Now you should see a table. Look at
+33:10: gateway. It should say reachable and
+33:13: show O token. Ignore any unauthorized
+33:17: errors at the very top. If the table
+33:19: says reachable because we verified our
+33:22: token in step 4 part A, the gateway is
+33:25: authenticated. You should see green
+33:27: statuses. If you see unauthorized, go
+33:30: back and rewatch step 4 part A. Open
+33:34: claw just released a built-in security
+33:36: auditor. Let's run it to prove our
+33:38: lockdom is working. Type this into
+33:41: terminal docker composer run- rm
+33:45: openclaw- cli security audit d--deep.
+33:49: You want to see green checks for no
+33:52: public binds file system read only. For
+33:56: a deeper health check that tests the
+33:57: gateway internals, run docker compose
+34:00: exec openclaw gateway nodeis/index.js
+34:05: health. Important. You will see sandbox
+34:08: inactive gray or red. This is correct.
+34:11: We haven't built the sandbox yet. That
+34:13: is our final step. Ignore it for now. As
+34:16: long as the file system is locked, you
+34:18: are good. Now you know our usual command
+34:22: structure. docker compose exec service
+34:25: openclaw command. But sometimes your
+34:28: gateway crashes. If your gateway crash
+34:31: loops and exec commands fail, use run
+34:34: instead. This launches a temporary
+34:36: rescue container to execute your
+34:38: command. Like this structure, exec
+34:41: enters the existing container while run
+34:44: creates a new temporary one and-rm
+34:47: deletes it after. Exec works like SSH.
+34:51: you're logging into your running server.
+34:53: If your server won't start, use docker
+34:56: compose run. This creates a temporary
+34:58: disposable copy of your open claw just
+35:01: to check errors or fix config files.
+35:05: For a deeper health check that tests the
+35:07: gateway internals, run this command.
+35:10: Docker compose run-m
+35:14: openclaw-
+35:16: cli dashboard- node-open.
+35:20: You'll see a link with http
+35:22: col127.0.0.18789
+35:28: at the beginning of it. Commandclick or
+35:31: controlclick that link. And now we are
+35:35: in the last step of the standard open
+35:38: cloth setup before we get to the heavy
+35:41: security hardening like sandboxing.
+35:44: So get ready and follow along.
+35:47: Part A, bot creation in Telegram. Before
+35:51: we touch the terminal, we need to create
+35:54: a bot in Telegram. One, open Telegram
+35:58: and search for appbot father, the
+36:00: official bot builder. Two, start a chat
+36:04: and type forward slashnewbot.
+36:07: Three, give it a name, as an example,
+36:10: myopen claw. Four, give it a unique
+36:13: username ending in bot. For an example,
+36:16: my local clawbot. Five. Botfather will
+36:20: give you an HTTP API token. Copy this
+36:23: string.
+36:25: Part B, configure Telegram gateway in
+36:28: OpenClaw. Now that we have the token,
+36:31: let's feed it to OpenClaw and pair with
+36:33: it in four simple steps. Step one,
+36:36: enable Telegram and set your bot token
+36:38: by typing these three commands in
+36:40: terminal. Docker Compose run-mopenclaw-
+36:45: CLI config set channels.telegram.enabled
+36:48: true. Docker composer run-r
+36:54: set channels.tele telegram.bot token
+36:57: yourbot token here. Docker composer
+37:00: run-mopenclaw-
+37:02: cli config setplugins.ent entries.tele
+37:05: telegram.enabled true. Just remember to
+37:08: replace your bot token here with the
+37:10: actual token from BotFather. It looks
+37:13: like some string of random numbers just
+37:15: pasted between the quotes. No brackets.
+37:18: Why are we using these three commands?
+37:20: Because OpenClaw has a two-layer system.
+37:23: Channels.Tlegram
+37:25: configures how Telegram should work,
+37:27: meaning token and policies.
+37:30: Plugins.telegram
+37:32: actually runs the Telegram plugin. Both
+37:36: layers need to be enabled or Telegram
+37:38: won't connect. Step two, restart the
+37:41: gateway. Then do a full stack restart by
+37:45: typing these two commands in terminal.
+37:47: Docker compose restart openclaw- gateway
+37:51: docker compose down double amperand
+37:54: docker compose up-ash d. That is a
+37:58: gateway restart followed by a full
+38:00: system restart. Step three. Now we need
+38:04: to see if telegram is successfully
+38:06: registered as a gateway. Type this
+38:09: docker compose exec-gateway
+38:12: nodeis forward/index.js
+38:15: status-deep.
+38:17: You should see telegram listed under
+38:19: channels with status reachable okay or
+38:22: connected. If it says disabled or isn't
+38:25: listed, go back to step one and check
+38:28: your token. Step four. Now we need to
+38:31: fully integrate the Telegram gateway by
+38:34: using its pairing code and authorizing
+38:36: its user ID by following this sequence.
+38:40: A go back to your chat with atbotfather.
+38:43: After you gave your bot a name, Telegram
+38:45: sent a link to chat with your new bot.
+38:48: Click that link and press start. B. Send
+38:51: hi to your new bot in Telegram. C. It
+38:54: will reply with a pairing code.
+38:56: Something like this. D. Now you need to
+39:00: pass your telegram pairing code to
+39:02: openclaw via the terminal by using this
+39:04: command docker compose exec- gateway
+39:09: nodeist/index.js
+39:11: pairing approved telegram your own
+39:13: pairing code. Just make sure that you
+39:16: replace fm99u3j7
+39:19: with your actual code. Just the code
+39:21: nothing else. No quotation marks, no
+39:24: brackets, nothing but the pairing code
+39:26: you see in telegram. And by that
+39:28: telegram should be connected now. Now
+39:32: let's add your telegram ID to the allow
+39:34: list so that you don't need to pair it
+39:37: up every time your docker restarts. For
+39:40: that we need to do the following. First
+39:43: get your telegram ID. It's in the same
+39:46: message where you got the pairing code.
+39:48: If you can't find it message at
+39:50: userinfobot in telegram and it'll send
+39:53: you your ID. Next pass it to openclaw in
+39:57: docker using this command. docker
+40:00: compose run- rm openclaw- cli config set
+40:05: channels telegram.allow from single
+40:09: quote open bracket double quote your
+40:11: telegram ID double quote close bracket
+40:15: single quote. That's right. Your user ID
+40:18: goes between all those quotes and
+40:20: brackets. Why? Because OpenClaw stores
+40:23: allowed users as a list. This format
+40:26: turns your single ID number into a list
+40:28: format that OpenClaw can read. And
+40:32: finally, as always, whenever you add a
+40:35: new gateway, WhatsApp, Slack, etc., or
+40:38: make any changes relating to gateways,
+40:41: do a gateway restart followed by a full
+40:44: stack restart so the changes take
+40:46: effect. Now, type this in your terminal.
+40:50: Docker compose restart open claw-
+40:53: gateway then docker compose down double
+40:57: amperand docker compose up-d
+41:01: creates an outbound connection to
+41:03: telegram. We don't need to open any
+41:05: firewall ports for this. The bot reaches
+41:08: out to telegram. Telegram doesn't need
+41:10: to reach in. And there you have it. Your
+41:13: telegram gateway is securely integrated.
+41:16: Even if Docker restarts, you won't need
+41:19: to pair again. Now you can chat with
+41:21: your OpenClaw bot right from your phone.
+41:24: Okay, your gateway is secure. But
+41:27: remember how I said tools still run
+41:29: inside that container? Let's fix that.
+41:32: We are going to enable agent sandboxing.
+41:35: Think of it like this. Every time
+41:37: OpenClaw runs a command like editing a
+41:40: file or executing a script, instead of
+41:42: running it in the main container, it
+41:44: spins up a completely separate throwaway
+41:47: container. If something goes wrong, that
+41:50: throwaway container gets deleted. Your
+41:52: main system stays untouched. Even if an
+41:55: attacker tricks your bot through a
+41:56: prompt injection attack, they're trapped
+41:58: in a jail cell with no internet and no
+42:01: way to escape. That's the power of
+42:03: sandboxing. So get ready. This is the
+42:06: final security layer. First, we need to
+42:09: build the special Docker image that acts
+42:12: as our jail cell. In your terminal, make
+42:15: sure you're in the OpenClaw folder by
+42:17: running cd space tilda/openclaw.
+42:21: Then run the sandbox setup
+42:22: script/scripts/andbox
+42:26: setup.sh.
+42:28: This builds a docker image called
+42:30: openclaw-andbox
+42:32: bookworm-slim.
+42:34: the jail cell for sandboxed commands.
+42:37: Let's make sure the image was built
+42:39: successfully by typing this into the
+42:41: terminal. Docker images pipe grep
+42:44: openclaw- sandbox. You should see
+42:48: openclaw- sandbox in the list. If it's
+42:52: not there, go back and run the setup
+42:54: script again. Now we need to tell
+42:57: OpenClaw to actually use the sandbox.
+43:01: Type these two commands. Docker composer
+43:04: run- rm openclaw- cli config set
+43:10: agent.defaults.andbox.mode
+43:13: space quote non--main quote and docker
+43:18: composer run-r
+43:21: openclaw- cli config set
+43:24: agents.defaults.sandbox.scope
+43:27: space quote agent quote. Why two
+43:30: commands? Because OpenClaw has a
+43:33: two-layer sandbox system. Mode controls
+43:36: when sandboxing kicks in. Non-main means
+43:40: agents and group chats are sandboxed,
+43:43: but your direct messages DM have full
+43:46: access.
+43:48: Sandbox scope controls the isolation
+43:50: boundary. Agent means each agent gets
+43:53: its own sandbox. Now we apply the real
+43:57: security restrictions. Type these three
+43:59: commands. First line docker composer
+44:03: run-r
+44:05: openclaw- cli config set
+44:08: agents.defaults.andbox.doccker.n
+44:12: network space quote none quote second
+44:15: line docker composer run-mopenclaw-
+44:20: cli config set
+44:22: agents.defaults.andbox.doccker
+44:25: readonly root space true. Third line
+44:29: docker composer run--rig
+44:34: set
+44:34: agents.deefaults.andbox.doccker.capdrop
+44:39: single quote open bracket double quote
+44:41: all double quote close bracket. Why
+44:45: three commands? Each one locks down a
+44:47: different attack vector.
+44:50: Network none. The sandbox has no
+44:52: internet access. If an attacker tries to
+44:55: download malware or send your data
+44:57: somewhere, it fails.
+45:00: Readonly root. True. The sandbox's file
+45:03: system is read only. If an attacker
+45:05: tries to install persistent malware, it
+45:08: fails.
+45:10: Cap drop all drops all Linux
+45:13: capabilities. The sandbox can't do
+45:15: anything privileged. This creates a
+45:17: trade-off. The benefit, attackers can't
+45:20: download malware or delete system files.
+45:22: The cost. Your bot can install new tools
+45:25: like Python packages or browsers inside
+45:28: the sandbox. For a security focused
+45:30: setup, this is exactly what we want. We
+45:33: manually install tools. The bot just
+45:36: uses them. Finally, we define exactly
+45:40: which tools are allowed in the sandbox
+45:42: by using these two commands. Docker
+45:45: composer run-m
+45:48: open claw- cli config settools.andbox
+45:51: Sandbox.tools.allow
+45:54: space single quote open bracket double
+45:57: quote exec double quote comma double
+45:59: quote right double quote comma double
+46:02: quote right double quote comma double
+46:04: quoteedit double quote comma double
+46:06: quote apply patch double quote close
+46:10: bracket single quote and right after
+46:12: that these commands docker composer
+46:14: run-rm
+46:16: openclaw- cli config
+46:18: settools.sandbox.tools.deny
+46:21: deny space single quote open bracket
+46:24: double quote browser double quote close
+46:26: bracket why two commands the allow
+46:30: command tells open claw which tools can
+46:33: run inside the sandbox executing
+46:35: commands reading files writing files
+46:38: editing and applying patches
+46:41: deny command then blocks the browser
+46:43: tool specifically so sandboxed agents
+46:46: can't spawn browser sessions so the
+46:49: result Agents running in the sandbox can
+46:52: do the basics, execute commands, read,
+46:55: write, and edit files, but they can't
+46:57: open a browser. That's a solid balance
+47:00: between functionality and security.
+47:03: Since we changed core config, we need a
+47:06: full restart. You might have noticed the
+47:08: terminal asking us to restart after each
+47:10: command, but we have saved the restart
+47:13: for the end on purpose. The last thing
+47:16: we want is a halfbaked sandbox. One more
+47:20: time, let's bring back our old faithful,
+47:22: the restart command. Docker compose down
+47:26: ampersand amperand docker compose up-d.
+47:30: Now let's verify the sandbox is active
+47:33: by using this command docker compose
+47:36: exec openclaw gateway node/index.js
+47:42: sandbox explain.
+47:44: You'll see several sections. Let's break
+47:47: them down. Effective sandbox mode
+47:50: non-main scope agent. This confirms
+47:54: sandboxing is active. Agents and group
+47:56: chats run in the sandbox. Your direct
+47:59: messages have full access. Workspace
+48:01: access none. Sandboxed agents can't
+48:04: touch your main workspace files. Sandbox
+48:07: tool policy. Allow global exec. Read,
+48:11: write, edit, apply patch. These tools
+48:14: can run in the sandbox. Deny global
+48:17: browser. The browser tool is blocked.
+48:20: Elevated enabled. True. The elevated
+48:23: permission system is available but
+48:25: allowed by config. False means it's not
+48:28: automatically granted. Agents can
+48:30: request elevated access but you'd have
+48:33: to approve it. Fix it section. This is
+48:36: just a reference list of config options
+48:38: you can change later. You don't need to
+48:40: do anything with it now. The bottom
+48:43: line. If you see mode non-main and your
+48:45: tool policies listed, congratulations.
+48:48: Your sandbox is live. Now you have a
+48:52: somewhat secure install of Open Claw.
+48:55: The container is locked. The network is
+48:58: quiet. But by no means is this the end.
+49:02: Security isn't a product you install.
+49:04: It's a process. New exploits drop every
+49:07: week. If you want the full open claw
+49:10: security master class where we go deep,
+49:13: check out the school community link
+49:15: below. It covers formal verification
+49:18: using audit-fix to autoheal your
+49:20: configuration threat modeling mapping
+49:23: your exact credential storage and blast
+49:26: radius. Incident response the contain
+49:29: rotate audit protocol for when things go
+49:31: wrong. advanced hardening, reverse proxy
+49:34: configs, node execution policies, and DM
+49:38: session isolation. And it's not just
+49:41: security. Subscription includes my open
+49:44: claw essentials course, N8N automation
+49:47: masterass, and the AI video marketing
+49:50: course, complete with the freeotion
+49:53: templates you see in my videos. We are
+49:56: running a 7-day free trial right now.
+49:59: Click the link, grab the master class,
+50:02: and let's turn that 99% into 100%. See
+50:06: you inside.
