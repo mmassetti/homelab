@@ -16,7 +16,8 @@
 │   └── usa-2026/                  #   FIFA World Cup trip planner (port 3000)
 ├── homelab/                       # This repo — homelab documentation
 │   ├── scripts/
-│   │   └── morning-brief.sh      #   Daily Telegram brief (crontab 8:00 AM)
+│   │   ├── morning-brief.sh      #   Daily Telegram brief (crontab 8:00 AM)
+│   │   └── gcal-today.py         #   Google Calendar OAuth2 helper (used by morning-brief)
 ├── Desktop/                       # Ubuntu defaults (unused, headless server)
 ├── Documents/
 ├── Downloads/

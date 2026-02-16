@@ -3,6 +3,7 @@
 # Crontab: 0 8 * * * /home/matias/homelab/scripts/morning-brief.sh
 #
 # Sources:
+#   Calendar: Google Calendar OAuth2 API (via gcal-today.py)
 #   Infra: docker-quick.js via gateway container
 #   Weather: wttr.in API
 #   Tech/AI: TechCrunch RSS
@@ -12,6 +13,8 @@
 set -uo pipefail
 
 FECHA=$(TZ="America/Argentina/Buenos_Aires" date '+%d/%m/%Y')
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+GCAL_OAUTH="/home/matias/.config/secrets/gcal_oauth.json"
 BRIEF=""
 
 add() { BRIEF="${BRIEF}${1}"$'\n'; }
@@ -41,7 +44,19 @@ add ""
 WEATHER=$(curl -s --max-time 15 "wttr.in/Bahia+Blanca?format=%t+%C&lang=es" 2>/dev/null || echo "N/A")
 add "🌡 Bahía Blanca: ${WEATHER}"
 
-# --- 2. Bahía Blanca ---
+# --- 2. Calendar ---
+if [ -f "$GCAL_OAUTH" ]; then
+    EVENTS=$(python3 "$SCRIPT_DIR/gcal-today.py" "$GCAL_OAUTH" 2>/dev/null || true)
+    if [ -n "$EVENTS" ]; then
+        add ""
+        add "📅 Agenda"
+        while IFS= read -r event; do
+            add "• ${event}"
+        done <<< "$EVENTS"
+    fi
+fi
+
+# --- 3. Bahía Blanca ---
 add ""
 add "📍 Bahía Blanca"
 LOCAL=$(rss_titles "https://www.labrujula24.com/feed/" 3)

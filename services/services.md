@@ -101,10 +101,12 @@ QMD binary installed at: `workspace/tools/qmd/` (npm local install with better-s
 ### Morning Brief (Host Crontab)
 | Job | Schedule | Delivery | Description |
 |-----|----------|----------|-------------|
-| Morning Brief | 8:00 AM daily | Telegram via `message send` | Weather, local news, Argentina news, tech/AI news, infra status |
+| Morning Brief | 8:00 AM daily | Telegram via `message send` | Calendar, weather, local news, Argentina news, tech/AI news, infra status |
 
 Host crontab script: `~/homelab/scripts/morning-brief.sh`
-Sources: wttr.in (weather), La Brújula 24 RSS (local), La Nación RSS (national), TechCrunch RSS (tech), docker-quick.js (infra)
+Helper: `~/homelab/scripts/gcal-today.py` (Google Calendar OAuth2 API, Workspace account `matias@honeydewcare.com`)
+Sources: Google Calendar OAuth2 (agenda), wttr.in (weather), La Brújula 24 RSS (local), La Nación RSS (national), TechCrunch RSS (tech), docker-quick.js (infra)
+Secrets: `~/.config/secrets/gcal_oauth.json` (OAuth2 client_id, client_secret, refresh_token — perms 600)
 Log: `/tmp/morning-brief.log`
 
 ### Ongoing Maintenance
