@@ -87,9 +87,10 @@ Config base: `/opt/docker/configs/<service>/`
 ### OpenClaw (openclaw_network: 172.31.0.0/24) — Separate compose: `/opt/docker/configs/openclaw/docker-compose.yml`
 | Service | Port | Notes |
 |---------|------|-------|
-| openclaw-gateway | 127.0.0.1:18789, 127.0.0.1:18790 | AI agent, localhost-only, hardened (read_only, cap_drop ALL, no-new-privileges) |
+| openclaw-gateway | 127.0.0.1:18789, 127.0.0.1:18790 | AI agent "Claudito", localhost-only, hardened (read_only, cap_drop ALL, no-new-privileges) |
 
-**Security**: Docker socket mounted (sandbox spawning), Telegram polling (outbound only), user ID allowlisted. NOT exposed via Cloudflare Tunnel.
+**Security**: Docker socket mounted (sandbox spawning + container monitoring via group_add docker GID 987), Telegram polling (outbound only), user ID allowlisted. NOT exposed via Cloudflare Tunnel.
+**Personality**: Bot named "Claudito" 🦞, Spanish-first, concise. Workspace files fully customized with homelab context. Monitoring scripts at `workspace/scripts/docker-{status,quick}.js`.
 
 ## Project Containers (separate compose files)
 | Project | Port | Compose |

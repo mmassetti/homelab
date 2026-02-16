@@ -43,11 +43,21 @@
 │   ├── jellyfin/
 │   ├── jellyseerr/
 │   ├── lidarr/
-│   ├── openclaw/                  #   OpenClaw AI agent (separate compose)
-│   │   ├── docker-compose.yml     #     Hardened compose (localhost-only, read_only, cap_drop ALL)
+│   ├── openclaw/                  #   OpenClaw AI agent "Claudito" (separate compose)
+│   │   ├── docker-compose.yml     #     Hardened compose (localhost-only, read_only, cap_drop ALL, group_add docker)
 │   │   ├── .env                   #     Gateway token (600 perms)
 │   │   ├── data/                  #     OpenClaw persistent data (UID 1000)
-│   │   ├── workspace/             #     Sandboxed workspace (UID 1000)
+│   │   ├── workspace/             #     Bot workspace (personality, tools, memory)
+│   │   │   ├── IDENTITY.md        #       Bot identity (name, emoji)
+│   │   │   ├── SOUL.md            #       Personality and behavior rules
+│   │   │   ├── USER.md            #       User profile (Matias)
+│   │   │   ├── TOOLS.md           #       Environment cheat sheet
+│   │   │   ├── AGENTS.md          #       Operating instructions
+│   │   │   ├── MEMORY.md          #       Long-term memory (bootstrapped)
+│   │   │   ├── HEARTBEAT.md       #       Periodic monitoring tasks
+│   │   │   └── scripts/           #       Utility scripts
+│   │   │       ├── docker-status.js  #     Full container status report
+│   │   │       └── docker-quick.js   #     Quick summary (down containers only)
 │   │   └── source/                #     Git clone of openclaw/openclaw
 │   ├── opencloud/
 │   ├── pihole/

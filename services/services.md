@@ -76,8 +76,15 @@ Dedicated `openclaw_network` (172.31.0.0/24), isolated from all other stacks.
 - **Network**: Isolated `openclaw_network`, not connected to arr/dns/homelab networks
 - **Sandbox**: Agent commands run in throwaway containers (`openclaw-sandbox-bookworm-slim`) with `network: none`
 - **Telegram**: Outbound polling only, user ID allowlisted
-- **Docker socket**: Mounted for sandbox spawning (trade-off, mitigated by read-only fs + no-new-privileges)
+- **Docker socket**: Mounted for sandbox spawning + container monitoring. `group_add: "987"` (docker GID) allows gateway process to query socket API
 - **NOT exposed via Cloudflare Tunnel** — access Web UI via SSH tunnel only
+
+### Bot Personality ("Claudito" 🦞)
+- Workspace files fully personalized at `/opt/docker/configs/openclaw/workspace/`
+- Files: IDENTITY.md, SOUL.md, USER.md, TOOLS.md, AGENTS.md, MEMORY.md, HEARTBEAT.md
+- Monitoring scripts: `workspace/scripts/docker-status.js` (full report), `workspace/scripts/docker-quick.js` (summary)
+- Spanish by default, English when addressed in English
+- Model: OpenRouter `auto` (routes to cheapest adequate model)
 
 ### Ongoing Maintenance
 - **Never install ClaWHub skills** — malware found in top downloaded skill (API key stealing, VAN-210)
