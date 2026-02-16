@@ -79,6 +79,12 @@ Dedicated `openclaw_network` (172.31.0.0/24), isolated from all other stacks.
 - **Docker socket**: Mounted for sandbox spawning (trade-off, mitigated by read-only fs + no-new-privileges)
 - **NOT exposed via Cloudflare Tunnel** — access Web UI via SSH tunnel only
 
+### Ongoing Maintenance
+- **Never install ClaWHub skills** — malware found in top downloaded skill (API key stealing, VAN-210)
+- **Never install VS Code extensions** for OpenClaw — fake extensions distribute malware
+- **To update**: `cd /opt/docker/configs/openclaw/source && git pull`, rebuild image, restart — **never re-run `docker-setup.sh`** (overwrites security config)
+- **Check logs periodically**: `docker logs openclaw-gateway --tail 50`
+
 ### Access
 - **Primary**: Telegram bot (`@clauditomassetti_bot`)
 - **Web UI**: `ssh -L 18789:127.0.0.1:18789 matias@192.168.1.239` then open `http://127.0.0.1:18789`
