@@ -55,9 +55,16 @@
 │   │   │   ├── AGENTS.md          #       Operating instructions
 │   │   │   ├── MEMORY.md          #       Long-term memory (bootstrapped)
 │   │   │   ├── HEARTBEAT.md       #       Periodic monitoring tasks
-│   │   │   └── scripts/           #       Utility scripts
-│   │   │       ├── docker-status.js  #     Full container status report
-│   │   │       └── docker-quick.js   #     Quick summary (down containers only)
+│   │   │   ├── scripts/           #       Utility scripts
+│   │   │   │   ├── docker-status.js  #     Full container status report
+│   │   │   │   └── docker-quick.js   #     Quick summary (down containers only)
+│   │   │   ├── skills/            #       ClaWHub skills (loaded automatically)
+│   │   │   │   ├── qmd/           #         Token-saving semantic search (BM25 + vectors)
+│   │   │   │   ├── prompt-injection-guard/  #  Prompt injection detection & blocking
+│   │   │   │   └── openclaw-mission-control/  # Mission Control skill manifest
+│   │   │   ├── mission-control/   #       Mission Control dashboard (Node.js web app, port 3333)
+│   │   │   ├── tools/qmd/         #       QMD binary (npm local install with better-sqlite3)
+│   │   │   └── .npm-global/bin/   #       ClaWHub CLI + QMD binary symlinks (in container PATH)
 │   │   └── source/                #     Git clone of openclaw/openclaw
 │   ├── opencloud/
 │   ├── pihole/
