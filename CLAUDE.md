@@ -92,7 +92,7 @@ Config base: `/opt/docker/configs/<service>/`
 
 **Security**: Docker socket mounted (sandbox spawning + container monitoring via group_add docker GID 987), host docker CLI bind-mounted at `/usr/bin/docker:ro`. Telegram polling (outbound only), user ID allowlisted. NOT exposed via Cloudflare Tunnel.
 **Personality**: Bot named "Claudito" 🦞, Spanish-first, concise. Workspace files fully customized with homelab context. Monitoring scripts at `workspace/scripts/docker-{status,quick}.js`.
-**Morning Brief**: Daily 8:00 AM Telegram brief via host crontab (`~/homelab/scripts/morning-brief.sh`). Sources: wttr.in (weather), Google Calendar OAuth2 (agenda, weekdays), dolarapi.com (Blue/Oficial/MEP), La Brújula 24 RSS (local), La Nación RSS (national), TechCrunch RSS (tech, weekdays), Olé RSS (sports, weekends), docker-quick.js (infra), df (disk). Weekend mode: no calendar, sports replaces tech. OAuth2 credentials at `~/.config/secrets/gcal_oauth.json`.
+**Morning Brief**: Daily 8:00 AM Telegram brief via host crontab (`~/homelab/scripts/morning-brief.sh`). Sources: wttr.in (weather), Google Calendar OAuth2 (agenda, weekdays), dolarapi.com (Blue/Oficial/MEP), La Brújula 24 RSS (local), La Nación RSS (national), TechCrunch RSS (tech, weekdays), Olé RSS (sports, daily), docker-quick.js (infra), df (disk). Weekend mode: no calendar, no tech. OAuth2 credentials at `~/.config/secrets/gcal_oauth.json`.
 
 ## Project Containers (separate compose files)
 | Project | Port | Compose |

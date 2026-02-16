@@ -105,8 +105,8 @@ QMD binary installed at: `workspace/tools/qmd/` (npm local install with better-s
 
 Host crontab script: `~/homelab/scripts/morning-brief.sh`
 Helper: `~/homelab/scripts/gcal-today.py` (Google Calendar OAuth2 API, Workspace account `matias@honeydewcare.com`)
-Sources: wttr.in (weather), Google Calendar OAuth2 (agenda, weekdays), dolarapi.com (Blue/Oficial/MEP), La Brújula 24 RSS (local), La Nación RSS (national), TechCrunch RSS (tech/AI, weekdays), Olé RSS (sports, weekends), docker-quick.js (infra), df (disk)
-Weekend mode: No calendar, sports news (Olé) replaces tech/AI (TechCrunch)
+Sources: wttr.in (weather), Google Calendar OAuth2 (agenda, weekdays), dolarapi.com (Blue/Oficial/MEP), La Brújula 24 RSS (local), La Nación RSS (national), TechCrunch RSS (tech/AI, weekdays), Olé RSS (sports, daily), docker-quick.js (infra), df (disk)
+Weekend mode: No calendar, no tech/AI section
 Secrets: `~/.config/secrets/gcal_oauth.json` (OAuth2 client_id, client_secret, refresh_token — perms 600)
 Log: `/tmp/morning-brief.log`
 

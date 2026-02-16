@@ -9,7 +9,7 @@
 #   Infra: docker-quick.js via gateway container
 #   Weather: wttr.in API
 #   Tech/AI: TechCrunch RSS (weekdays)
-#   Sports: Olé RSS (weekends)
+#   Sports: Olé RSS (daily)
 #   Argentina: La Nación RSS
 #   Bahía Blanca: La Brújula 24 RSS
 
@@ -95,20 +95,8 @@ else
     add "• No se pudieron obtener noticias nacionales"
 fi
 
-# --- 6. Tech/AI (weekdays) or Sports (weekends) ---
-if [ "$WEEKEND" = true ]; then
-    add ""
-    add "⚽ Deportes"
-    SPORTS=$(rss_titles "https://www.ole.com.ar/rss/ultimas-noticias/" 3)
-    if [ -n "$SPORTS" ]; then
-        while IFS= read -r title; do
-            title=$(echo "$title" | decode_html)
-            add "• ${title}"
-        done <<< "$SPORTS"
-    else
-        add "• No se pudieron obtener noticias deportivas"
-    fi
-else
+# --- 6. Tech/AI (weekdays only) ---
+if [ "$WEEKEND" = false ]; then
     add ""
     add "🤖 Tech / AI"
     TECH=$(rss_titles "https://techcrunch.com/feed/" 3)
@@ -122,8 +110,21 @@ else
     fi
 fi
 
+# --- 7. Sports (always) ---
 add ""
-# --- 7. Infra ---
+add "⚽ Deportes"
+SPORTS=$(rss_titles "https://www.ole.com.ar/rss/ultimas-noticias/" 3)
+if [ -n "$SPORTS" ]; then
+    while IFS= read -r title; do
+        title=$(echo "$title" | decode_html)
+        add "• ${title}"
+    done <<< "$SPORTS"
+else
+    add "• No se pudieron obtener noticias deportivas"
+fi
+
+add ""
+# --- 8. Infra ---
 INFRA=$(docker exec openclaw-gateway node /home/node/.openclaw/workspace/scripts/docker-quick.js 2>&1 || echo "⚠️ No se pudo chequear infra")
 TOTAL=$(echo "$INFRA" | grep -oP 'Running: \K\d+' || echo "?")
 DOWN_LIST=$(echo "$INFRA" | grep "^DOWN:" | grep -v "openclaw-cli" || true)
@@ -138,7 +139,7 @@ else
 fi
 
 add ""
-# --- 8. Disk ---
+# --- 9. Disk ---
 NAS_USE=$(df /mnt/nas --output=pcent,avail 2>/dev/null | tail -1 | xargs || true)
 MINIPC_USE=$(df / --output=pcent,avail 2>/dev/null | tail -1 | xargs || true)
 if [ -n "$NAS_USE" ] && [ -n "$MINIPC_USE" ]; then
