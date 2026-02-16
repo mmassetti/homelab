@@ -66,7 +66,8 @@ Dedicated `openclaw_network` (172.31.0.0/24), isolated from all other stacks.
 
 | Service | Container | Port | Image | Config | Notes |
 |---------|-----------|------|-------|--------|-------|
-| OpenClaw Gateway | openclaw-gateway | 127.0.0.1:18789, 127.0.0.1:18790 | openclaw:local (built from source) | /opt/docker/configs/openclaw | AI agent with Telegram integration |
+| OpenClaw Gateway | openclaw-gateway | 127.0.0.1:18789, 127.0.0.1:18790, 127.0.0.1:3333 | openclaw:local (built from source) | /opt/docker/configs/openclaw | AI agent with Telegram integration |
+| Mission Control | openclaw-mission-control | 3333 (shared via network_mode) | openclaw:local | /opt/docker/configs/openclaw/workspace/mission-control | Web dashboard for agent management |
 
 ### Security Hardening
 - **Ports**: Bound to `127.0.0.1` only — not accessible from LAN or internet
@@ -86,15 +87,27 @@ Dedicated `openclaw_network` (172.31.0.0/24), isolated from all other stacks.
 - Spanish by default, English when addressed in English
 - Model: OpenRouter `auto` (routes to cheapest adequate model)
 
+### Installed ClaWHub Skills (workspace/skills/)
+| Skill | Version | Purpose |
+|-------|---------|---------|
+| qmd | 1.0.0 | Local semantic search for markdown/docs (BM25 + vectors), reduces token usage |
+| prompt-injection-guard | 1.0.0 | Prompt injection defense — detects and blocks malicious prompts |
+| openclaw-mission-control | 1.0.0 | Skill manifest for Mission Control dashboard integration |
+
+ClaWHub CLI installed at: `workspace/.npm-global/bin/clawhub`
+QMD binary installed at: `workspace/tools/qmd/` (npm local install with better-sqlite3 compiled)
+
 ### Ongoing Maintenance
-- **Never install ClaWHub skills** — malware found in top downloaded skill (API key stealing, VAN-210)
+- **ClaWHub skills**: Allowed with audit — always inspect skills before installing, watch for VirusTotal flags. VAN-210 (hidden npm script attack) is partially mitigated by `--ignore-scripts` default.
 - **Never install VS Code extensions** for OpenClaw — fake extensions distribute malware
 - **To update**: `cd /opt/docker/configs/openclaw/source && git pull`, rebuild image, restart — **never re-run `docker-setup.sh`** (overwrites security config)
 - **Check logs periodically**: `docker logs openclaw-gateway --tail 50`
+- **Mission Control logs**: `docker logs openclaw-mission-control --tail 50`
 
 ### Access
 - **Primary**: Telegram bot (`@clauditomassetti_bot`)
 - **Web UI**: `ssh -L 18789:127.0.0.1:18789 matias@192.168.1.239` then open `http://127.0.0.1:18789`
+- **Mission Control**: `ssh -L 3333:127.0.0.1:3333 matias@192.168.1.239` then open `http://127.0.0.1:3333`
 
 ## Project Containers (Separate Compose Files)
 
