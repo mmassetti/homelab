@@ -90,8 +90,9 @@ Config base: `/opt/docker/configs/<service>/`
 | openclaw-gateway | 127.0.0.1:18789, 127.0.0.1:18790, 127.0.0.1:3333 | AI agent "Claudito", localhost-only, hardened (read_only, cap_drop ALL, no-new-privileges) |
 | openclaw-mission-control | 3333 (shared via network_mode) | Web dashboard for agent management |
 
-**Security**: Docker socket mounted (sandbox spawning + container monitoring via group_add docker GID 987), Telegram polling (outbound only), user ID allowlisted. NOT exposed via Cloudflare Tunnel.
+**Security**: Docker socket mounted (sandbox spawning + container monitoring via group_add docker GID 987), host docker CLI bind-mounted at `/usr/bin/docker:ro`. Telegram polling (outbound only), user ID allowlisted. NOT exposed via Cloudflare Tunnel.
 **Personality**: Bot named "Claudito" 🦞, Spanish-first, concise. Workspace files fully customized with homelab context. Monitoring scripts at `workspace/scripts/docker-{status,quick}.js`.
+**Morning Brief**: Daily 8:00 AM Telegram brief via host crontab (`~/homelab/scripts/morning-brief.sh`). Sources: wttr.in, La Brújula 24 RSS, La Nación RSS, TechCrunch RSS, docker-quick.js.
 
 ## Project Containers (separate compose files)
 | Project | Port | Compose |

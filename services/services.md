@@ -93,9 +93,19 @@ Dedicated `openclaw_network` (172.31.0.0/24), isolated from all other stacks.
 | qmd | 1.0.0 | Local semantic search for markdown/docs (BM25 + vectors), reduces token usage |
 | prompt-injection-guard | 1.0.0 | Prompt injection defense — detects and blocks malicious prompts |
 | openclaw-mission-control | 1.0.0 | Skill manifest for Mission Control dashboard integration |
+| morning-brief | — | Reference for daily morning brief cron job (management commands) |
 
 ClaWHub CLI installed at: `workspace/.npm-global/bin/clawhub`
 QMD binary installed at: `workspace/tools/qmd/` (npm local install with better-sqlite3 compiled)
+
+### Morning Brief (Host Crontab)
+| Job | Schedule | Delivery | Description |
+|-----|----------|----------|-------------|
+| Morning Brief | 8:00 AM daily | Telegram via `message send` | Weather, local news, Argentina news, tech/AI news, infra status |
+
+Host crontab script: `~/homelab/scripts/morning-brief.sh`
+Sources: wttr.in (weather), La Brújula 24 RSS (local), La Nación RSS (national), TechCrunch RSS (tech), docker-quick.js (infra)
+Log: `/tmp/morning-brief.log`
 
 ### Ongoing Maintenance
 - **ClaWHub skills**: Allowed with audit — always inspect skills before installing, watch for VirusTotal flags. VAN-210 (hidden npm script attack) is partially mitigated by `--ignore-scripts` default.

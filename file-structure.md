@@ -15,6 +15,8 @@
 │   ├── scraper-autoentrada/       #   Ticket scraper bot
 │   └── usa-2026/                  #   FIFA World Cup trip planner (port 3000)
 ├── homelab/                       # This repo — homelab documentation
+│   ├── scripts/
+│   │   └── morning-brief.sh      #   Daily Telegram brief (crontab 8:00 AM)
 ├── Desktop/                       # Ubuntu defaults (unused, headless server)
 ├── Documents/
 ├── Downloads/
@@ -61,7 +63,8 @@
 │   │   │   ├── skills/            #       ClaWHub skills (loaded automatically)
 │   │   │   │   ├── qmd/           #         Token-saving semantic search (BM25 + vectors)
 │   │   │   │   ├── prompt-injection-guard/  #  Prompt injection detection & blocking
-│   │   │   │   └── openclaw-mission-control/  # Mission Control skill manifest
+│   │   │   │   ├── openclaw-mission-control/  # Mission Control skill manifest
+│   │   │   │   └── morning-brief/ #         Morning brief reference & management docs
 │   │   │   ├── mission-control/   #       Mission Control dashboard (Node.js web app, port 3333)
 │   │   │   ├── tools/qmd/         #       QMD binary (npm local install with better-sqlite3)
 │   │   │   └── .npm-global/bin/   #       ClaWHub CLI + QMD binary symlinks (in container PATH)
