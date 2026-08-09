@@ -28,6 +28,20 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
   → auto-rename/move to NAS → Bazarr (subtitles: Spanish + English) → Jellyfin (auto-scan)
 ```
 
+### Bazarr Notes
+
+- `general.ignore_pgs_subs: true` (since 2026-08-09) — PGS (image-based) embedded subtitle
+  tracks no longer count as satisfying a movie/series' language profile. Some BluRay REMUX
+  releases embed both PGS and true-text (SubRip) tracks for the same language with identical
+  labels in Jellyfin's subtitle picker (e.g. multiple "Spanish" entries), and picking the PGS
+  one silently fails to render in Jellyfin's web/Mac client (no burn-in transcode happens on
+  direct play). With this flag, Bazarr treats PGS-only releases as missing subtitles and
+  downloads a proper external `.srt` instead of assuming the embedded PGS track is good enough.
+- Language profile "Spanish Preferred" (profileId 1): requires Spanish (`es`), Spanish Latino
+  (`ea`), and English (`en`).
+- API key at `/opt/docker/configs/bazarr/config/config.yaml` → `auth.apikey` (also usable for
+  `X-API-KEY` header against `http://localhost:6767/api/...`).
+
 ## DNS Stack (Pi-hole + Unbound)
 
 Dedicated `dns_network` (172.30.0.0/24).
