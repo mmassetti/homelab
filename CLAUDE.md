@@ -9,7 +9,7 @@
 - **CPU**: AMD Ryzen 7 8745HS (8c/16t, 3.8/5.1 GHz) | **RAM**: 32GB DDR5 | **GPU**: Radeon 780M (RDNA 3)
 - **Storage**: 931.5GB NVMe (LVM, ext4, `/`) + Seagate 4TB USB at `/DATA/Media` (exFAT, 99% full, legacy)
 - **OS**: Ubuntu Server 24.04.2 LTS, kernel 6.8.0-94-generic
-- **IP**: 192.168.1.239 | **Tailscale**: 100.118.87.121 | **Hostname**: `homelab`
+- **IP**: 192.168.1.239 | **Tailscale**: 100.112.136.118 | **Hostname**: `homelab` | **SSH**: `ssh matias@homelab` (MagicDNS)
 - Runs 24/7, ~30-50W, headless, 2x 2.5GbE (using enp1s0)
 
 ### NAS — Synology DS423
@@ -136,10 +136,11 @@ network config, update mounts, add services, change compose files, etc.), you MU
 4. Commit the doc changes alongside or immediately after the infrastructure change
 
 ## Tailscale Devices
-- homelab (100.118.87.121) — always on, exit node
-- MacBook Pro (100.64.172.116)
-- NVIDIA Shield (100.77.190.51)
-- Samsung S23 Ultra (100.121.189.40)
+_(verified 2026-08-09 via `tailscale status`)_
+- homelab (100.112.136.118) — always on, tags `SSH`+`Subnets`, advertises approved subnet route 192.168.1.0/24. Not currently an exit node.
+- MacBook Pro (100.102.177.38)
+- Samsung S23 Ultra (100.111.162.37) — intermittent
+- MagicDNS domain: `tail076e1b.ts.net` — use `ssh matias@homelab` for remote access, falls back to the IP above. Tailscale SSH requires periodic browser re-auth ("check mode"); see `network/network.md` for details.
 
 ## Other Devices (not on this server)
 - **Gaming PC**: AMD Ryzen 5 2600, RX 570 8GB, 16GB DDR4, Win 10, DHCP

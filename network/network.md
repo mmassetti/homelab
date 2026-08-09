@@ -25,14 +25,30 @@ ISP (300 Mbps down / ~30-50 Mbps up, Argentina, dynamic public IP)
 
 ## Tailscale (VPN Overlay)
 
+> Verified 2026-08-09 via `tailscale status` — IPs below replace any older list in this file or in `old-docs/`.
+
 | Tailscale IP | Device | OS | Status |
 |--------------|--------|----|--------|
-| 100.118.87.121 | homelab (mini PC) | Linux | Online, offers exit node |
-| 100.64.172.116 | Matias's MacBook Pro | macOS | Intermittent |
-| 100.77.190.51 | NVIDIA Shield Android TV | Android | Intermittent |
-| 100.121.189.40 | Samsung SM-S918B (S23 Ultra) | Android | Intermittent |
+| 100.112.136.118 | homelab (mini PC) | Linux | Online. Tags: `SSH`, `Subnets`. Advertises + approved subnet route `192.168.1.0/24` |
+| 100.102.177.38 | Matias's MacBook Pro | macOS | Online |
+| 100.111.162.37 | Samsung SM-S918B (S23 Ultra) | Android | Intermittent |
 
+Tailnet: `matiasmassetti@gmail.com`. MagicDNS domain: `tail076e1b.ts.net` (enabled).
 Tailscale manages DNS (resolv.conf points to 100.100.100.100).
+Tailnet ACL policy (Access controls → JSON editor) is the default wide-open grant (`{"src": ["*"], "dst": ["*"], "ip": ["*"]}`) — not used to restrict anything today.
+
+### Remote SSH access
+
+From outside the house, SSH goes through Tailscale, not the LAN IP directly:
+
+```
+ssh matias@homelab        # MagicDNS, recommended
+ssh matias@100.112.136.118  # fallback if MagicDNS resolution misbehaves
+```
+
+`ssh matias@192.168.1.239` only works from the home LAN (or via the approved Tailscale subnet route, which needs the client to have "Use subnet routes" enabled — flaky by default, prefer the two commands above).
+
+**Tailscale SSH is enabled** (not plain OpenSSH auth) and periodically requires re-authentication ("check mode"). When it triggers, the `ssh` client hangs and prints a `https://login.tailscale.com/a/...` link — open it and sign in with `matiasmassetti@gmail.com` to continue. Before that check succeeds, connection attempts can look like a dead/blocked SSH (timeouts or instant "connection refused" on various ports) if the Tailscale client on the connecting device is also mid-reconnect — check `tailscale status` first before assuming a firewall problem (there isn't one; see Firewall section below).
 
 ## DNS
 
