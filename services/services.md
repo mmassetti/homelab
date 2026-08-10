@@ -68,6 +68,13 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
     note `GET /Items?ParentId={collectionId}` returns 0 items without a user context — must
     use `GET /Users/{userId}/Items?ParentId={collectionId}` or the removal step silently
     no-ops (this bit us on the first attempt: additions worked, removals didn't).
+  - **Original-language titles** (2026-08-10): 441 Spanish-language movies (primary
+    `ProductionLocations` = Argentina/Spain/Mexico/Uruguay/Chile) had their display `Name`
+    switched from the English TMDB title to `OriginalTitle` (e.g. "Every Stewardess Goes to
+    Heaven" → "Todas las azafatas van al cielo"), with `Name` added to `LockedFields` so it
+    sticks. Gotcha: items with generated Trickplay data 500 on the `POST /Items/{id}`
+    round-trip unless the `Trickplay` key is stripped from the body first (Jellyfin bug —
+    its own GET response isn't valid input for its own POST).
   - **Known limitation**: Jellyfin's flat "Collections" library view does not hide BoxSets
     that are nested inside a parent collection — all decade/franchise/country subcollections
     also show up as ordinary top-level tiles. No native fix exists. Planned resolution:

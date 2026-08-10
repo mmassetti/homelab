@@ -1,5 +1,34 @@
 # Architecture Decision Records
 
+## 2026-08 — Display original Spanish titles instead of English for Spanish-language films
+
+**Context**: Many Spanish-language films (mostly Argentine/Spanish arthouse co-productions)
+were showing their English TMDB title instead of their real original title — e.g. "Every
+Stewardess Goes to Heaven" instead of "Todas las azafatas van al cielo". Jellyfin already had
+the correct title in `OriginalTitle`, just wasn't using it as the display `Name`.
+**Decision**: For all movies whose primary (first-listed) `ProductionLocations` country is
+Argentina, Spain, Mexico, Uruguay, or Chile, and where `Name != OriginalTitle`: set
+`Name = OriginalTitle` via `POST /Items/{id}` (fetch full item via
+`/Users/{userId}/Items/{id}` first, mutate, POST back — same pattern as the collection
+Overview edits) and lock the field (`LockedFields: ["Name"]`) so it survives future metadata
+refreshes. 441 movies updated; excluded 2 (`Mermaid on board` / `The end of the world`) whose
+"original" title was actually Norwegian, not Spanish, despite Argentina being a co-production
+country — country-of-production is not the same as original language, verified those two by
+inspection since neither an audio-track-language check nor a lexical Spanish-word heuristic
+were reliable enough to fully automate the distinction (both produced too many false
+negatives on legitimately-Spanish titles).
+**Bug found along the way**: items that already have Trickplay data generated (see the
+trickplay/chapter-image background task entry below) fail this same `POST /Items/{id}`
+round-trip with a 500 — Jellyfin's own `TrickplayInfoDto` can't be deserialized back from what
+its own GET response produces. Fix: `.pop("Trickplay", None)` from the item dict before
+POSTing. Relevant for any future bulk metadata edits done this way while trickplay generation
+is still running/expanding.
+**Rationale**: Purely a display fix via the metadata editor endpoint — no filesystem changes,
+no restart. Country of primary production is a good proxy for original language in this
+library except for the rare non-Spanish-speaking co-production (Nordic countries showed up
+here); manually reviewing the ~55 candidates that had a plausibly-non-Spanish co-producer
+country was cheap and caught both real exceptions.
+
 ## 2026-08 — Fix "Cine del Mundo" country collections: use primary country, not "any co-production country"
 
 **Context**: Matias noticed movies that clearly didn't belong — e.g. the Argentine film "Un
