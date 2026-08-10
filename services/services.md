@@ -80,6 +80,22 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
     sticks. Gotcha: items with generated Trickplay data 500 on the `POST /Items/{id}`
     round-trip unless the `Trickplay` key is stripped from the body first (Jellyfin bug —
     its own GET response isn't valid input for its own POST).
+  - **Plugins installed** (2026-08-10, required one Jellyfin container restart — done only
+    after confirming zero active sessions): **JavaScript Injector** (n00bcodr fork of the
+    unmaintained johnpc plugin) injects a script that hides the 22 nested subcollection tiles
+    (Cine Argentino decades, Sagas, Cine del Mundo countries) from the flat Collections grid,
+    while still showing them inside their parent hub's detail page — script source lives in
+    the plugin's own config (`Jellyfin.Plugin.JavaScriptInjector.xml`), logic: hide by ID
+    everywhere except when `location.hash` contains `/details` for one of the 3 parent hub
+    IDs. Also installed **Jellyfin Enhanced** (shortcuts, ratings, hidden-content management,
+    Jellyseerr integration) from the same repo. Repo URL:
+    `https://raw.githubusercontent.com/n00bcodr/jellyfin-plugins/main/10.11/manifest.json`.
+  - **TMDb Box Sets** (pre-existing plugin, not installed by us): auto-creates un-curated
+    native collections from TMDB franchise data every 24h, including 3 that duplicate the
+    Sagas hub (Harry Potter/Mission: Impossible/Pirates of the Caribbean Collections) plus
+    ~25 others (Avatar, Die Hard, Dune, James Bond, John Wick, etc.). Its scheduled task
+    (`TMDbBoxSetsRefreshLibraryTask`) had its trigger cleared (empty `Triggers` array) so it
+    won't auto-run again; existing native collections were left in place.
   - **Known limitation**: Jellyfin's flat "Collections" library view does not hide BoxSets
     that are nested inside a parent collection — all decade/franchise/country subcollections
     also show up as ordinary top-level tiles. No native fix exists. Planned resolution:

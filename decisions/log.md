@@ -1,5 +1,44 @@
 # Architecture Decision Records
 
+## 2026-08 — Installed JavaScript Injector + Jellyfin Enhanced plugins; restart done, subcollections hidden
+
+**Context**: Last piece of the Jellyfin UI polish effort — hiding the ~22 nested subcollection
+tiles (Cine Argentino decades, Sagas franchises, Cine del Mundo countries) from the flat
+top-level Collections grid, which required a Jellyfin container restart (deferred until no one
+was watching, per the standing safety rule). Verified 0 active sessions via `/Sessions` and no
+running transcodes before restarting.
+**Decision**: The originally-planned `jellyfin-plugin-custom-javascript` (johnpc) is
+unmaintained; used the actively-maintained fork instead — **JavaScript Injector** by n00bcodr
+(repo `https://raw.githubusercontent.com/n00bcodr/jellyfin-plugins/main/10.11/manifest.json`,
+targets our exact Jellyfin 10.11 ABI). Also installed **Jellyfin Enhanced** from the same repo
+(shortcuts, ratings, hidden-content management, Jellyseerr integration) at Matias's request.
+Skipped the locally-cataloged **Skin Manager** plugin — last released Nov 2024 targeting ABI
+10.7.0.0, judged too stale/risky against a live 10.11 server; the Custom CSS branding change
+already covers the visual-polish goal.
+**JS Injector script**: `CustomJavaScriptEntry` schema is `{Name, Script, Enabled,
+RequiresAuthentication}`, set via `POST /Plugins/{pluginId}/Configuration`. First version keyed
+"hide except on the flat Collections list" off `location.hash` containing `type=BoxSet` —
+worked for Sagas/Cine del Mundo but **not** for the Cine Argentino decades (root cause
+unconfirmed, possibly a route-detection edge case). Rewrote to the inverse, more robust logic:
+hide all 22 target IDs everywhere **except** when `location.hash` contains `/details` for one
+of the 3 parent hub IDs (Cine Argentino, Sagas, Cine del Mundo) — a whitelist model instead of
+a blacklist-on-one-route model. Added a 1.5s `setInterval` fallback alongside the
+`MutationObserver` in case of missed DOM mutations. Confirmed working by Matias after a
+browser refresh.
+**Side discovery**: the pre-existing **TMDb Box Sets** plugin (not installed by us) runs a
+`TMDbBoxSetsRefreshLibraryTask` every 24h that auto-creates un-curated native collections
+(no custom art/description) for any TMDB franchise with 2+ movies in the library — found ~28
+of these (Avatar, Die Hard, Dune, Indiana Jones, James Bond, John Wick, Joker, Paddington,
+Scream, Spider-Man, Terminator, X, etc.), 3 of which duplicate our curated Sagas hub (Harry
+Potter, Mission: Impossible, Pirates of the Caribbean Collections). Matias chose to just stop
+future auto-generation — cleared the task's `Triggers` via `POST /ScheduledTasks/{id}/Triggers`
+with an empty array — without deleting the existing native collections or the 3 duplicates.
+**Rationale**: Bundling both plugin installs into the single restart avoided a second
+restart/interruption window later. The whitelist-based hide script is more robust than the
+original route-based blacklist and easier to reason about (parent detail pages are a small,
+fixed set; every other route should hide). Left the TMDb Box Sets duplicates alone since
+Matias didn't ask for cleanup — worth revisiting if the visual clutter becomes annoying.
+
 ## 2026-08 — Latinoamérica collection review: closes out the Cine del Mundo manual pass
 
 **Context**: Last of the 7 Cine del Mundo country reviews. "Latinoamérica" (Brazil/Mexico/
