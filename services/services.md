@@ -90,6 +90,11 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
     IDs. Also installed **Jellyfin Enhanced** (shortcuts, ratings, hidden-content management,
     Jellyseerr integration) from the same repo. Repo URL:
     `https://raw.githubusercontent.com/n00bcodr/jellyfin-plugins/main/10.11/manifest.json`.
+    Enabled its rating badges (`ShowUserRatingOnPosters`, `RatingTagsEnabled`,
+    `ColoredRatingsEnabled` — colored rating tag bottom-right + rating shown on the poster
+    itself) via `POST /Plugins/{id}/Configuration`, live, no restart. Quality tags
+    (resolution/source/codec badges) and genre/language tags exist in the same plugin but
+    weren't turned on.
   - **TMDb Box Sets** (pre-existing plugin, not installed by us): auto-creates un-curated
     native collections from TMDB franchise data every 24h. Its scheduled task
     (`TMDbBoxSetsRefreshLibraryTask`) had its trigger cleared (empty `Triggers` array) so it
