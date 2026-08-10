@@ -1,5 +1,32 @@
 # Architecture Decision Records
 
+## 2026-08 — Flag-based poster redesign for Cine del Mundo + Sol de Mayo for Cine Argentino
+
+**Context**: The original gradient+text posters for the 7 Cine del Mundo country collections
+and the 13 Cine Argentino (parent + 12 decades) collections worked but weren't instantly
+recognizable — Matias wanted something that reads at a glance, like each country's flag.
+**Decision**: Redesigned all 21 posters with ImageMagick, generated via ~/homelab-adjacent
+scratch scripts (not checked into the repo, one-off): each Cine del Mundo country poster now
+uses that country's actual flag as the background (vertical/horizontal bands drawn to scale —
+France/Italy vertical tricolors, Germany horizontal tricolor, Spain's red-yellow-red, Japan's
+Hinomaru red circle on white, a hand-approximated Union Jack for Reino Unido using stroked
+diagonal + cross lines). Latinoamérica has no single flag (covers Brazil/Mexico/Uruguay/Chile),
+so built a 4-panel mosaic — one simplified flag per country side by side with a small text
+label under each, avoiding the earlier attempt's bug where using `+append` on separately-
+rendered tile PNGs produced misaligned/bled colors (root cause never fully pinned down;
+switched to drawing all 4 flags directly onto one canvas with absolute coordinates, which
+fixed it). Cine del Mundo's parent poster stays neutral (a thin gold globe line-art on navy)
+since it doesn't represent one country. Cine Argentino's parent + all 12 decade posters now
+use the actual Argentine flag (light blue/white/light blue bands) with a hand-drawn Sol de
+Mayo (16-ray sun, alternating straight/wavy — built as an SVG via a small Python script using
+trig for ray angles, then rasterized) placed in the white stripe, with the decade (or "CINE
+ARGENTINO" for the parent) as large text below it.
+**Rationale**: Flags are a far stronger at-a-glance identifier than abstract gradients for a
+"pick a country to browse" hub. Building precise flags directly in ImageMagick (rectangles/
+lines/polygons) instead of sourcing real flag images keeps everything self-generated, avoids
+any licensing/attribution question, and stayed consistent with the "no external images"
+approach used for every other piece of collection art this session.
+
 ## 2026-08 — Library-wide duplicate sweep using TMDB provider IDs (~136GB freed)
 
 **Context**: The 7-country manual review had already turned up 5 duplicate movies just by
