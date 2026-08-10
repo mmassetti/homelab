@@ -1,5 +1,33 @@
 # Architecture Decision Records
 
+## 2026-08 — Latinoamérica collection review: closes out the Cine del Mundo manual pass
+
+**Context**: Last of the 7 Cine del Mundo country reviews. "Latinoamérica" (Brazil/Mexico/
+Uruguay/Chile ex-Argentina, 22 titles) had the same two failure modes seen throughout: Uruguay
+listed as the primary co-production country for what are culturally Argentine films (mirrors
+the España/Latinoamérica overlap from the original country-fix pass), and American
+director-driven films with Brazilian financing (RT Features shows up as a producer on several
+of these, the same way German tax-shelter and EMI Films financing did for Alemania/Reino
+Unido).
+**Decision**: Removed 7 titles, down to 15. Argentine misattributions: *Gilda: no me
+arrepiento de este amor* (Lorena Muñoz, Argentine director — Uruguay was just a co-production
+credit), *Mi amiga del parque* (Ana Katz, Argentine director), *Compañero Fernando*
+(documentary by Argentine exiles, directed by an Argentine, shot in Mexico). American
+misattributions: *Frances Ha* (Noah Baumbach, NYC), *Silence* (Scorsese), *Armageddon Time*
+(James Gray, NYC autobiographical), and *Dreams* (2026, Matias called this one American too).
+Kept *Blindness* (2008) despite its heavily international cast/crew and English dialogue,
+since Fernando Meirelles (Brazilian) directed it — same "director's cultural identity" tie-
+breaker used for *PERFECT DAYS*, *Prisoners of the Ghostland*, etc. in earlier country reviews.
+**Status**: This closes the manual review of all 7 Cine del Mundo subcollections (España,
+Alemania, Italia, Francia, Reino Unido, Japón, Latinoamérica). Final counts: 37 / 17 / 18 / 56
+/ 79 / 34 / 15 = 256 movies, down from 761 after the original "primary country" fix, and far
+more curated than the original "any co-production country" version (which had over 900 combined
+across just España+Latinoamérica alone due to Argentine co-production overlap). Along the way,
+found and fixed 5 duplicate movie files across the library (Wild Tales, Indagine su un
+cittadino, Holy Motors, La Nuit américaine, plus the 7-way Trap(2024) folder mixup which
+included one broken/incomplete download) and one full deletion (*Battleship*, at Matias's
+request).
+
 ## 2026-08 — Japón collection review: two false alarms, one real duplicate
 
 **Context**: Continuing the manual per-country pass. "Japón" (37 titles) looked cleaner than
