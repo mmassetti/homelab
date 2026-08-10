@@ -1,5 +1,47 @@
 # Architecture Decision Records
 
+## 2026-08 — Reino Unido collection review; "Trap (2024)" folder had 7 stray duplicate movies, one broken download recovered
+
+**Context**: Continuing the manual per-country pass. "Reino Unido" (120 titles) had the same
+financing-credit pattern as Alemania, but from **EMI Films** and other British studios that
+bankrolled 1970s-80s Hollywood productions (*Close Encounters*, *The Deer Hunter*, *The Driver*,
+etc.) — British money, American films. Also found 3 titles under garbled non-English names
+(Persian, German, Italian scripts) that turned out to be real British films with mislabeled
+titles: `I due Kennedy` is actually Ken Loach's *Kes*, `فیل در تاریکی` is Alan Clarke's
+*Elephant* (about the Troubles), `Schau mir in die Augen, Kleiner` is a British prison drama —
+kept all three since the content is genuinely British, title metadata issue is separate/unfixed.
+**Decision**: Removed 37 titles (EMI/financing-only American films, plus *Paris, Texas*
+(Wenders, German) and *Born and Bred* (Argentine)), down to 83 before dedup, **79 after**.
+Matias made the call on the two genuine toss-ups himself: *Closer* and *Interstellar* both
+out (culturally American despite British-adjacent connections — Mike Nichols/American cast for
+Closer, Nolan's dual nationality doesn't make a NASA story British for Interstellar). Kept
+several films where the director's British identity or the story's British cultural core
+outweighs a non-British co-financier: Kubrick's whole catalog, all of Hitchcock's British
+period (1927-1972), Powell & Pressburger, David Lean, *Blow-Up* (Antonioni's "English film",
+a long-established genre-history classification), *Brazil* (Gilliam), *An American Werewolf in
+London*, Guy Ritchie's *The Covenant*, *Highlander* (Scottish mythology core), *Hamnet*
+(British literary source).
+**Duplicates found — much bigger than previous countries**: A folder named `Trap (2024)`
+(M. Night Shyamalan's film) turned out to also contain 7 fully separate Hitchcock movies
+nested as subfolders — *To Catch a Thief*, *Topaz*, *Torn Curtain*, *Under Capricorn*,
+*Vertigo*, *Waltzes from Vienna*, *Young and Innocent* — apparently bundled together in
+whatever download brought in `Trap (2024)`. All 7 duplicated a properly-organized top-level
+copy elsewhere in `/Peliculas`, **except** `To Catch a Thief`, where the top-level copy turned
+out to be a broken, incomplete download (a 40MB `.filepart`, not even a valid video file) —
+the real 2.3GB file was only the one buried inside `Trap (2024)`. Recovered it by deleting the
+broken top-level folder and moving the good nested copy up to `/Peliculas/To Catch A Thief
+(1955)/`. Deleted the other 6 redundant nested copies (byte-identical to their top-level
+counterparts) and left `Trap (2024).mkv` itself untouched. Also found and fixed a genuine
+quality duplicate: *Barry Lyndon* existed as a 2160p HDR10 Dolby Vision remux (with embedded
+Spanish subs already) and a lower-quality 1080p x264 rip — kept the UHD copy, deleted the
+1080p one and its external subs (redundant, remux already has embedded Spanish SubRip tracks).
+Ran `RefreshLibrary` after all filesystem changes; verified zero active sessions throughout
+and confirmed no duplicate names remain in the collection afterward.
+**Rationale**: same "financing credit ≠ creative origin" pattern as prior countries, but this
+pass also turned up real filesystem hygiene issues (misfiled duplicates, a broken download)
+that had nothing to do with country attribution — worth checking for on every remaining
+country review, not just metadata. Japón and Latinoamérica still pending.
+
 ## 2026-08 — Francia collection review; fourth duplicate found
 
 **Context**: Continuing the manual per-country pass. "Francia" (97 titles) mixed every failure
