@@ -1,5 +1,32 @@
 # Architecture Decision Records
 
+## 2026-08 — Jellyfin UI polish: custom CSS + curated collections via API
+
+**Context**: Wanted Jellyfin to feel more "pro" (Netflix-style browsing) and better organized
+than the default auto-generated library view, without ever risking an interruption to active
+playback (a friend is often watching remotely) — so nothing that requires a container restart
+was acceptable during active sessions.
+**Decision**: Split the work into a restart-free track and a restart-required track.
+Restart-free (done): (1) Custom CSS pushed live via `POST /System/Configuration/branding`
+(Dashboard → Branding also works, same effect) — card hover/elevation, blurred header, celeste
+accent. (2) Built 25 curated collections (Cine Argentino × 12 decades, Sagas × 3 franchises,
+Cine del Mundo × 7 countries, plus 10 standalone thematic collections) entirely through the
+Jellyfin REST API (`/Collections`, `/Items?...`, `/Items/{id}/Images/Primary`), including
+custom poster art generated locally with ImageMagick (gradients + text, no external image
+sources needed, avoids any copyright/licensing concern). Verified via `GET /Sessions` before
+and after every write that no playback was interrupted. Restart-required (deferred): installing
+`jellyfin-plugin-custom-javascript` to hide nested subcollections from the flat top-level
+Collections view, and any Skin Manager theme — both parked until `/Sessions` shows no active
+streams.
+**Alternatives considered**: Doing everything at once including plugin installs (rejected —
+plugin installs need a Jellyfin restart, which kills in-progress transcodes/streams). Manually
+uploading poster art from the internet (rejected — avoids scraping/copyright issues, and
+generated art is easy to keep visually consistent across ~25 collections).
+**Rationale**: Nearly all meaningful customization (branding CSS, collections, artwork) is
+achievable purely through Jellyfin's REST API and is safe to do live. Only plugin installation
+requires downtime, so that work is cleanly isolated and gated on an explicit safety check
+rather than mixed in with everything else.
+
 ## 2026-08 — Bazarr: ignore embedded PGS subtitles when checking for missing subs
 
 **Context**: Downloaded "The Hunger Games: The Ballad of Songbirds & Snakes" (BluRay REMUX). Jellyfin's subtitle picker showed several identically-labeled "Spanish" tracks; picking some of them showed no subtitles at all when playing from the Mac. Manually downloading an external `.srt` worked immediately. Investigation via `ffprobe` on the mkv showed the release embeds **both** `hdmv_pgs_subtitle` (image-based) and `subrip` (text) tracks for the same language, indistinguishable in the Jellyfin UI. Bazarr's `missing_subtitles` was already empty for this movie because `use_embedded_subs: true` let the embedded PGS tracks count as satisfying the language profile — even though PGS requires server-side burn-in transcode to render and doesn't display on direct play.

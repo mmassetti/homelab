@@ -1,0 +1,82 @@
+/* ===== Homelab custom theme — "pro" polish pass ===== */
+/* Applied live via Dashboard > Branding > Custom CSS, no server restart needed */
+
+:root {
+  --accent: #75AADB; /* Argentina celeste, doubles as our accent color */
+}
+
+/* Typography */
+body, .emby-button, .cardText, .sectionTitle, h1, h2, h3 {
+  font-family: -apple-system, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  letter-spacing: 0.01em;
+}
+
+.sectionTitle, .homeSectionsContainer .sectionTitle {
+  font-weight: 600;
+  font-size: 1.3em;
+}
+
+/* Cards: rounder corners, soft shadow, smooth hover lift */
+.card {
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  z-index: 2;
+}
+
+.cardBox {
+  border-radius: 10px;
+}
+
+.cardImageContainer {
+  border-radius: 10px;
+  transition: filter 0.2s ease;
+}
+
+.card:hover .cardImageContainer {
+  filter: brightness(1.05);
+}
+
+/* Accent color across buttons, focus rings, progress */
+.emby-button.raised.button-submit,
+.raised.button-submit {
+  background: var(--accent) !important;
+  color: #0b1a26 !important;
+}
+
+.mediaButton:focus-visible,
+.card:focus-visible,
+.emby-button:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px;
+}
+
+.itemProgressBar {
+  background: var(--accent) !important;
+}
+
+/* Headers: subtle blur + translucency instead of flat bar */
+.skinHeader {
+  backdrop-filter: blur(14px) saturate(140%);
+  background-color: rgba(20, 20, 22, 0.72) !important;
+}
+
+/* Backdrop dim for readability on home/detail screens */
+.backdropImage {
+  filter: brightness(0.65) saturate(1.05);
+}
+
+/* Collections / BoxSet tiles: give them a bit more presence */
+.cardScalable .cardPadder-overlay {
+  border-radius: 10px;
+}
+
+/* Smoother section scroller edges */
+.emby-scroller {
+  scroll-behavior: smooth;
+}

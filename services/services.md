@@ -28,6 +28,31 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
   → auto-rename/move to NAS → Bazarr (subtitles: Spanish + English) → Jellyfin (auto-scan)
 ```
 
+### Jellyfin Customization (since 2026-08-09/10)
+
+- **Custom CSS**: applied live via Dashboard → General → Branding → Custom CSS (no
+  restart needed). Source kept at `~/homelab/scripts/jellyfin_custom.css` — rounder card
+  corners, hover elevation, blurred translucent header, celeste (#75AADB) accent color.
+- **Collections**: built via Jellyfin REST API (`/Collections`, `/Collections/{id}/Items`,
+  `/Items/{id}/Images/Primary`), all read/write, no server restart required. Custom
+  1000x1500 poster art generated locally with ImageMagick (gradient + text, no external
+  images) for every collection listed below.
+  - **Cine Argentino** (hub) — 1178 movies (filtered by `ProductionLocations` containing
+    "Argentina"), nested into 12 decade subcollections (1910s–2020s).
+  - **Sagas** (hub) — Harry Potter (9), Mission: Impossible (7), Piratas del Caribe (5).
+  - **Cine del Mundo** (hub) — by `ProductionLocations`: Francia (226), Reino Unido (197),
+    España (133), Alemania (108), Italia (76), Japón (49), Latinoamérica ex-Argentina (97).
+  - **Standalone thematic collections** — Imprescindibles (rating ≥8.5, 60), Basadas en
+    Libros (TMDB tag, 179), Basadas en Hechos Reales (TMDB tag, 63), Dirigidas por Mujeres
+    (TMDB tag, 97), Terror (207), Documentales (262), Ciencia Ficción (119), Animación (28),
+    Western (33), Musicales (88).
+  - **Known limitation**: Jellyfin's flat "Collections" library view does not hide BoxSets
+    that are nested inside a parent collection — all decade/franchise/country subcollections
+    also show up as ordinary top-level tiles. No native fix exists. Planned resolution:
+    install `jellyfin-plugin-custom-javascript` to inject DOM-hiding JS for subcollection
+    tiles on the root view only — **requires a container restart**, deferred until no
+    active playback sessions (`GET /Sessions`) are found.
+
 ### Bazarr Notes
 
 - `general.ignore_pgs_subs: true` (since 2026-08-09) — PGS (image-based) embedded subtitle
