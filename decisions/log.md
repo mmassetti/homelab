@@ -14,7 +14,9 @@ actual content is genuinely Japanese, only the title metadata is wrong (same cla
 the 3 mislabeled British titles found in the Reino Unido pass; not fixed, just noted). Removed
 2 genuine misattributions: *Battleship* (American blockbuster) and *No Direction Home: Bob
 Dylan* (Scorsese documentary) — both list Japan only for minor international financing/
-distribution credit. Kept *Ghost in the Shell: Stand Alone Complex* (genuine anime) and
+distribution credit. Matias asked to delete *Battleship* from the library entirely rather than
+just the collection — not Radarr-managed, so a plain filesystem delete + `RefreshLibrary` was
+enough, freed 6.4GB. Kept *Ghost in the Shell: Stand Alone Complex* (genuine anime) and
 *Prisoners of the Ghostland* (Sion Sono directed, despite Nicolas Cage/English dialogue —
 same "director's cultural identity wins" logic as *PERFECT DAYS* in Alemania). Down to 34.
 **Duplicate found**: *Tokyo Story* (1953, Ozu) existed as two separate Jellyfin items — a
