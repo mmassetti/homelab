@@ -1,5 +1,36 @@
 # Architecture Decision Records
 
+## 2026-08 — Alemania collection: German tax-financing credits ≠ German cinema; third duplicate found
+
+**Context**: Continuing the manual per-country review. "Alemania" (44 titles) turned out to be
+the most polluted collection so far, with a different failure mode than España/Italia: a
+large share were American blockbusters that list Germany as a `ProductionLocations` entry
+purely because of German tax-shelter co-production financing (a very common industry practice
+in the 1990s-2000s), not any actual German creative involvement.
+**Decision**: Removed 27 titles, down to 17. Three groups: (1) American films with German
+financing credit only — *Smoke*, *8MM*, *Fight Club*, *The Score*, *Confessions of a
+Dangerous Mind*, *The Life of David Gale*, *The Aviator*, *Inglourious Basterds*, *She's
+Funny That Way*, *The Hunger Games: The Ballad of Songbirds & Snakes*; (2) Argentine
+co-productions (same overlap pattern as España/Latinoamérica) — *Rolling Family*, *Reimon*,
+*The Third Side of the River*, *The Owners*, *Two Shots Fired*, *El Cinco*, *Noh*,
+*The Practice*, *Cuarentena (Exil und Rückkehr)*, *Juan: Como si nada hubiera sucedido*,
+*Without This World*; (3) other misattributed nationalities — *Backbeat* (British, Beatles
+biopic), *Låt den rätte komma in* (Swedish), *Wadjda* (Saudi, first Saudi film, Germany
+co-produced for technical/funding reasons), *Holy Motors* (French, Leos Carax — also existed
+as a duplicate, see below), *The Pleasure Garden* (Hitchcock's directorial debut, usually
+classified as British/early Hitchcock despite the German studio). Kept genuinely German
+auteur/production titles even when co-produced abroad (*PERFECT DAYS* — Wenders, shot in
+Japan; *Victoria* — Berlin one-take thriller despite listing the US as a co-country).
+**Third duplicate found**: *Holy Motors (2012)* existed twice — a 720x384 XviD rip in a
+subfolder and a proper 1080p h264 remux at the top level. Deleted the low-quality subfolder,
+ran `RefreshLibrary`, confirmed a single 1080p entry survives. No Radarr involvement needed
+(same as the Investigation/Indagine duplicate — most of this library predates Radarr).
+**Rationale**: same as the España/Italia review — `ProductionLocations` reflects financing/
+distribution credits, not cultural or creative origin, and country-level co-production
+financing schemes (especially German tax shelters) are common enough in this library to
+warrant catching by hand rather than trusting the field alone. Alemania was the worst offender
+by far; Francia, Japón, Reino Unido, Latinoamérica still pending the same review.
+
 ## 2026-08 — Manual per-country review of Cine del Mundo collections; second duplicate found
 
 **Context**: The "primary country" fix (see below) got the numbers right but not necessarily
