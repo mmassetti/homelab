@@ -41,7 +41,9 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
     "Argentina"), nested into 12 decade subcollections (1910s–2020s).
   - **Sagas** (hub) — Harry Potter (9), Mission: Impossible (7), Piratas del Caribe (5).
   - **Cine del Mundo** (hub) — by `ProductionLocations`: Francia (226), Reino Unido (197),
-    España (133), Alemania (108), Italia (76), Japón (49), Latinoamérica ex-Argentina (97).
+    España (41), Alemania (44), Italia (24), Japón (37), Latinoamérica ex-Argentina (22).
+    Membership rule: a movie's country is its **first** entry in `ProductionLocations`
+    (not "any of these countries appears in the list" — see fix below).
   - **Standalone thematic collections** — Imprescindibles (rating ≥8.5, 60), Basadas en
     Libros (TMDB tag, 179), Basadas en Hechos Reales (TMDB tag, 63), Dirigidas por Mujeres
     (TMDB tag, 97), Terror (207), Documentales (262), Ciencia Ficción (119), Animación (28),
@@ -54,6 +56,18 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
     `Overview`, POST the full object back — a partial body resets other fields). Note:
     plain `GET /Items/{id}` without a user context 400s on this Jellyfin version; use the
     `/Users/{userId}/Items/{id}` route for reads.
+  - **Country-collection filter bug fix** (2026-08-10): the 7 Cine del Mundo subcollections
+    were originally built with "country appears anywhere in `ProductionLocations`", which
+    badly over-included co-productions — e.g. Spain-Argentina arthouse co-productions (very
+    common via Ibermedia funding) showed up in "España" even though they're really Argentine
+    films, and multi-country films like *Il buono, il brutto, il cattivo* (Italy/Spain/
+    Germany/USA co-production) showed up in "España" too. 63% of "España" (84/133) and 77%
+    of "Latinoamérica" (75/97) were actually Argentine co-productions. Rebuilt using "country
+    is the first entry in `ProductionLocations`" instead — a much stronger signal of actual
+    country of origin. New counts above. When diffing old vs new membership via the API,
+    note `GET /Items?ParentId={collectionId}` returns 0 items without a user context — must
+    use `GET /Users/{userId}/Items?ParentId={collectionId}` or the removal step silently
+    no-ops (this bit us on the first attempt: additions worked, removals didn't).
   - **Known limitation**: Jellyfin's flat "Collections" library view does not hide BoxSets
     that are nested inside a parent collection — all decade/franchise/country subcollections
     also show up as ordinary top-level tiles. No native fix exists. Planned resolution:

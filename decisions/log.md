@@ -1,5 +1,31 @@
 # Architecture Decision Records
 
+## 2026-08 — Fix "Cine del Mundo" country collections: use primary country, not "any co-production country"
+
+**Context**: Matias noticed movies that clearly didn't belong — e.g. the Argentine film "Un
+oso rojo" showing up in "España", and the Italian/Spanish/German/US co-production "Il buono,
+il brutto, il cattivo" also showing in "España". Root cause: the original filter treated a
+movie as belonging to a country if that country appeared *anywhere* in TMDB's
+`ProductionLocations` list, so any multi-country co-production got bucketed into every
+country involved. This library is unusually rich in Argentina-Spain/France/Germany arthouse
+co-productions (Ibermedia, ARTE France, Hubert Bals Fund all show up as studios), so the
+distortion was large: 63% of "España" and 77% of "Latinoamérica" were actually Argentine
+co-productions, not representative Spanish/Latin American cinema.
+**Decision**: Rebuilt all 7 Cine del Mundo subcollections using "country is the *first* entry
+in `ProductionLocations`" as the membership rule instead of "country appears anywhere in the
+list". New sizes: España 133→41, Latinoamérica 97→22, Francia 226→97, Alemania 108→44, Italia
+76→24, Japón 49→37, Reino Unido 197→120.
+**Alternatives considered**: Excluding only Argentina-overlap movies (simpler, smaller fix,
+but leaves other multi-country dilution like the Leone western); using `OriginalLanguage`
+instead (rejected — doesn't disambiguate Spain vs. Argentina vs. Mexico, all Spanish-language).
+**Rationale**: TMDB lists `production_countries` in an order that reliably reflects the
+primary/home country in the vast majority of cases; "first entry" is a much stronger signal
+of a film's actual national cinema than "this country was involved at all". Done entirely via
+`POST`/`DELETE /Collections/{id}/Items`, no restart. Also found and fixed a bug in the diff
+script: `GET /Items?ParentId=X` without a user context returns 0 items on this Jellyfin
+version, which silently no-op'd the removal step on the first pass — must use
+`GET /Users/{userId}/Items?ParentId=X`.
+
 ## 2026-08 — Jellyfin UI polish: custom CSS + curated collections via API
 
 **Context**: Wanted Jellyfin to feel more "pro" (Netflix-style browsing) and better organized
