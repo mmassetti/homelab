@@ -1,5 +1,51 @@
 # Architecture Decision Records
 
+## 2026-08 — Library-wide duplicate sweep using TMDB provider IDs (~136GB freed)
+
+**Context**: The 7-country manual review had already turned up 5 duplicate movies just by
+spot-checking ~350 titles, suggesting more existed across the full ~2530-movie library.
+Grouping by TMDB provider ID (`ProviderIds.Tmdb`, via `/Items?...Fields=ProviderIds`) instead
+of fuzzy title matching found 23 groups sharing a TMDB ID — far more reliable than title/year
+matching since it survives language and folder-naming differences.
+**Decision**: Of the 23 groups, only 19 were genuine duplicate files; 4 were false positives
+that must **not** be touched:
+- ***La Flor* (2018, Mariano Llinás)** and **Trenque Lauquen (2022, Laura Citarella)** — both
+  intentionally multi-part films (4 and 2 parts respectively), sharing one TMDB entry by
+  design, not duplicated content.
+- **"Civil War Life: Left for Dead"** — `dead set 2.mp4`/`dead set 3.mp4` look like episodes
+  of the British zombie miniseries *Dead Set* mis-imported as movies and mis-matched to an
+  unrelated TMDB documentary entry. Left alone, flagged for a future metadata-only fix.
+- **"Happiness (1997)" vs "Happy Together (1997)"** — these are two **completely different
+  films** (Todd Solondz's *Happiness* vs Wong Kar-wai's *Happy Together*) that got matched to
+  the *same* TMDB ID by mistake — confirmed by the Criterion extras in the "Happiness" folder
+  featuring a Solondz interview. A metadata bug, not a duplicate; neither file was touched.
+
+For the 19 real duplicates, resolved each with the established pattern (ffprobe quality
+compare, subtitle rescue when the loser had better/different subs, delete loser, refresh
+library), verifying zero active sessions throughout:
+- **3 stray copies of *Bring Her Back* (2025)** — one correctly filed, two others nested
+  inside unrelated movie folders (*Black Glasses*, *Knock At The Cabin*) — same failure mode
+  as the earlier `Trap (2024)` folder mixup, most likely a torrent client writing into
+  whatever folder was previously open instead of creating its own.
+- **Biggest single win**: *Once Upon a Time... in Hollywood* existed as both a clean 20GB
+  1080p BluRay remux (kept) and a **90GB raw unpacked Blu-ray disc folder** (BDMV/CERTIFICATE/
+  menus/etc.) — deleted the disc folder entirely.
+- Other resolved pairs: Lady Vengeance/Sympathy for Lady Vengeance, El exilio de Gardel
+  (2 copies), El gran simulador (2012 vs 2013), El otro hermano (2 files same folder), Falling
+  Down/Un día de furia, Godfather Part 2 (mp4) vs Part II (mkv, AV1 — kept the AV1), Gone Baby
+  Gone (nested 720p leftover), The Intern (nested inside an unrelated *True Confessions*
+  folder), John Wick (nested duplicate inside its own folder), Kundun (two identical-spec
+  copies), Las Acacias/Luminum/Picado fino/Sabes nadar (all had a second folder with a wrong
+  year in the name), No abras nunca esa puerta (lower-res TDTRip vs a better copy), Wild
+  Strawberries/Smultronstallet (near-identical quality, kept the one with clean Spanish subs),
+  Misantropo/To Catch a Killer (identical encode under two release titles).
+- **Total freed: ~136GB**, ~90GB of which was the single Blu-ray disc folder.
+**Rationale**: TMDB ID grouping is a far stronger duplicate signal than filename/title
+matching — it caught cross-language pairs (Wild Strawberries/Smultronstallet, El otro hermano)
+that a naive text match would miss, while correctly *not* flagging intentionally multi-part
+films or genuinely different movies that happened to share a bad metadata match. Worth
+re-running this sweep periodically as new downloads land.
+
 ## 2026-08 — Curated the TMDb Box Sets native collections into the Sagas hub
 
 **Context**: The pre-existing TMDb Box Sets plugin (auto-scan already disabled, see entry
