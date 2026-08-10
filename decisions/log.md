@@ -1,5 +1,31 @@
 # Architecture Decision Records
 
+## 2026-08 — Japón collection review: two false alarms, one real duplicate
+
+**Context**: Continuing the manual per-country pass. "Japón" (37 titles) looked cleaner than
+the previous countries but had two titles with garbled/wrong-looking names worth checking
+before assuming they were misattributions like the UK/Alemania cases.
+**Decision**: Investigated both before touching anything — **not** removed: `8½` turned out to
+be a different, genuinely Japanese genre film (about an agent named Jiro Kitami stopping arms
+smuggling to the Vietcong) that just happens to share its title with Fellini's `8½`; `Плем'я`
+(Cyrillic, "The Tribe") turned out to be Sion Sono's *Tokyo Tribe* mismatched with the TMDB
+entry for an unrelated Ukrainian film that also translates to "The Tribe" in English — the
+actual content is genuinely Japanese, only the title metadata is wrong (same class of issue as
+the 3 mislabeled British titles found in the Reino Unido pass; not fixed, just noted). Removed
+2 genuine misattributions: *Battleship* (American blockbuster) and *No Direction Home: Bob
+Dylan* (Scorsese documentary) — both list Japan only for minor international financing/
+distribution credit. Kept *Ghost in the Shell: Stand Alone Complex* (genuine anime) and
+*Prisoners of the Ghostland* (Sion Sono directed, despite Nicolas Cage/English dialogue —
+same "director's cultural identity wins" logic as *PERFECT DAYS* in Alemania). Down to 34.
+**Duplicate found**: *Tokyo Story* (1953, Ozu) existed as two separate Jellyfin items — a
+720p BRRip and a 1080p BluRay — because they lived in different subfolders and got scanned
+as distinct titles (one under the English title, one under the Japanese 東京物語). Both had
+Spanish subtitles already. Deleted the 720p copy, ran `RefreshLibrary`.
+**Rationale**: This pass reinforces checking the actual `Overview`/content before assuming an
+odd-looking title is a metadata mismatch worth removing — two titles that looked exactly like
+prior countries' misattribution pattern turned out to be correct on inspection. Latinoamérica
+is the last country left to review.
+
 ## 2026-08 — Reino Unido collection review; "Trap (2024)" folder had 7 stray duplicate movies, one broken download recovered
 
 **Context**: Continuing the manual per-country pass. "Reino Unido" (120 titles) had the same

@@ -41,14 +41,14 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
     "Argentina"), nested into 12 decade subcollections (1910s–2020s).
   - **Sagas** (hub) — Harry Potter (9), Mission: Impossible (7), Piratas del Caribe (5).
   - **Cine del Mundo** (hub) — by `ProductionLocations`: Francia (226), Reino Unido (197),
-    España (37), Alemania (17), Italia (18), Francia (56), Reino Unido (79), Japón (37),
+    España (37), Alemania (17), Italia (18), Francia (56), Reino Unido (79), Japón (34),
     Latinoamérica ex-Argentina (22). Membership rule: a movie's country is its **first**
     entry in `ProductionLocations` (not "any of these countries appears in the list" —
     see fix below), refined further by a manual per-country review (see decisions log)
     since production-financing credits (esp. German/British co-production financing
     schemes) don't always match creative/cultural origin. Alemania, España, Italia,
-    Francia and Reino Unido have been manually reviewed; Japón and Latinoamérica still
-    need the same pass.
+    Francia, Reino Unido and Japón have been manually reviewed; Latinoamérica is the
+    only one left.
   - **Standalone thematic collections** — Imprescindibles (rating ≥8.5, 60), Basadas en
     Libros (TMDB tag, 179), Basadas en Hechos Reales (TMDB tag, 63), Dirigidas por Mujeres
     (TMDB tag, 97), Terror (207), Documentales (262), Ciencia Ficción (119), Animación (28),
