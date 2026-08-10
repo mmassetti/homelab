@@ -91,11 +91,12 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
     Jellyseerr integration) from the same repo. Repo URL:
     `https://raw.githubusercontent.com/n00bcodr/jellyfin-plugins/main/10.11/manifest.json`.
   - **TMDb Box Sets** (pre-existing plugin, not installed by us): auto-creates un-curated
-    native collections from TMDB franchise data every 24h, including 3 that duplicate the
-    Sagas hub (Harry Potter/Mission: Impossible/Pirates of the Caribbean Collections) plus
-    ~25 others (Avatar, Die Hard, Dune, James Bond, John Wick, etc.). Its scheduled task
+    native collections from TMDB franchise data every 24h. Its scheduled task
     (`TMDbBoxSetsRefreshLibraryTask`) had its trigger cleared (empty `Triggers` array) so it
-    won't auto-run again; existing native collections were left in place.
+    won't auto-run again. The 44 collections it had already generated were audited and
+    curated: 10 deleted (4 empty, 3 single-movie, 3 duplicating the Sagas hub), 34 kept and
+    nested into **Sagas** (29 already had TMDB art, 5 Argentine series got custom posters) —
+    Sagas hub is now 37 subcollections total, all hidden from the flat view like the rest.
   - **Known limitation**: Jellyfin's flat "Collections" library view does not hide BoxSets
     that are nested inside a parent collection — all decade/franchise/country subcollections
     also show up as ordinary top-level tiles. No native fix exists. Planned resolution:

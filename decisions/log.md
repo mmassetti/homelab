@@ -1,5 +1,33 @@
 # Architecture Decision Records
 
+## 2026-08 — Curated the TMDb Box Sets native collections into the Sagas hub
+
+**Context**: The pre-existing TMDb Box Sets plugin (auto-scan already disabled, see entry
+below) had left 44 native franchise collections sitting at the top level, uncurated and
+visually inconsistent with the hand-built collections. Audited all 44 by movie count and
+image status before deciding what to do with each.
+**Decision**: Deleted 10: 4 were empty (0 movies — stale entries from removed files:
+*American Graffiti*, *Once Upon a Time... in Hollywood*, *Spider-Man: Spider-Verse*, *The
+Vengeance Trilogy*), 3 had only 1 movie (no browsing value as a "collection": *It Follows*,
+*Sinners*, *Waiting for the Hearse*), and 3 duplicated the hand-curated Sagas hub (native
+*Harry Potter/Mission: Impossible/Pirates of the Caribbean Collections* — kept our versions,
+which already have custom art; note the native Harry Potter list was actually the cleaner one,
+8 canon films with no reunion special, but Matias had already said to keep the reunion special
+in ours). Of the remaining 34, 29 already had real TMDB poster art + descriptions (Die Hard,
+The Godfather, James Bond, John Wick, Joker, Scream, Dune, Avatar, Indiana Jones, Paddington,
+etc. — no extra work needed) and only 5 lacked images, all Argentine film series TMDB doesn't
+carry art for (*Odio desencadenada* — Lucía Seles' avant-garde tennis-complex comedy franchise,
+*Cándida*, *Catita y Goyena*, *Colección: El Auge del Humano*, *La pequeña señora de Pérez*) —
+generated posters for those 5 in the established gradient style. Nested all 34 into the
+**Sagas** hub (`POST /Collections/{sagasId}/Items`) and added their IDs to the JavaScript
+Injector's hide-list (56 IDs total now, up from 22), so they only surface inside Sagas'
+detail page, not the flat Collections grid. Sagas hub: 3 → 37 children. Total BoxSet count:
+79 → 69 after the 10 deletions.
+**Rationale**: No point hand-curating art for 29 that already look good — checking image
+status first saved a lot of redundant work. Consolidating everything franchise-shaped under
+one Sagas hub (rather than leaving native ones as loose top-level tiles) keeps the "flat
+Collections view only shows curated hubs" promise from the JS Injector work intact.
+
 ## 2026-08 — Installed JavaScript Injector + Jellyfin Enhanced plugins; restart done, subcollections hidden
 
 **Context**: Last piece of the Jellyfin UI polish effort — hiding the ~22 nested subcollection
