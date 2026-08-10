@@ -46,6 +46,14 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
     Libros (TMDB tag, 179), Basadas en Hechos Reales (TMDB tag, 63), Dirigidas por Mujeres
     (TMDB tag, 97), Terror (207), Documentales (262), Ciencia Ficción (119), Animación (28),
     Western (33), Musicales (88).
+  - **Backdrops + descriptions** (2026-08-10): every one of the 35 collections (13 Cine
+    Argentino, 4 Sagas, 8 Cine del Mundo, 10 thematic) also got a landscape backdrop
+    (1920x1080, same gradient/palette as its poster, generated with ImageMagick) via
+    `POST /Items/{id}/Images/Backdrop`, plus a short Spanish description via
+    `POST /Items/{id}` (fetch full item from `/Users/{userId}/Items/{id}` first, set
+    `Overview`, POST the full object back — a partial body resets other fields). Note:
+    plain `GET /Items/{id}` without a user context 400s on this Jellyfin version; use the
+    `/Users/{userId}/Items/{id}` route for reads.
   - **Known limitation**: Jellyfin's flat "Collections" library view does not hide BoxSets
     that are nested inside a parent collection — all decade/franchise/country subcollections
     also show up as ordinary top-level tiles. No native fix exists. Planned resolution:
