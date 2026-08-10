@@ -1,5 +1,37 @@
 # Architecture Decision Records
 
+## 2026-08 — Manual per-country review of Cine del Mundo collections; second duplicate found
+
+**Context**: The "primary country" fix (see below) got the numbers right but not necessarily
+the curation — a film can legitimately have a country as its first `ProductionLocations`
+entry and still not belong in a national-cinema showcase (e.g. auteur-driven co-productions
+where the money/distribution credit doesn't match cultural identity). Went through Cine del
+Mundo country by country manually with Matias.
+**Decision**: **España** (41→37): removed *Giù la testa* (Sergio Leone spaghetti western —
+Italian, not Spanish), *Chimes at Midnight* (Orson Welles, American/international arthouse),
+*Vicky Cristina Barcelona* (Woody Allen, American), *The Ninth Gate* (Polanski, considered
+American by Matias). **Italia** (24→18): removed *Don't Look Now* (Nicolas Roeg, British),
+*Dawn of the Dead* (Romero, American — Argento only did the European cut), *King of New York*
+(Ferrara, American), *Fahrenheit 9/11* (Michael Moore, American), *The Merchant of Venice*
+(Radford, British Shakespeare adaptation). Kept genuine Italian-director spaghetti westerns
+(*Il grande silenzio*, *C'era una volta il West*) since those correctly belong to Italian
+cinema despite the "western" trope, unlike the Spain cases. Left *Ностальгия* (Tarkovsky) in
+Italia as a judgment call — Soviet auteur, Italian production, ambiguous either way.
+**Second duplicate found**: while reviewing Italia, found *Indagine su un cittadino al di
+sopra di ogni sospetto* (1970) existed as two separate library entries — a 598MB 720x384 rip
+(Spanish-titled folder, had a Spanish `.srt`) and a proper 1080p 2GB BluRay remux
+(English-titled folder, no subs). Same resolution as the earlier Wild Tales duplicate: moved
+the `.srt` into the HD copy's folder (renamed to match), deleted the low-quality file and its
+now-empty folder, ran a full library scan (`RefreshLibrary` task) to reconcile. Verified zero
+active playback sessions before touching any files. Neither copy was Radarr-managed (Radarr
+only tracks 63 of the ~2543 movies in this library — most predate Radarr or were bulk-imported
+outside it), so no Radarr-side rescan was needed, unlike the Wild Tales case.
+**Rationale**: `ProductionLocations` order is a strong but imperfect proxy for "cinema of
+country X" — it reflects production/financing credits, not always cultural identity. Worth a
+manual pass per country given how much curation intent depends on judgment calls an automated
+rule can't make. Remaining countries (Alemania, Francia, Japón, Reino Unido, Latinoamérica)
+still need the same manual review.
+
 ## 2026-08 — Display original Spanish titles instead of English for Spanish-language films
 
 **Context**: Many Spanish-language films (mostly Argentine/Spanish arthouse co-productions)
