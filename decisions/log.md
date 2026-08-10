@@ -1,5 +1,34 @@
 # Architecture Decision Records
 
+## 2026-08 — Francia collection review; fourth duplicate found
+
+**Context**: Continuing the manual per-country pass. "Francia" (97 titles) mixed every failure
+mode seen so far: Italian auteurs (Fellini, Antonioni, Bertolucci, Sorrentino, Argento) whose
+films list France as a co-production/financing country, German titles (Schlöndorff, Petzold),
+British titles (Greenaway, Wright, Cornish, Paddington films), a long tail of American
+studio/indie films with French financing (Cameron, Scorsese, Lynch, the Coens, Clooney,
+Safdie brothers, Schnabel), Spanish (Almodóvar, Sorogoyen, García Ibarra) and Argentine
+(Solanas, Mitre) co-productions, one Mexican film (Amat Escalante's *Heli*), and one Polish
+film (*Corpus Christi*).
+**Decision**: Removed 40 titles, down to 56. Kept several genuine judgment calls in Francia
+despite a non-French director, on a "does the film's language/setting/cultural identity read
+as French regardless of the director's passport" basis (consistent with keeping Wenders'
+*PERFECT DAYS* in Alemania and Argento/Corbucci's westerns in Italia): *Sunset Boulevards*
+(Cozarinsky, Argentine-born but Paris-based, French subject matter), *Missing Persons Section*
+(1956, no director data, no strong signal either way), *Nouvelle Vague* (2025, Linklater is
+American but the film is in French, shot in Paris, about the making of *Breathless*). Removed
+on the same consistency basis: *Vérités et Mensonges* (Welles — same call as *Chimes at
+Midnight* in España), *Green Card* (Peter Weir, English-language, NYC-set), *The Dreamers*
+(Bertolucci — an Italian auteur's film, like *The Last Emperor* which stayed in Italia).
+**Fourth duplicate found**: *La Nuit américaine* (1973, Truffaut) existed as two entries — a
+704x432 AVI (`Natteffekt.avi`, Scandinavian release naming) and a proper 1792x1072 MP4. Both
+already had Spanish subtitles, so no subtitle rescue needed this time (unlike the previous
+three dedup cases). Deleted the low-quality folder, ran `RefreshLibrary`, confirmed single
+surviving entry.
+**Rationale**: same as prior country reviews — `ProductionLocations` reflects financing/
+distribution credit, not creative or cultural origin. Reino Unido, Japón and Latinoamérica
+still need the same manual pass.
+
 ## 2026-08 — Alemania collection: German tax-financing credits ≠ German cinema; third duplicate found
 
 **Context**: Continuing the manual per-country review. "Alemania" (44 titles) turned out to be
