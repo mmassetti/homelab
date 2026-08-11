@@ -20,6 +20,7 @@ All ARR services use Hotio images, share `arr_network`, and use common env (PUID
 | FlareSolverr | flaresolverr | 8191 | ghcr.io/flaresolverr/flaresolverr | — | — |
 | Jellyseerr | jellyseerr | 5055 | fallenbagel/jellyseerr | /opt/docker/configs/jellyseerr | — |
 | Profilarr | profilarr | 6868 | santiagosayshey/profilarr | /opt/docker/configs/profilarr | — |
+| SABnzbd | sabnzbd | 8085 | ghcr.io/hotio/sabnzbd | /opt/docker/configs/sabnzbd | /mnt/nas/downloads (Usenet client, added since last audit — alt. to qBittorrent) |
 
 ### Media Flow
 
@@ -123,6 +124,13 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
 - API key at `/opt/docker/configs/bazarr/config/config.yaml` → `auth.apikey` (also usable for
   `X-API-KEY` header against `http://localhost:6767/api/...`).
 
+### Notifications (added 2026-08-11)
+
+- **Radarr + Sonarr**: Telegram connection ("Telegram - Claudito") added via each app's `/api/v3/notification` REST endpoint (schema fetched from `/api/v3/notification/schema` first — event flags differ: Radarr uses `onMovie*`, Sonarr uses `onSeries*`/`onEpisode*`). Both fire on Grab, Download, Upgrade, Health Issue, Health Restored, Manual Interaction Required, to the admin's Telegram chat.
+- **Jellyfin**: official **Webhook** plugin (GUID `71552a5a5c5c4350a2aeebe451a30173`, v18.0.0.0, installed via `/Packages/Installed/Webhook` + container restart) with one Generic destination whose `WebhookUri` points straight at the Telegram Bot API `sendMessage` endpoint. `Content-Type: application/json` header set explicitly; body is a Handlebars template (stored **base64-encoded** in the plugin config's `Template` field — that's the plugin's own convention, not an obfuscation choice) rendering `{{NotificationUsername}}`, `{{Name}}`, `{{SeriesName}}`. Fires on `PlaybackStart` only, for Movies/Episodes/Songs. Plugin config lives at `/opt/docker/configs/jellyfin/data/plugins/configurations/Jellyfin.Plugin.Webhook.xml` — edit via the `/Plugins/{id}/Configuration` API, not the file directly (it's read on startup, not watched).
+- **Jellyseerr**: admin-level Telegram notifications under Settings → Notifications → Telegram (Bot Token + admin Chat ID, events: Pending Approval/Approved/Declined/Available/Issue Reported). Per-user notifications are separate — each user either self-serves via their own Profile → Settings → Notifications → Telegram (needs their own Chat ID, obtained by DMing the bot and reading `getUpdates`, or via a helper bot like `@userinfobot`), or the admin pastes a user's Chat ID into Settings → Users → [user] → Notifications on their behalf.
+- Bot: `@masa_server_bot`. **Secrets (bot token, API keys) deliberately not written into this repo** — it has a GitHub remote (`origin` → `mmassetti/homelab`), so anything committed here should be treated as effectively public. Look them up live: Radarr/Sonarr API keys in `/opt/docker/configs/{radarr,sonarr}/config.xml`, Jellyfin API key under Dashboard → Advanced → API Keys, Telegram bot token via @BotFather (`/mybots`) if it needs to be regenerated.
+
 ## DNS Stack (Pi-hole + Unbound)
 
 Dedicated `dns_network` (172.30.0.0/24).
@@ -139,22 +147,25 @@ Router should point DNS to 192.168.1.239 for whole-network ad blocking.
 
 | Service | Container | Port | Network | Notes |
 |---------|-----------|------|---------|-------|
-| Cloudflare Tunnel | cloudflared | — | homelab | Exposes services to internet, no port forwarding needed |
-| Homarr | homarr | 7575 | homelab | Dashboard, mounts docker.sock |
+| Cloudflare Tunnel | cloudflared | — | homelab | Exposes services to internet, no port forwarding needed. Token-based (`tunnel --token`) — ingress routing is in the Cloudflare Zero Trust dashboard, not a local file |
+| Homepage | homepage | 3000 | homelab | Dashboard — **replaced Homarr** (removed from stack entirely; not even a stopped container remains) |
 | Uptime Kuma | uptime-kuma | 3001 | homelab | Service monitoring |
 | Glances | glances | — | host network | System monitoring (web: `-w` flag) |
 | Netdata | netdata | 19999 | homelab | Advanced monitoring |
+| Cinemateca | cinemateca | 8001 | homelab | Custom build (`/opt/docker/configs/cinemateca`), personal movie catalog/enricher — Letterboxd (`matimassetti`) + Jellyfin + TMDB director data, reads `/mnt/nas/Peliculas:ro`, writes to `cinemateca` DB inside the `media_tracker_db` Postgres instance |
 
 ## Cloud & Storage
 
 | Service | Container | Port | Network | Notes |
 |---------|-----------|------|---------|-------|
 | OpenCloud | opencloud | 9200 | homelab | Cloud storage, URL: cloud.matiasmassetti.com, data on NAS via /mnt/opencloud |
-| Nextcloud | nextcloud | 8090 | homelab | Personal cloud, mounts /mnt/nas |
-| Nextcloud DB | nextcloud-db | — (3306 internal) | homelab | MariaDB 10.11 |
 | Image Server | image-server | 4010 | homelab | Static file server for /opt/images |
 
-## OpenClaw (AI Agent)
+**Nextcloud decommissioned** — `nextcloud` and `nextcloud-db` containers, and their entries in `/opt/docker/docker-compose.yml`, no longer exist. The `nextcloud-db`/`nextcloud-app` named volumes below may be orphaned leftovers; check with `docker volume ls` / `docker system df -v` before assuming they're safe to prune, in case anything was never migrated off them.
+
+## OpenClaw (AI Agent) — ⚠️ NOT CURRENTLY RUNNING (verified 2026-08-11)
+
+`docker ps -a` shows **zero** `openclaw-*` containers — not stopped, gone entirely — and the `openclaw_network` (172.31.0.0/24) doesn't exist anymore either. The compose file below is still present on disk but nothing in this section should be assumed active (Telegram bot, Morning Brief, Mission Control) until re-verified. Everything below this line is historical/as-configured-on-disk, not as-deployed.
 
 Separate compose file: `/opt/docker/configs/openclaw/docker-compose.yml`
 Dedicated `openclaw_network` (172.31.0.0/24), isolated from all other stacks.
@@ -219,25 +230,30 @@ Log: `/tmp/morning-brief.log`
 
 ## Project Containers (Separate Compose Files)
 
-| Service | Container | Port | Compose File | Notes |
-|---------|-----------|------|--------------|-------|
-| USA 2026 | usa2026 | 3000 | ~/Code/usa-2026/docker-compose.yml | FIFA World Cup trip planner |
-| CEN Dashboard | cen-dashboard-cen-dashboard-1 | 3003 | ~/Code/cen-dashboard/docker-compose.yml | Dashboard app |
-| Media Tracker DB | media_tracker_db | 5432 | ~/media-tracker-db/docker-compose.yml | PostgreSQL 16 |
-| Scraper Autoentrada | — | — | ~/Code/scraper-autoentrada/docker-compose.yml | Ticket scraper bot |
-| Reporte Minoritario | — | — | ~/Code/reporteminoritario-transcript-fetcher/docker-compose.yml | Podcast transcript AI |
+| Service | Container | Port | Compose File | Running 2026-08-11? | Notes |
+|---------|-----------|------|--------------|----------------------|-------|
+| CEN Dashboard | cen-dashboard-cen-dashboard-1 | 3003 | ~/Code/cen-dashboard/docker-compose.yml | ✅ | Dashboard app |
+| Media Tracker DB | media_tracker_db | 5432 | ~/Code/media-tracker-db/docker-compose.yml | ✅ | PostgreSQL 16. Its `pgadmin` service (port 5050) is defined but not currently up |
+| Ricota DB | ricota-db-db-1, ricota-db-rest-1, ricota-caddy | 80 (caddy) | ~/homelab/ricota-db/docker-compose.yml | ✅ | Postgres 17 + PostgREST + Caddy (CORS-friendly REST API in front of Postgres, Supabase-style routing at `/rest/v1/*`). **Untracked in git** as of 2026-08-11 — lives inside the homelab repo dir but was never committed |
+| USA 2026 | usa2026 | 3000 | ~/Code/usa-2026/docker-compose.yml | ❌ | FIFA World Cup trip planner. Would conflict with `homepage` on :3000 if started |
+| Scraper Autoentrada | — | — | ~/Code/scraper-autoentrada/docker-compose.yml | ❌ | Ticket scraper bot |
+| Reporte Minoritario | — | — | ~/Code/reporteminoritario-transcript-fetcher/docker-compose.yml | ❌ | Podcast transcript AI |
 
 ## Docker Networks
+
+_(verified via `docker network ls`, 2026-08-11)_
 
 | Network | Subnet | Purpose |
 |---------|--------|---------|
 | arr_network | (bridge, auto) | ARR stack services |
 | docker_homelab | (bridge, auto) | Infrastructure + cloud services |
 | dns_network | 172.30.0.0/24 | Pi-hole + Unbound |
-| media_tracker_network | 172.21.0.0/16 | Media tracker project |
-| openclaw_network | 172.31.0.0/24 | OpenClaw AI agent (isolated) |
+| cen-dashboard_default | (bridge, auto) | CEN Dashboard project |
+| media-tracker-db_media_tracker_network | (bridge, auto) | Media tracker project (name is compose-project-prefixed, not the plain `media_tracker_network` this doc used to say) |
+| ricota-db_ricota | (bridge, auto) | Ricota DB internal network (db + rest); `ricota-caddy` also joins `docker_homelab` to be reachable |
+
+`openclaw_network` (172.31.0.0/24) no longer exists — removed along with the OpenClaw containers.
 
 ## Docker Named Volumes
 
-- `nextcloud-db` — MariaDB data for Nextcloud
-- `nextcloud-app` — Nextcloud application data
+- `nextcloud-db`, `nextcloud-app` — likely orphaned since Nextcloud was decommissioned; verify with `docker volume ls` before pruning (see note in Cloud & Storage above)

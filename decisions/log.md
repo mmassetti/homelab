@@ -1,5 +1,47 @@
 # Architecture Decision Records
 
+## 2026-08-11 — Full stack audit + Telegram notifications for ARR/Jellyfin/Jellyseerr
+
+**Context**: Matias wanted notifications so he doesn't have to check Jellyseerr manually to see
+new requests, and asked what else could be made "cool" across the stack. While implementing
+that, a live audit (`docker ps`, `docker network ls`, reading the real compose files) turned up
+significant drift between `~/homelab/CLAUDE.md`/`services.md` and what's actually running —
+those docs hadn't been touched since 2026-02-14 despite real changes happening in the meantime.
+**Decision**:
+1. **Notifications** — created a dedicated Telegram bot (`@masa_server_bot`). Radarr and Sonarr
+   got a Telegram connection via their REST APIs directly (`POST /api/v3/notification`, schema
+   pulled first from `/api/v3/notification/schema` since Radarr/Sonarr event field names differ
+   — `onMovie*` vs `onSeries*`/`onEpisode*`) firing on Grab/Download/Upgrade/Health events to
+   the admin chat. Jellyfin got the official Webhook plugin installed via its Packages API
+   (required one container restart — checked `GET /Sessions` first to confirm nobody was
+   actively streaming), configured with a Generic destination pointed straight at Telegram's
+   `sendMessage` endpoint, template rendering `{{NotificationUsername}}`/`{{Name}}` on
+   `PlaybackStart`. Jellyseerr's built-in admin + per-user Telegram notifications were
+   configured through its own UI (no API needed there).
+2. **Stack audit findings** — Homarr was replaced by `homepage` at some point (different port:
+   7575 → 3000) without a doc update; Nextcloud + its DB were fully removed; OpenClaw
+   ("Claudito") was **completely torn down** — not paused, no containers at all in `docker ps
+   -a`, network gone too — despite docs and memory describing it as an active daily service.
+   Three new things existed with zero documentation: `sabnzbd` (Usenet client alongside
+   qBittorrent), `cinemateca` (custom Letterboxd/Jellyfin/TMDB movie cataloger), and
+   `ricota-db` (Postgres+PostgREST+Caddy, ironically living *inside* the homelab repo itself
+   at `~/homelab/ricota-db/` but untracked in git).
+3. **Docs updated to match reality**: `CLAUDE.md` and `services/services.md` were rewritten
+   for accuracy — dead services removed/flagged, new ones added, the Cloudflare Tunnel table
+   marked as unverifiable-from-disk (the tunnel is token-based with dashboard-managed ingress,
+   no local `config.yml` to check against) with a flagged likely-broken entry for
+   `home.matiasmassetti.com` (still documented as pointing at Homarr's old port).
+**Rationale**: Docs that silently drift from reality are worse than no docs — they actively
+mislead. Since this repo has been fully overhauled once already for accuracy, the same
+"Keep Docs in Sync" discipline the repo already asks for (see `CLAUDE.md` checklist) needs to
+actually get followed going forward, especially for teardown-type changes (removing a service
+entirely is easy to forget to document, since there's no "add this to the compose file" moment
+that would naturally prompt it).
+**Follow-ups not done yet**: verify/fix the `home.matiasmassetti.com` Cloudflare Tunnel target;
+decide whether to revive OpenClaw/Claudito or formally retire it in the docs; `git add` the
+`ricota-db/` directory (or `.gitignore` it if it's meant to stay untracked) — right now it's
+just sitting there unstaged.
+
 ## 2026-08 — Flag-based poster redesign for Cine del Mundo + Sol de Mayo for Cine Argentino
 
 **Context**: The original gradient+text posters for the 7 Cine del Mundo country collections

@@ -1,7 +1,7 @@
 # Matias's Homelab — Claude Code Context
 
 > Auto-loaded when working in `~/homelab/`. Dense summary of entire setup.
-> Last updated: 2026-02-14. See individual files for full details.
+> Last updated: 2026-08-11. See individual files for full details.
 
 ## Hardware
 
@@ -40,12 +40,15 @@ Config base: `/opt/docker/configs/<service>/`
 | lidarr | 8686 | /mnt/nas/{downloads,Music} |
 | bazarr | 6767 | /mnt/nas/{Peliculas,Series} |
 | qbittorrent | 8080/6881 | /mnt/nas/downloads |
+| sabnzbd | 8085 | /mnt/nas/downloads (Usenet client, alt. to qBittorrent — added since last audit) |
 | prowlarr | 9696 | — |
 | flaresolverr | 8191 | — |
 | jellyseerr | 5055 | — |
 | profilarr | 6868 | — |
 
-**Flow**: Jellyseerr → Radarr/Sonarr (via Prowlarr) → qBittorrent → NAS → Bazarr (subs) → Jellyfin
+**Flow**: Jellyseerr → Radarr/Sonarr (via Prowlarr) → qBittorrent/SABnzbd (download) → NAS → Bazarr (subs) → Jellyfin
+
+**Notifications (added 2026-08-11)**: Radarr and Sonarr both have a Telegram connection ("Telegram - Claudito") firing on Grab/Download/Upgrade/Health Issue/Health Restored/Manual Interaction, sent to the admin chat. Jellyfin has the official **Webhook** plugin installed, with a Generic destination posting directly to the Telegram Bot API (`sendMessage`) on `PlaybackStart` for movies/episodes/songs — a "now playing" ping to the admin chat. Jellyseerr's own notification settings (Settings → Notifications → Telegram, admin-level) cover request pending/approved/declined/available; individual users self-register their personal Telegram chat ID either via their own Profile → Notifications → Telegram, or the admin pastes it in for them under Settings → Users → [user] → Notifications after the user DMs the bot. Bot: `@masa_server_bot`. Tokens/chat IDs intentionally not duplicated here — this repo is pushed to a public-facing GitHub remote (`origin` → `github.com:mmassetti/homelab`); check the respective app's Settings → Connect/Notifications page or ricota-style local `.env`/secrets files instead.
 
 ### DNS Stack (dns_network: 172.30.0.0/24)
 | Service | Port | IP |
@@ -56,52 +59,49 @@ Config base: `/opt/docker/configs/<service>/`
 ### Infrastructure (docker_homelab network)
 | Service | Port | Notes |
 |---------|------|-------|
-| cloudflared | — | Cloudflare Tunnel |
-| homarr | 7575 | Dashboard |
+| cloudflared | — | Cloudflare Tunnel (runs via `tunnel --token`, no local `config.yml` — ingress/subdomain routing lives in the Cloudflare Zero Trust dashboard, not on disk) |
+| homepage | 3000 | Dashboard — **replaced Homarr** (removed; container and its config no longer exist) |
 | uptime-kuma | 3001 | Monitoring |
 | glances | host | System stats |
 | netdata | 19999 | Advanced monitoring |
+| cinemateca | 8001 | Custom-built (`/opt/docker/configs/cinemateca`) personal movie catalog/enricher — pulls Letterboxd (`matimassetti`) + Jellyfin + TMDB director data, reads `/mnt/nas/Peliculas` read-only, writes to the `cinemateca` DB on `media_tracker_db` (192.168.1.239:5432) |
 
 ### Cloud & Storage (docker_homelab network)
 | Service | Port | Notes |
 |---------|------|-------|
 | opencloud | 9200 | cloud.matiasmassetti.com, data on NAS via /mnt/opencloud |
-| nextcloud | 8090 | Personal cloud, mounts /mnt/nas |
-| nextcloud-db | 3306 | MariaDB 10.11 |
 | image-server | 4010 | Static files from /opt/images |
 
-### Named volumes: nextcloud-db, nextcloud-app
+**Nextcloud has been decommissioned** — `nextcloud` and `nextcloud-db` containers no longer exist (not even stopped); not in `/opt/docker/docker-compose.yml` anymore. If `/opt/images` was shared with Nextcloud specifically, double check nothing still expects it.
 
 ## Cloudflare Tunnel URLs
-| Subdomain | Target |
-|-----------|--------|
-| media.matiasmassetti.com | :8096 (Jellyfin) |
-| radarr.matiasmassetti.com | :7878 |
-| sonarr.matiasmassetti.com | :8989 |
-| descargas.matiasmassetti.com | :8080 (qBittorrent) |
-| pedidos.matiasmassetti.com | :5055 (Jellyseerr) |
-| home.matiasmassetti.com | :7575 (Homarr) |
-| status.matiasmassetti.com | :3001 (Uptime Kuma) |
-| cloud.matiasmassetti.com | :9200 (OpenCloud) |
+_Routing lives entirely in the Cloudflare Zero Trust dashboard (token-based tunnel, no local ingress file), so this table can't be verified from disk — only from what actually answered over the public internet during the 2026-08-11 session, or prior session notes. Re-check the dashboard, don't trust this blindly._
 
-### OpenClaw (openclaw_network: 172.31.0.0/24) — Separate compose: `/opt/docker/configs/openclaw/docker-compose.yml`
-| Service | Port | Notes |
-|---------|------|-------|
-| openclaw-gateway | 127.0.0.1:18789, 127.0.0.1:18790, 127.0.0.1:3333 | AI agent "Claudito", localhost-only, hardened (read_only, cap_drop ALL, no-new-privileges) |
-| openclaw-mission-control | 3333 (shared via network_mode) | Web dashboard for agent management |
+| Subdomain | Target | Last verified |
+|-----------|--------|----------------|
+| media.matiasmassetti.com | :8096 (Jellyfin) | prior session (unverified 2026-08-11) |
+| radarr.matiasmassetti.com | :7878 | ✅ 2026-08-11 (HTTP 302, reachable) |
+| sonarr.matiasmassetti.com | :8989 | ✅ 2026-08-11 (HTTP 302, reachable) |
+| descargas.matiasmassetti.com | :8080 (qBittorrent) | prior session (unverified 2026-08-11) |
+| pedidos.matiasmassetti.com | :5055 (Jellyseerr) | ✅ 2026-08-11, actively used this session |
+| home.matiasmassetti.com | :7575 (Homarr) | ⚠️ **stale** — Homarr is gone, dashboard is now `homepage` on :3000. If the tunnel still points at :7575 this URL is broken. Fix in Cloudflare dashboard. |
+| status.matiasmassetti.com | :3001 (Uptime Kuma) | prior session (unverified 2026-08-11) |
+| cloud.matiasmassetti.com | :9200 (OpenCloud) | prior session (unverified 2026-08-11) |
 
-**Security**: Docker socket mounted (sandbox spawning + container monitoring via group_add docker GID 987), host docker CLI bind-mounted at `/usr/bin/docker:ro`. Telegram polling (outbound only), user ID allowlisted. NOT exposed via Cloudflare Tunnel.
-**Personality**: Bot named "Claudito" 🦞, Spanish-first, concise. Workspace files fully customized with homelab context. Monitoring scripts at `workspace/scripts/docker-{status,quick}.js`.
-**Morning Brief**: Daily 8:00 AM Telegram brief via host crontab (`~/homelab/scripts/morning-brief.sh`). Sources: wttr.in (weather), Google Calendar OAuth2 (agenda, weekdays), dolarapi.com (Blue/Oficial/MEP), La Brújula 24 RSS (local), La Nación RSS (national), TechCrunch RSS (tech, weekdays), Olé RSS (sports, daily), docker-quick.js (infra), df (disk). Weekend mode: no calendar, no tech. OAuth2 credentials at `~/.config/secrets/gcal_oauth.json`.
+## OpenClaw — currently NOT running (as of 2026-08-11)
+Compose file still exists at `/opt/docker/configs/openclaw/docker-compose.yml`, but `docker ps -a` shows **zero** `openclaw-*` containers (not even stopped ones) and the `openclaw_network` (172.31.0.0/24) no longer exists — it was fully torn down at some point, not just paused. The Telegram bot "Claudito" (`@clauditomassetti_bot`), the Morning Brief cron, and the Mission Control dashboard should all be assumed **inactive** until re-verified. Do not assume any of the operational rules below still apply without checking first.
+
+Historical config (kept for reference if reviving it): dedicated `openclaw_network`, gateway bound to 127.0.0.1 only (18789/18790/3333), hardened (`read_only`, `cap_drop: ALL`, `no-new-privileges`), Docker socket mounted for sandbox spawning, Telegram polling outbound-only with user ID allowlist, NOT exposed via Cloudflare Tunnel. Full details in `services/services.md` § OpenClaw (not rewritten — historical, matches what's on disk in the compose file, not what's currently deployed).
 
 ## Project Containers (separate compose files)
-| Project | Port | Compose |
-|---------|------|---------|
-| usa-2026 | 3000 | ~/Code/usa-2026/docker-compose.yml |
-| cen-dashboard | 3003 | ~/Code/cen-dashboard/docker-compose.yml |
-| media_tracker_db | 5432 | ~/media-tracker-db/docker-compose.yml |
-| scraper-autoentrada | — | ~/Code/scraper-autoentrada/docker-compose.yml |
-| reporteminoritario | — | ~/Code/reporteminoritario-transcript-fetcher/docker-compose.yml |
+| Project | Port | Compose | Running 2026-08-11? |
+|---------|------|---------|----------------------|
+| cen-dashboard | 3003 | ~/Code/cen-dashboard/docker-compose.yml | ✅ |
+| media_tracker_db | 5432 | ~/Code/media-tracker-db/docker-compose.yml | ✅ (postgres only; its `pgadmin` service is defined but not up) |
+| ricota-db | 80 (via ricota-caddy) | ~/homelab/ricota-db/docker-compose.yml | ✅ Postgres 17 + PostgREST + Caddy, `git status` shows this dir is **untracked** — new, not yet committed |
+| usa-2026 | 3000 | ~/Code/usa-2026/docker-compose.yml | ❌ not running (would conflict with `homepage` on :3000 if started) |
+| scraper-autoentrada | — | ~/Code/scraper-autoentrada/docker-compose.yml | ❌ not running |
+| reporteminoritario | — | ~/Code/reporteminoritario-transcript-fetcher/docker-compose.yml | ❌ not running |
 
 ## System Services (non-Docker)
 - CasaOS (6 services: main, gateway, app-mgmt, local-storage, message-bus, user-service)
