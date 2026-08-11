@@ -95,7 +95,7 @@ Pulled from the tunnel's live ingress config via the Cloudflare API on 2026-08-1
 | cen-api.matiasmassetti.com | cen-dashboard | 192.168.1.239:3003 |
 | ricota-api.matiasmassetti.com | Ricota DB (Caddy) | `ricota-caddy:80` (container hostname, same `docker_homelab` network as cloudflared) |
 
-**Removed 2026-08-11**: `nas.matiasmassetti.com` → `192.168.1.119:5000` was exposing the Synology DSM login page directly to the internet, with no Cloudflare Access policy visible in front of it — Matias didn't know it was there. Ingress rule deleted via API; remote NAS access still available via Tailscale. DNS record itself wasn't deleted yet (needs `Zone:DNS:Edit` on the token, which only has `Cloudflare Tunnel:Edit` so far) — harmless in the meantime, just 404s.
+**Removed 2026-08-11**: `nas.matiasmassetti.com` → `192.168.1.119:5000` was exposing the Synology DSM login page directly to the internet, with no Cloudflare Access policy visible in front of it — Matias didn't know it was there. Both the tunnel ingress rule and the DNS CNAME record (`d9a9622c...`, pointed at the tunnel's `.cfargotunnel.com` address, created 2026-02-08) were deleted via API once the token got `Zone:DNS:Edit`. The hostname no longer resolves at all. Remote NAS access still available via Tailscale.
 
 **Not audited**: whether any of the remaining hostnames sit behind a Cloudflare Access policy (email OTP, etc.) — the API token used for this audit can't read Access config. Several ARR-stack subdomains may be relying only on their own app-level login for internet-facing protection.
 

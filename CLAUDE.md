@@ -100,7 +100,7 @@ Account ID: `7dfee4d2de02fa195e6b9674de205fa6` · Tunnel ID: `7ddc3a66-cfbf-46b9
 | ricota-api.matiasmassetti.com | `ricota-caddy:80` (container hostname — cloudflared and ricota-caddy share `docker_homelab`) |
 | *(catch-all)* | `http_status:404` |
 
-**Removed 2026-08-11**: `nas.matiasmassetti.com` → `192.168.1.119:5000` used to point straight at the Synology DSM login page, publicly exposed with no Cloudflare Access policy in front of it as far as this token can see. Matias didn't know it was there; ingress rule deleted via the API (DNS record itself still exists, now just resolves to a 404 — remove it too once the token has `Zone:DNS:Edit`). Remote NAS access still works via Tailscale.
+**Removed 2026-08-11**: `nas.matiasmassetti.com` → `192.168.1.119:5000` used to point straight at the Synology DSM login page, publicly exposed with no Cloudflare Access policy in front of it as far as this token can see. Matias didn't know it was there; both the tunnel ingress rule and the DNS CNAME record were deleted via API (the token was granted `Zone:DNS:Edit` for this) — the hostname no longer resolves to anything at all. Remote NAS access still works via Tailscale.
 
 **Note**: none of these hostnames were checked for a Cloudflare Access policy (this API token only has `Account:Cloudflare Tunnel:Edit`, not `Access:Read`) — several of these (Radarr/Sonarr/Bazarr/etc.) may be relying solely on their own app-level auth for internet-facing protection. Worth auditing separately.
 

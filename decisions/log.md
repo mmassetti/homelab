@@ -23,13 +23,14 @@ status not checked) is a meaningfully worse risk than a broken dashboard link �
 immediately rather than just documenting it. Removing via API (not just noting it) was the
 right call once explicit confirmation was given, since the fix is trivial to reverse if it
 turns out to have been intentional after all (just re-add the ingress rule).
-**Follow-ups not done yet**: the DNS record for `nas.matiasmassetti.com` still exists (now
-orphaned, resolves to a 404) — removing it needs `Zone:DNS:Edit` added to the token, which
-Matias is adding via the dashboard (can't be self-granted by the token, needs `API Tokens:Edit`
-which it intentionally doesn't have). Also still unaudited: whether any of the *other* exposed
-subdomains (Radarr, Sonarr, Bazarr, Prowlarr, Lidarr, Profilarr, etc.) sit behind a Cloudflare
-Access policy — this token can't read Access config, so that needs a separate check (either a
-broader token or the dashboard) before assuming they're adequately protected.
+**Update same day**: Matias added `Zone:DNS:Edit` (scoped to `matiasmassetti.com`) to the token
+via the dashboard. Used it to look up the zone (`184c571f...`), find the orphaned
+`nas.matiasmassetti.com` CNAME record (`d9a9622c...`, → tunnel's `.cfargotunnel.com`, created
+2026-02-08), and delete it. The hostname no longer resolves at all now, not even to a 404.
+**Follow-ups not done yet**: still unaudited whether any of the *other* exposed subdomains
+(Radarr, Sonarr, Bazarr, Prowlarr, Lidarr, Profilarr, etc.) sit behind a Cloudflare Access
+policy — this token can't read Access config, so that needs a separate check (either a broader
+token or the dashboard) before assuming they're adequately protected.
 
 ## 2026-08-11 — Full stack audit + Telegram notifications for ARR/Jellyfin/Jellyseerr
 
