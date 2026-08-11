@@ -1,5 +1,36 @@
 # Architecture Decision Records
 
+## 2026-08-11 (later same day) — Cloudflare API token + tunnel cleanup, found NAS exposed to internet
+
+**Context**: Follow-up to the stack audit earlier the same day. `home.matiasmassetti.com` was
+confirmed already fixed (pointing at homepage's :3000, not Homarr's old :7575 — turned out
+Matias had already fixed it manually before asking about it). Created a scoped Cloudflare API
+token (`Account:Cloudflare Tunnel:Edit`, name "cloudflare tunnel minipc access") so tunnel
+ingress can be managed via API instead of the dashboard going forward. Stored at
+`~/.config/secrets/cloudflare_api_token` (0600), same convention as `gcal_oauth.json`.
+**Decision**: Used the token to pull the tunnel's live ingress config (`GET .../cfd_tunnel/
+{id}/configurations`) — ground truth, replacing all the "unverified" guesses in `CLAUDE.md`/
+`network/network.md` with the real 18-route list. This turned up something nobody had
+flagged: `nas.matiasmassetti.com` pointed straight at the Synology DSM login page
+(`192.168.1.119:5000`), publicly reachable with no visible Cloudflare Access policy in front
+of it. Matias confirmed he didn't know it was configured that way and asked to remove it.
+Deleted the ingress rule via `PUT .../configurations` (full ingress array minus that one entry
+— the endpoint replaces the whole list, no partial-delete). Verified `https://
+nas.matiasmassetti.com` now 404s. Remote NAS access remains available via Tailscale subnet
+routing (NAS shares the LAN with the mini PC, which already advertises `192.168.1.0/24`).
+**Rationale**: An internet-facing NAS admin login with unknown auth posture (DSM version/2FA
+status not checked) is a meaningfully worse risk than a broken dashboard link — worth fixing
+immediately rather than just documenting it. Removing via API (not just noting it) was the
+right call once explicit confirmation was given, since the fix is trivial to reverse if it
+turns out to have been intentional after all (just re-add the ingress rule).
+**Follow-ups not done yet**: the DNS record for `nas.matiasmassetti.com` still exists (now
+orphaned, resolves to a 404) — removing it needs `Zone:DNS:Edit` added to the token, which
+Matias is adding via the dashboard (can't be self-granted by the token, needs `API Tokens:Edit`
+which it intentionally doesn't have). Also still unaudited: whether any of the *other* exposed
+subdomains (Radarr, Sonarr, Bazarr, Prowlarr, Lidarr, Profilarr, etc.) sit behind a Cloudflare
+Access policy — this token can't read Access config, so that needs a separate check (either a
+broader token or the dashboard) before assuming they're adequately protected.
+
 ## 2026-08-11 — Full stack audit + Telegram notifications for ARR/Jellyfin/Jellyseerr
 
 **Context**: Matias wanted notifications so he doesn't have to check Jellyseerr manually to see

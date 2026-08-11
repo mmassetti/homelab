@@ -75,18 +75,36 @@ Config base: `/opt/docker/configs/<service>/`
 **Nextcloud has been decommissioned** — `nextcloud` and `nextcloud-db` containers no longer exist (not even stopped); not in `/opt/docker/docker-compose.yml` anymore. If `/opt/images` was shared with Nextcloud specifically, double check nothing still expects it.
 
 ## Cloudflare Tunnel URLs
-_Routing lives entirely in the Cloudflare Zero Trust dashboard (token-based tunnel, no local ingress file), so this table can't be verified from disk — only from what actually answered over the public internet during the 2026-08-11 session, or prior session notes. Re-check the dashboard, don't trust this blindly._
+Pulled straight from the tunnel's live ingress config via the Cloudflare API (`GET /accounts/{account}/cfd_tunnel/{tunnel}/configurations`) on 2026-08-11 — this is ground truth, not guesswork. Tunnel is token-based (no local `config.yml`); manage it via API or the Zero Trust dashboard (Networks → Tunnels).
 
-| Subdomain | Target | Last verified |
-|-----------|--------|----------------|
-| media.matiasmassetti.com | :8096 (Jellyfin) | prior session (unverified 2026-08-11) |
-| radarr.matiasmassetti.com | :7878 | ✅ 2026-08-11 (HTTP 302, reachable) |
-| sonarr.matiasmassetti.com | :8989 | ✅ 2026-08-11 (HTTP 302, reachable) |
-| descargas.matiasmassetti.com | :8080 (qBittorrent) | prior session (unverified 2026-08-11) |
-| pedidos.matiasmassetti.com | :5055 (Jellyseerr) | ✅ 2026-08-11, actively used this session |
-| home.matiasmassetti.com | :7575 (Homarr) | ⚠️ **stale** — Homarr is gone, dashboard is now `homepage` on :3000. If the tunnel still points at :7575 this URL is broken. Fix in Cloudflare dashboard. |
-| status.matiasmassetti.com | :3001 (Uptime Kuma) | prior session (unverified 2026-08-11) |
-| cloud.matiasmassetti.com | :9200 (OpenCloud) | prior session (unverified 2026-08-11) |
+Account ID: `7dfee4d2de02fa195e6b9674de205fa6` · Tunnel ID: `7ddc3a66-cfbf-46b9-8124-2bfef8a27456` (both derivable from the tunnel token in the compose file, not secret in the same way an API token is, but still avoid publishing further).
+
+| Subdomain | Target |
+|-----------|--------|
+| media.matiasmassetti.com | 192.168.1.239:8096 (Jellyfin) |
+| radarr.matiasmassetti.com | 192.168.1.239:7878 |
+| sonarr.matiasmassetti.com | 192.168.1.239:8989 |
+| bazarr.matiasmassetti.com | 192.168.1.239:6767 |
+| lidarr.matiasmassetti.com | 192.168.1.239:8686 |
+| prowlarr.matiasmassetti.com | 192.168.1.239:9696 |
+| profilarr.matiasmassetti.com | 192.168.1.239:6868 |
+| descargas.matiasmassetti.com | 192.168.1.239:8080 (qBittorrent) |
+| usenet.matiasmassetti.com | 192.168.1.239:8085 (SABnzbd) |
+| pedidos.matiasmassetti.com | 192.168.1.239:5055 (Jellyseerr) |
+| home.matiasmassetti.com | 192.168.1.239:3000 (homepage — fixed 2026-08-11, was stale-pointed at Homarr's old :7575) |
+| status.matiasmassetti.com | 192.168.1.239:3001 (Uptime Kuma) |
+| cloud.matiasmassetti.com | 192.168.1.239:9200 (OpenCloud) |
+| cinemateca.matiasmassetti.com | 192.168.1.239:8001 |
+| assets.matiasmassetti.com | 192.168.1.239:4010 (image-server) |
+| cen-api.matiasmassetti.com | 192.168.1.239:3003 (cen-dashboard) |
+| ricota-api.matiasmassetti.com | `ricota-caddy:80` (container hostname — cloudflared and ricota-caddy share `docker_homelab`) |
+| *(catch-all)* | `http_status:404` |
+
+**Removed 2026-08-11**: `nas.matiasmassetti.com` → `192.168.1.119:5000` used to point straight at the Synology DSM login page, publicly exposed with no Cloudflare Access policy in front of it as far as this token can see. Matias didn't know it was there; ingress rule deleted via the API (DNS record itself still exists, now just resolves to a 404 — remove it too once the token has `Zone:DNS:Edit`). Remote NAS access still works via Tailscale.
+
+**Note**: none of these hostnames were checked for a Cloudflare Access policy (this API token only has `Account:Cloudflare Tunnel:Edit`, not `Access:Read`) — several of these (Radarr/Sonarr/Bazarr/etc.) may be relying solely on their own app-level auth for internet-facing protection. Worth auditing separately.
+
+**API access**: a Cloudflare API token (`Account:Cloudflare Tunnel:Edit`, name "cloudflare tunnel minipc access") is stored at `~/.config/secrets/cloudflare_api_token` (0600) for managing tunnel ingress programmatically going forward, instead of the dashboard.
 
 ## OpenClaw — currently NOT running (as of 2026-08-11)
 Compose file still exists at `/opt/docker/configs/openclaw/docker-compose.yml`, but `docker ps -a` shows **zero** `openclaw-*` containers (not even stopped ones) and the `openclaw_network` (172.31.0.0/24) no longer exists — it was fully torn down at some point, not just paused. The Telegram bot "Claudito" (`@clauditomassetti_bot`), the Morning Brief cron, and the Mission Control dashboard should all be assumed **inactive** until re-verified. Do not assume any of the operational rules below still apply without checking first.

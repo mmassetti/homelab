@@ -73,16 +73,31 @@ ssh matias@100.112.136.118  # fallback if MagicDNS resolution misbehaves
 
 ### Cloudflare Tunnel Public URLs
 
+Pulled from the tunnel's live ingress config via the Cloudflare API on 2026-08-11 (ground truth, not guesswork — see `CLAUDE.md` for account/tunnel IDs and how to query it again). Account has a scoped API token at `~/.config/secrets/cloudflare_api_token` for managing this without the dashboard.
+
 | Subdomain | Service | Local Target |
 |-----------|---------|-------------|
 | media.matiasmassetti.com | Jellyfin | 192.168.1.239:8096 |
 | radarr.matiasmassetti.com | Radarr | 192.168.1.239:7878 |
 | sonarr.matiasmassetti.com | Sonarr | 192.168.1.239:8989 |
+| bazarr.matiasmassetti.com | Bazarr | 192.168.1.239:6767 |
+| lidarr.matiasmassetti.com | Lidarr | 192.168.1.239:8686 |
+| prowlarr.matiasmassetti.com | Prowlarr | 192.168.1.239:9696 |
+| profilarr.matiasmassetti.com | Profilarr | 192.168.1.239:6868 |
 | descargas.matiasmassetti.com | qBittorrent | 192.168.1.239:8080 |
+| usenet.matiasmassetti.com | SABnzbd | 192.168.1.239:8085 |
 | pedidos.matiasmassetti.com | Jellyseerr | 192.168.1.239:5055 |
-| home.matiasmassetti.com | Homarr | 192.168.1.239:7575 |
+| home.matiasmassetti.com | homepage | 192.168.1.239:3000 (was Homarr on :7575 — Homarr is gone, tunnel entry fixed 2026-08-11) |
 | status.matiasmassetti.com | Uptime Kuma | 192.168.1.239:3001 |
 | cloud.matiasmassetti.com | OpenCloud | 192.168.1.239:9200 |
+| cinemateca.matiasmassetti.com | Cinemateca | 192.168.1.239:8001 |
+| assets.matiasmassetti.com | image-server | 192.168.1.239:4010 |
+| cen-api.matiasmassetti.com | cen-dashboard | 192.168.1.239:3003 |
+| ricota-api.matiasmassetti.com | Ricota DB (Caddy) | `ricota-caddy:80` (container hostname, same `docker_homelab` network as cloudflared) |
+
+**Removed 2026-08-11**: `nas.matiasmassetti.com` → `192.168.1.119:5000` was exposing the Synology DSM login page directly to the internet, with no Cloudflare Access policy visible in front of it — Matias didn't know it was there. Ingress rule deleted via API; remote NAS access still available via Tailscale. DNS record itself wasn't deleted yet (needs `Zone:DNS:Edit` on the token, which only has `Cloudflare Tunnel:Edit` so far) — harmless in the meantime, just 404s.
+
+**Not audited**: whether any of the remaining hostnames sit behind a Cloudflare Access policy (email OTP, etc.) — the API token used for this audit can't read Access config. Several ARR-stack subdomains may be relying only on their own app-level login for internet-facing protection.
 
 ## Router
 
