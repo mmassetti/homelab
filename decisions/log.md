@@ -1,5 +1,29 @@
 # Architecture Decision Records
 
+## 2026-08-12 (later same day) — Committed ricota-db to git, caught a hardcoded password first
+
+**Context**: `ricota-db/` (Postgres 17 + PostgREST + Caddy, a Supabase-style REST API stack)
+had been sitting inside the homelab repo since 2026-08-11, fully untracked. Matias wanted it in
+GitHub, minus secrets.
+**Decision**: Added a scoped `ricota-db/.gitignore` covering `.env`, `keys.txt`, and `data/`
+(the live Postgres volume) — the repo-root `.gitignore` already caught `*.env` but not the
+other two. Before staging, scanned every file that would actually get committed rather than
+trusting the `.env`/`keys.txt` split to be the whole story — and found `init/01-roles.sql` had
+the real `authenticator` role password **hardcoded in plaintext** (it has to be, since
+Postgres's `docker-entrypoint-initdb.d` just runs raw SQL — no built-in env-var substitution),
+which would have pushed a live DB credential straight to a public GitHub repo alongside
+everything else. Added that file to the `.gitignore` too and replaced it with
+`init/01-roles.sql.example` (placeholder password + a comment pointing at `AUTH_PW` in `.env`).
+Did the same `.example` treatment for `.env` and `keys.txt`. Verified with a script that
+sourced the real `.env`/`keys.txt` and grepped every file about to be staged for each actual
+secret value, not just spot-checked — all clean. Committed and pushed.
+**Rationale**: "Secrets live in `.env`" is an assumption, not a guarantee — anything that shells
+out to raw SQL/config files during setup is a place a credential can leak in without anyone
+intending it to. Grepping the *actual bytes* of what's about to be committed, for the *actual*
+secret values (not just filenames matching a `secret`-ish pattern), is the only check that
+would have caught this one; a purely filename-based `.gitignore` review would have missed it
+since `01-roles.sql` looks like an ordinary schema file at a glance.
+
 ## 2026-08-12 — Cloudflare Access on admin-only hostnames + Sonarr auth fix
 
 **Context**: Follow-up to the previous day's tunnel audit item "check whether the exposed

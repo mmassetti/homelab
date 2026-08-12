@@ -6,10 +6,6 @@ as they come up.
 
 ## Open
 
-- [ ] **Decide on `ricota-db/`** — lives inside the homelab repo (`~/homelab/ricota-db/`) but
-      is untracked in git; has `.env` and `keys.txt` with real secrets in it. Either commit it
-      with secrets stripped out (`.env.example` instead) and add real `.env`/`keys.txt` to
-      `.gitignore`, or move it out of the homelab repo entirely if it's not meant to live here.
 - [ ] **OpenClaw / Claudito — revive or retire** — fully torn down (no containers, no
       network), but docs used to describe it as an active daily service (Telegram bot, morning
       brief). Either bring it back properly or remove the historical section from
@@ -27,3 +23,4 @@ as they come up.
 - [x] `CLAUDE.md` / `services/services.md` / `network/network.md` synced with real running stack (2026-08-11)
 - [x] Sonarr auth hardened (`disabledForLocalAddresses` → `enabled`, matches Radarr/Prowlarr/Lidarr) (2026-08-12)
 - [x] Cloudflare Access added on 15 admin-only hostnames, email-OTP to matiasmassetti@gmail.com, 168h sessions; `media`/`pedidos` (Jellyfin/Jellyseerr) deliberately left open for family/friends (2026-08-12)
+- [x] `ricota-db/` committed to git with real secrets excluded — found and fixed a hardcoded DB password in `init/01-roles.sql` before it ever reached GitHub (2026-08-12)
