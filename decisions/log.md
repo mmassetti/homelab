@@ -1,5 +1,99 @@
 # Architecture Decision Records
 
+## 2026-08-12 (later again) — Fixed Jellystat login (SHA3 hash vs. plaintext mismatch)
+
+**Context**: After installing Jellystat, Matias couldn't log in with the credentials given —
+"invalid username or password" — from two completely different devices (phone via Tailscale
+and LAN, Mac via Tailscale and LAN), consistently, immediately, in incognito. Ruled out (via
+direct `curl` from the mini PC itself, matching his exact IP/port): wrong credentials — DB
+inspection (`SELECT * FROM app_config`) showed byte-exact match to the credentials given, no
+whitespace;
+network/CORS — login succeeded via curl over both LAN and Tailscale IPs, with Origin/Referer
+headers set; rate-limiting/lockout — none found in the backend source; hardcoded wrong API URL
+in the frontend bundle — none found.
+**Decision**: Read `/app/backend/routes/auth.js` directly. `/auth/login` compares
+`user.APP_PASSWORD === password` against whatever's stored in `app_config.APP_PASSWORD` — a
+**plain equality check, no hashing on the backend**. But `/auth/createuser` and
+`/api/updatePassword` also just store whatever `password` value they're sent, verbatim, again
+with no hashing. Both of those were called via raw `curl` with the plaintext password, so the
+DB held plaintext. The frontend's actual login form, however, hashes the password client-side
+with `CryptoJS.SHA3(...)` (512-bit output, seen in the bundle at
+`/app/dist/assets/index-*.js`) before ever sending it — confirmed by temporarily patching
+`auth.js` to `console.log(req.body)`, restarting the container, and asking Matias to attempt
+one real login: the captured request showed `username: "matias"`, `password: "<128-hex-char
+SHA3 hash>"`. Computed `SHA3(<the password>)` inside the container and it matched the captured hash
+exactly. Fixed by `UPDATE app_config SET "APP_PASSWORD" = '<that hash>'` directly in Postgres —
+now the frontend's hashed submission matches the stored value. Verified: login with the SHA3
+hash succeeds, login with the raw plaintext now correctly fails (401) — consistent with what
+the real login form does. Removed the debug `console.log` and restarted clean.
+**Rationale**: This is a real bug in Jellystat (or at least an undocumented contract) — any
+password set through its own API endpoints rather than its own frontend form will silently
+never work, with no indication of why beyond a generic auth failure. Worth remembering for any
+future Jellystat password change: **always go through the web UI's own forms**, or replicate
+the SHA3 hashing manually before calling the API directly.
+
+## 2026-08-12 (yet again later) — Backfilled the rest of the movie library into Radarr
+
+**Context**: Following up on the earlier 8-title Radarr backfill (done to unblock subtitle
+management for a handful of titles), Matias asked whether it's worth linking the *entire*
+unlinked library — 2432 of 2517 Jellyfin movies had no Radarr entry at all. First attempt used
+Jellyfin's stored IMDb id per movie for the Radarr lookup and immediately caught two silent
+mismatches in just a 5-title test: "...E tu vivrai nel terrore! L'aldilà" (the correct movie,
+in a folder literally named "The Beyond (1981)") matched to "Battle Beyond the Stars", and
+Fellini's "8½" matched to "Interpol Code 8" — both from Jellyfin already holding a bad IMDb id
+for those items independent of anything in this session. Switched to using Jellyfin's own
+**TMDB id** instead (also stored per-item, and what Jellyfin's own displayed title/artwork
+already reflects) — re-tested the same 5 titles and all matched correctly, including a genuine
+oddity ("8ミリ生フィルムのすべて" turned out to correctly be "Everything about 8mm Raw Film",
+not a mismatch). Also applied a folder-depth safety filter (skip any movie whose file isn't
+directly one level under its own `Title (Year)/` folder) after finding "A Cure For Wellness
+(2016)" nested inside the unrelated "25th Hour (2002)" folder — a real, pre-existing library
+organization bug, left for manual review rather than auto-imported.
+**Decision**: Classified all 2517 Jellyfin movies: 2277 safe to auto-batch (has TMDB id, one
+file directly in its own folder, not already tracked), 105 with no TMDB id, 58 in nested/
+multi-file folders — the latter two buckets set aside for manual review, not touched. Built a
+script with an explicit safety gate before committing to the full run: import + `monitored:
+false` + `searchForMovie: false` for a 150-title canary batch first, then **wait for one real
+RSS Sync cycle to complete** (Radarr's `2160p Efficient` profile has `upgradeAllowed: true`,
+and RSS Sync runs every 30 min — a genuine risk of triggering "upgrade" downloads for perfectly
+fine existing files) and check Radarr's queue + grab history for any activity tied to the
+canary's movie IDs before proceeding. Canary came back clean (`queue_hits=0 grab_hits=0`), so
+the remaining 2077 titles ran in batches of 200 back-to-back. Final result: **2210 linked**,
+**60 left needing a rescan retry** (mostly false negatives — see below), **7 errors** (5 were
+harmless duplicates from the earlier manual test run, 2 were loose files sitting directly in
+the root `Peliculas/` folder with no enclosing subfolder, which the path-parent logic can't
+handle — left for manual review), **0 lookup failures**.
+Of the 60 "rescan failed" entries, a spot-check on "El secreto de sus ojos" (Radarr title: "The
+Secret in Their Eyes") showed `hasFile: True` when re-checked minutes later, despite having
+been logged as failed during the run — the script's rescan-poll only waited 3 seconds, too
+short under the heavy concurrent NAS load from Jellyfin's library scan + Bazarr's subtitle
+search + this import all running at once. Ran a reconciliation pass after the full run
+completed: re-checked all 60, flipped `monitored: true` for any now showing `hasFile: true`.
+**51 of 60 were exactly this false-negative timing issue**; only **9 have a genuine path
+mismatch** (folder name casing, e.g. "The boat that rocked" vs. the folder's actual "The Boat
+That Rocked") and remain safely unmonitored, unresolved, for manual review.
+Verified no unwanted downloads occurred across the *entire* run, not just the canary: Radarr's
+queue at the end still showed only the one pre-existing stalled Jackass 3.5 torrent
+(`movieId: 87`, added `03:24:19Z` — hours before this session started, completely unrelated),
+identical to before the run began.
+**Rationale**: The IMDb→TMDB pivot is the single most important lesson here — trusting a
+"foreign key" the source system already got wrong just propagates the error at scale instead
+of fixing anything, while trusting the *same* identifier the family already sees in Jellyfin
+guarantees Radarr and Jellyfin can never silently disagree about which movie is which. The
+canary-then-wait-then-proceed pattern is worth reusing for any future bulk operation against a
+profile with `upgradeAllowed: true` — cheap insurance against a slow-burn storage/bandwidth
+surprise that wouldn't show up until the next RSS cycle, by which point it'd be too late to
+catch before the first batch ran.
+
+**Follow-up items left for manual review** (not urgent, none of it broken/dangerous as-is):
+- 105 movies with no TMDB id in Jellyfin at all
+- 58 movies in nested or multi-file folders (mix of legitimate extras, multi-part rips, and at
+  least one real mismatch — "A Cure For Wellness" living inside "25th Hour"'s folder)
+- 9 movies where Radarr still can't find the file after the path it was given (folder name
+  casing mismatches, most likely)
+- 2 movies whose files sit loose directly in `Peliculas/` root with no enclosing folder ("El
+  Partido", "La cara oculta")
+
 ## 2026-08-12 (still later) — Installed Jellystat
 
 **Context**: Original TODO item from earlier in the day (Playback Reporting vs. a nicer visual
