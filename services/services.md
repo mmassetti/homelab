@@ -15,6 +15,7 @@ All ARR services use Hotio images, share `arr_network`, and use common env (PUID
 | Sonarr | sonarr | 8989 | ghcr.io/hotio/sonarr | /opt/docker/configs/sonarr | /mnt/nas/downloads, /mnt/nas/Series |
 | Lidarr | lidarr | 8686 | ghcr.io/hotio/lidarr | /opt/docker/configs/lidarr | /mnt/nas/downloads, /mnt/nas/Music |
 | Bazarr | bazarr | 6767 | ghcr.io/hotio/bazarr | /opt/docker/configs/bazarr | /mnt/nas/Series, /mnt/nas/Peliculas |
+| Subgen | subgen | 9000 | mccloud/subgen:cpu | /opt/docker/configs/subgen/models | — (Whisper ASR provider for Bazarr, CPU-only) |
 | qBittorrent | qbittorrent | 8080 (web), 6881 (torrent) | ghcr.io/hotio/qbittorrent | /opt/docker/configs/qbittorrent | /mnt/nas/downloads |
 | Prowlarr | prowlarr | 9696 | ghcr.io/hotio/prowlarr | /opt/docker/configs/prowlarr | — |
 | FlareSolverr | flaresolverr | 8191 | ghcr.io/flaresolverr/flaresolverr | — | — |
@@ -144,6 +145,25 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
   (`ea`), and English (`en`).
 - API key at `/opt/docker/configs/bazarr/config/config.yaml` → `auth.apikey` (also usable for
   `X-API-KEY` header against `http://localhost:6767/api/...`).
+- Already-enabled providers (as of 2026-08-12) cover Latino/Argentina sources well:
+  `opensubtitlescom`, `embeddedsubtitles`, `subdl`, `tvsubtitles`, `yifysubtitles`, `wizdom`,
+  `subtis`, `subdivx`, `subtitulamostv`.
+- **Whisper AI provider (`whisperai`), added 2026-08-12**: backed by the `subgen` container
+  (`mccloud/subgen:cpu`, image handles Whisper-ASR-webservice-compatible HTTP calls from
+  Bazarr — no path mapping or webhooks needed for this mode). Config:
+  `whisperai.endpoint: http://subgen:9000` (Docker network hostname, not `127.0.0.1` —
+  Bazarr and subgen are different containers). Model `medium`, CPU-only (no NVIDIA GPU on
+  this host; the AMD iGPU used for Jellyfin transcoding doesn't accelerate Whisper).
+  `PROCESS_ADDED_MEDIA`/`PROCESS_MEDIA_ON_PLAY` left `False` — subgen only runs when Bazarr
+  calls it as a provider, not on its own webhook triggers.
+  **Known limitation**: Whisper's `translate` task only outputs **English**, never Spanish or
+  any other target language — it's transcribe-in-original-language or translate-to-English,
+  full stop. So this provider only helps for (a) Spanish/other-language audio missing a
+  same-language subtitle, or (b) English audio missing an English subtitle. It does **not**
+  solve the more common case of English-audio movies needing a Spanish subtitle. Verified
+  working via a live provider search on "Mercano, el marciano" (Spanish-language Argentine
+  film): Bazarr returned a `whisperai` candidate labeled "transcribe Spanish audio -> Spanish
+  SRT".
 
 ### Notifications (added 2026-08-11)
 

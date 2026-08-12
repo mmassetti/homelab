@@ -1,5 +1,78 @@
 # Architecture Decision Records
 
+## 2026-08-12 (yet even later) — Switched default quality profile, backfilled Radarr for legacy
+## movies, fixed a metadata mismatch, and added a Whisper AI subtitle provider
+
+**Context**: Reviewing transcoding led to reviewing Radarr/Sonarr quality profiles. Found
+Jellyseerr's default profile for new requests was "2160p Remux" (raw Blu-ray/UHD extraction,
+no compression) — 68 of 77 Radarr-tracked movies (88%) were remux, almost certainly the main
+driver of the NAS being nearly full. Switched Jellyseerr's Radarr *and* Sonarr default profile
+to "2160p Efficient" (prefers well-regarded x265 encode groups — HONE/QxR/TAoE — at a fraction
+of remux size). Tradeoff made explicit via the profile's own custom-format scores: "Efficient"
+scores `Lossless Audio` at -999999 and TrueHD/DTS-HD MA/Atmos/DTS-X at 0 (vs. Remux scoring
+those 1200-1600), so future downloads will generally carry Dolby Digital+ instead of lossless/
+object-based audio. Video quality is unaffected. Only matters if a home theater with an
+Atmos-capable receiver enters the picture later — imperceptible on phone/browser/TV speakers.
+
+Separately, checked subtitle compatibility across the 100 most-recently-added movies via
+Jellyfin's MediaStreams: 54 had a text-based track (fine), 11 had *only* image-based (PGS/DVD)
+subs — forces a full burn-in transcode on any client that can't render PGS overlay (most
+browsers/mobile apps). Cross-checked all 11 against Bazarr by IMDb ID: **none were tracked by
+Bazarr** — they were added to the NAS before the Radarr/Jellyseerr pipeline existed, so Bazarr
+(which only manages Radarr/Sonarr-known items) had no way to search subtitles for them.
+
+**Decision — Radarr backfill**: Confirmed `renameMovies: false` and `autoRenameFolders: false`
+in Radarr's config before touching anything (critical — don't want Radarr moving/renaming
+files a live family library already points at). For 8 of the 11 titles (To Catch a Thief,
+Interstellar, Hail Caesar!, Fallen Angels, Empire of the Sun, Short Memory, Mercano el
+Marciano, Pirates of the Caribbean), looked up each via Radarr's lookup-by-IMDb endpoint, added
+via `POST /api/v3/movie` with `monitored: false` and `addOptions.searchForMovie: false` (so it
+can never trigger a new download), path pointed at the *existing* NAS folder (translated from
+Jellyfin's `/data/movies/...` mount to Radarr's `/movies/...` mount — same NAS folder, two
+different container mount points), then triggered `RescanMovie` to link the existing file.
+Verified `hasFile: true` on all 8 before flipping `monitored: true`. Test movie (To Catch a
+Thief) was done alone first and fully verified before batching the rest. Bazarr's Radarr sync
+picked up all 8 immediately after.
+
+**Decision — "The Club" (2015) metadata bug found along the way**: the 3 excluded titles all
+lived in one folder, `The Club (2015)/`, which turned out to have a real metadata problem: the
+actual movie (Pablo Larraín's *El Club*, TMDB 319995) was misidentified by Jellyfin as **"Winx
+Club: The Mystery of the Abyss"** (TMDB 290841 — wrong film entirely), and two bonus
+featurettes plus a Berlinale Q&A clip were sitting as loose files in a subfolder named
+`The.Club.Extras-Grym` — not a name Jellyfin recognizes as bonus content, so each got indexed
+as its own standalone "movie". Fixed via `POST /Items/RemoteSearch/Apply/{itemId}` with the
+correct TMDB match for the main film, and renamed the subfolder to `extras` (a name Jellyfin
+does recognize) so the 3 clips get associated with the parent movie as bonus features instead
+of polluting the movie list. Verified post-fix: search for "Club" only returns "The Club" with
+correct synopsis; the 3 extra files no longer appear as separate Movie items.
+
+**Decision — Whisper AI subtitle provider**: researched what's added beyond standard Bazarr
+providers for hard-to-find subtitles (WebSearch: Bazarr's official Whisper Provider wiki page,
+McCloudS/subgen GitHub). Existing `enabled_providers` already covered Latino/Argentina sources
+well (`subdivx`, `subtitulamostv`, `subtis` were already on). Added `subgen` (`mccloud/subgen:
+cpu`, no NVIDIA GPU on this host) as a new service on `arr_network`, pointed Bazarr's
+pre-existing (but previously unused) `whisperai.endpoint` config at `http://subgen:9000`
+(Docker-network hostname — `127.0.0.1` would resolve to Bazarr's own container, not subgen's),
+and added `whisperai` to `enabled_providers`. `PROCESS_ADDED_MEDIA`/`PROCESS_MEDIA_ON_PLAY` set
+`False` so subgen is purely a Bazarr-triggered provider, not an auto-webhook processor.
+Verified live: a manual provider search for "Mercano, el marciano" (Spanish-language Argentine
+film) returned a `whisperai` candidate — "transcribe Spanish audio -> Spanish SRT" — confirming
+the HTTP integration works end-to-end.
+**Important limitation flagged to Matias before implementing**: Whisper's `translate` task only
+ever outputs English — there's no way to get it to translate directly into Spanish. So this
+provider only helps when the *audio* is already in the target subtitle language (transcribe
+mode) or when English audio needs an English subtitle. It does not solve the far more common
+case in this library — English-audio movies needing a Spanish subtitle — that still depends on
+the existing human-subtitle providers finding a match.
+
+**Rationale**: All four changes came from the transcoding review going wider once the profile
+scoring made the storage-vs-quality tradeoff visible in hard numbers, and once the subtitle
+compatibility check surfaced two adjacent problems (untracked legacy movies, a genuine metadata
+mismatch) that were worth fixing while already in that part of the stack. The Radarr backfill
+in particular sets a repeatable pattern for any future case of "great, why doesn't Bazarr know
+about this movie" — check `renameMovies` first, always test one title end-to-end before
+batching.
+
 ## 2026-08-12 (even later) — Fixed VAAPI hardware transcoding passthrough on Jellyfin
 
 **Context**: Matias asked to evaluate the state of transcoding. Investigation found Jellyfin's
