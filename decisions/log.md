@@ -1,5 +1,41 @@
 # Architecture Decision Records
 
+## 2026-08-12 (later still) — Migrated Jellyseerr → Seerr (2.7.3 → 3.4.1)
+
+**Context**: Matias noticed the running Jellyseerr (`fallenbagel/jellyseerr:latest`, but stuck
+at 2.7.3 despite the `latest` tag) was well behind the project's GitHub releases, now under
+`seerr-team/seerr`. Research confirmed this isn't just a version bump — Jellyseerr and Overseerr
+officially merged into a single project, "Seerr", with development continuing there;
+`fallenbagel/jellyseerr` won't see further releases. Official migration guide
+(docs.seerr.dev/migration-guide) documents an automatic data migration on first startup — no
+manual DB steps — but two breaking changes: the new image runs as a non-root `node` user
+(UID 1000) instead of root, so the bind-mounted config directory needs matching ownership; and
+the container no longer provides its own init process, so `init: true` is mandatory in compose
+(without it, zombie processes / signal handling breaks).
+**Decision**: Matias asked for a recommendation rather than deciding blind — advised updating
+now rather than waiting, since staying on the dead branch only accumulates more drift while a
+backup makes it trivially reversible, and the two breaking changes were already fully
+understood before touching anything. Backed up `/opt/docker/configs/jellyseerr` (1.9MB
+compressed) to `/opt/docker/backups/jellyseerr-preseerr-<timestamp>.tar.gz` first. Swapped the
+image in `/opt/docker/docker-compose.yml` to `ghcr.io/seerr-team/seerr:latest`, added
+`init: true`. First start failed with `EACCES` on a log file — turned out most of the config
+was already `matias:matias` (his UID is 1000, matching what Seerr expects) but a handful of
+`.machinelogs-*.json(.gz)` files had been created `root:root` by the old container, which *did*
+run as root. Fixed with a recursive `chown matias:matias` on the whole config dir (no `sudo`
+needed since Matias already owned the parent directory), matching the official guide's
+recommendation exactly rather than skipping it on the assumption top-level ownership was
+sufficient. Second start came up clean: `Starting Seerr version 3.4.1`, settings migrations
+0001–0008 auto-applied, server ready. Verified after: Radarr/Sonarr connections intact, all
+three users' Telegram notification settings from earlier today (Matias/Bianca/negro, both
+admin-level and per-user) survived untouched, and `pedidos.matiasmassetti.com` still resolves
+correctly through the tunnel.
+**Rationale**: A live, multi-user-facing service (the only one in the stack besides Jellyfin
+that non-admin users touch directly) deserved a backup-first, verify-after approach even though
+the migration path was well-documented and low-complexity. The permission error on first boot
+is exactly the kind of thing the official guide's "fix folder ownership" step exists to prevent
+— worth noting for the *next* fallenbagel-style image swap: don't assume top-level directory
+ownership implies every file under it matches, check with `find -not -user <expected>`.
+
 ## 2026-08-12 (yet later) — Built "Viernes de Novedades" weekly digest
 
 **Context**: Matias wanted a weekly (not per-title) heads-up for Jellyseerr users about new

@@ -18,7 +18,7 @@ All ARR services use Hotio images, share `arr_network`, and use common env (PUID
 | qBittorrent | qbittorrent | 8080 (web), 6881 (torrent) | ghcr.io/hotio/qbittorrent | /opt/docker/configs/qbittorrent | /mnt/nas/downloads |
 | Prowlarr | prowlarr | 9696 | ghcr.io/hotio/prowlarr | /opt/docker/configs/prowlarr | — |
 | FlareSolverr | flaresolverr | 8191 | ghcr.io/flaresolverr/flaresolverr | — | — |
-| Jellyseerr | jellyseerr | 5055 | fallenbagel/jellyseerr | /opt/docker/configs/jellyseerr | — |
+| Jellyseerr | jellyseerr | 5055 | ghcr.io/seerr-team/seerr (3.4.1) | /opt/docker/configs/jellyseerr | Migrated from `fallenbagel/jellyseerr` 2026-08-12, see decision log. `init: true` is required in compose — the image no longer provides its own init process |
 | Profilarr | profilarr | 6868 | santiagosayshey/profilarr | /opt/docker/configs/profilarr | — |
 | SABnzbd | sabnzbd | 8085 | ghcr.io/hotio/sabnzbd | /opt/docker/configs/sabnzbd | /mnt/nas/downloads (Usenet client, added since last audit — alt. to qBittorrent) |
 
