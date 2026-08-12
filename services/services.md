@@ -16,6 +16,7 @@ All ARR services use Hotio images, share `arr_network`, and use common env (PUID
 | Lidarr | lidarr | 8686 | ghcr.io/hotio/lidarr | /opt/docker/configs/lidarr | /mnt/nas/downloads, /mnt/nas/Music |
 | Bazarr | bazarr | 6767 | ghcr.io/hotio/bazarr | /opt/docker/configs/bazarr | /mnt/nas/Series, /mnt/nas/Peliculas |
 | Subgen | subgen | 9000 | mccloud/subgen:cpu | /opt/docker/configs/subgen/models | — (Whisper ASR provider for Bazarr, CPU-only) |
+| Jellystat | jellystat + jellystat-db | 3002 | cyfershepard/jellystat + postgres:18.1 | /opt/docker/configs/jellystat/{postgres-data,backup-data} | — (Jellyfin stats dashboard) |
 | qBittorrent | qbittorrent | 8080 (web), 6881 (torrent) | ghcr.io/hotio/qbittorrent | /opt/docker/configs/qbittorrent | /mnt/nas/downloads |
 | Prowlarr | prowlarr | 9696 | ghcr.io/hotio/prowlarr | /opt/docker/configs/prowlarr | — |
 | FlareSolverr | flaresolverr | 8191 | ghcr.io/flaresolverr/flaresolverr | — | — |
@@ -164,6 +165,26 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
   working via a live provider search on "Mercano, el marciano" (Spanish-language Argentine
   film): Bazarr returned a `whisperai` candidate labeled "transcribe Spanish audio -> Spanish
   SRT".
+
+### Jellystat (added 2026-08-12)
+
+- `cyfershepard/jellystat` + a dedicated `postgres:18.1` container (`jellystat-db`), both on
+  `arr_network`. Jellystat connects to Jellyfin as `http://jellyfin:8096` (Docker network
+  hostname) using the same `JELLYFIN_API_KEY` as other tools.
+- Web UI on port 3002 (`http://192.168.1.239:3002` / Tailscale `http://100.112.136.118:3002`).
+  Credentials in `/home/matias/.config/secrets/jellystat.env`. Postgres password and JWT secret
+  generated with `openssl rand`, stored directly in `/opt/docker/docker-compose.yml`
+  (consistent with how `pihole`/`opencloud`/`cloudflared` already handle secrets in that file —
+  it lives outside the git repo).
+- Setup was fully scripted via Jellystat's own API (no browser needed): `POST /auth/createuser`
+  for the admin account, then `POST /auth/configSetup` with `JF_HOST`/`JF_API_KEY`. Its Swagger
+  schema isn't served at the usual `/swagger.json` path (that 404s to the SPA) — the real one
+  is baked into the image at `/app/backend/swagger.json`, readable via `docker exec`.
+- **Not exposed via Cloudflare Tunnel/Access** — hit an "Authentication error" reading DNS
+  records for the zone with the existing Cloudflare API token (it can edit the tunnel and list
+  zones, but not read/write DNS records for this zone specifically — scope mismatch not yet
+  diagnosed). Matias opted to leave it local/Tailscale-only for now rather than debug the token;
+  revisit if he wants it public later.
 
 ### Notifications (added 2026-08-11)
 

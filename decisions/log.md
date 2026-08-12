@@ -1,5 +1,27 @@
 # Architecture Decision Records
 
+## 2026-08-12 (still later) — Installed Jellystat
+
+**Context**: Original TODO item from earlier in the day (Playback Reporting vs. a nicer visual
+dashboard) — decided to add Jellystat rather than rely on raw Playback Reporting SQL queries
+going forward.
+**Decision**: Added `jellystat` (`cyfershepard/jellystat`) + a dedicated `jellystat-db`
+(`postgres:18.1`) to `/opt/docker/docker-compose.yml`, on `arr_network`, port 3002. Generated
+Postgres password and JWT secret with `openssl rand`. Setup (admin account creation + Jellyfin
+connection) done entirely via Jellystat's own API — `POST /auth/createuser` then
+`POST /auth/configSetup` — no browser click-through needed. Verified via
+`GET /api/getLibraries` that it correctly sees the Películas/Series libraries.
+Attempted to expose it via the existing Cloudflare Tunnel + Access (matching every other
+admin-only tool) but the API token returned "Authentication error" on the zone's DNS records
+endpoint specifically, even though it can list zones and edit the tunnel — an unresolved scope
+mismatch, not investigated further. Asked Matias how to proceed; he chose local/Tailscale-only
+access for now rather than debug the token, since it's a personal stats dashboard with no
+other users.
+**Rationale**: Fully API-driven setup keeps this repeatable/scriptable like every other change
+this session, rather than a one-off manual browser walkthrough that isn't documented anywhere.
+Deferring the public-exposure question was the right call given it's low-stakes (nobody else
+needs this tool) and the token issue deserves a dedicated look rather than a rushed workaround.
+
 ## 2026-08-12 (yet even later) — Switched default quality profile, backfilled Radarr for legacy
 ## movies, fixed a metadata mismatch, and added a Whisper AI subtitle provider
 
