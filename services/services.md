@@ -27,9 +27,29 @@ All ARR services use Hotio images, share `arr_network`, and use common env (PUID
 ### Media Flow
 
 ```
-Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (download)
+Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent/SABnzbd (download)
   → auto-rename/move to NAS → Bazarr (subtitles: Spanish + English) → Jellyfin (auto-scan)
 ```
+
+### Radarr/Sonarr Notes
+
+- **Quality profile setup is a full TRaSH Guides/Recyclarr template** — 20+ pre-built profiles,
+  240+ custom formats. Jellyseerr's default profile for new requests (both Radarr and Sonarr)
+  is **"2160p Efficient"** (switched from "2160p Remux" 2026-08-12 — see decision log; remux
+  was 88% of the tracked library and the main driver of the NAS running low on space).
+- **Usenet vs. torrent**: both `qBittorrent` (torrent) and `SABnzbd` (usenet, via `NZBgeek`)
+  are enabled download clients/indexers, alongside 3 torrent indexers (`1337x`, `Nyaa.si`,
+  `YTS`). Checked 2026-08-12: Radarr's Delay Profile already has `preferredProtocol: usenet`
+  with both delays at 0 (no artificial wait, but usenet wins ties) — this was already correctly
+  configured, nothing needed changing. In practice usenet availability is limited by having
+  only one usenet indexer vs. three torrent ones, especially for older/rarer titles.
+- **Stalled/dead torrent recovery**: if a queued download shows `"errorMessage": "stalled with
+  no connections"`, check `GET /api/v3/release?movieId={id}` sorted by `seeders` — Radarr's
+  quality-format rejections (e.g., "Banned Groups") can hide perfectly healthy, high-seeder
+  releases from automatic grabs. `DELETE /api/v3/queue/{id}?removeFromClient=true&blocklist=
+  true&skipRedownload=false` clears the dead one; a manual `POST /api/v3/release` with that
+  release's `guid`+`indexerId` force-grabs a specific rejected release if there's a good reason
+  to override the filter (e.g., a healthy YIFY release when nothing else has real seeders).
 
 ### Hardware Transcoding (fixed 2026-08-12)
 

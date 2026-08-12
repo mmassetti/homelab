@@ -1,5 +1,34 @@
 # Architecture Decision Records
 
+## 2026-08-12 (last one, really) — Unstuck a dead torrent, confirmed usenet-preference already works
+
+**Context**: Matias asked to unblock a "Jackass 3.5" download stuck since 03:24 that morning
+("stalled with no connections"). Checked `GET /api/v3/release?movieId=87`: the healthiest
+option by far — a YIFY release with 59 seeders — was being auto-rejected for hitting the
+"Banned Groups" custom format (score -819999), and a second decent one (50 seeders) failed
+Radarr's title-matching ("Unknown Movie"). Every other candidate had 0-4 seeders, effectively
+dead. This led into a broader question: how does Radarr currently choose between usenet and
+torrent when both are available, since Matias has noticed usenet performing more reliably for
+him and wants it preferred going forward.
+**Decision**: For Jackass specifically — removed the dead download
+(`removeFromClient=true&blocklist=true&skipRedownload=false`), ran a fresh search (found
+nothing better automatically, for the reasons above), then force-grabbed the 59-seeder YIFY
+release via `POST /api/v3/release` with its `guid`+`indexerId` — Matias explicitly chose to
+override the "Banned Groups" rejection given the alternative was either a dead torrent or
+nothing. For the broader usenet-preference question: checked `GET /api/v3/delayprofile` and
+found `preferredProtocol: usenet` **already set**, with both `usenetDelay`/`torrentDelay` at 0
+(so no artificial waiting — highest-scoring option grabbed immediately, ties broken in favor of
+usenet). This was already correct, likely from the original Recyclarr/TRaSH template sync — no
+change was needed. The Jackass case didn't hit this preference at all: there was no usenet
+candidate for that title, only torrent, so nothing was actually being chosen between.
+**Rationale**: Confirmed rather than assumed the delay profile config, since "usenet feels more
+reliable" is exactly the kind of preference that's easy to think is enforced when it's actually
+just been true by chance so far. Worth remembering the real limiting factor going forward:
+usenet coverage is capped by having only one usenet indexer (`NZBgeek`) against three torrent
+ones, so for less common titles torrent is often the only option regardless of the (already
+correct) protocol preference — adding another usenet indexer would matter far more here than
+any Radarr setting change.
+
 ## 2026-08-12 (later again) — Fixed Jellystat login (SHA3 hash vs. plaintext mismatch)
 
 **Context**: After installing Jellystat, Matias couldn't log in with the credentials given —
