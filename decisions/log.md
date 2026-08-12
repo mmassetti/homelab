@@ -1,5 +1,32 @@
 # Architecture Decision Records
 
+## 2026-08-12 (even later) — Fixed VAAPI hardware transcoding passthrough on Jellyfin
+
+**Context**: Matias asked to evaluate the state of transcoding. Investigation found Jellyfin's
+own encoding config already had `HardwareAccelerationType: vaapi` and
+`VaapiDevice: /dev/dri/renderD128` set, and `ffmpeg` correctly detected the AMD Radeon 780M's
+hw encoders (`hevc_vaapi`, `av1_vaapi`, `h264_vaapi`, etc.) — but the `jellyfin` container in
+`/opt/docker/docker-compose.yml` never had `/dev/dri` passed through at all
+(`docker inspect jellyfin` showed empty `HostConfig.Devices`). Every real hardware transcode was
+failing outright: live logs showed a 4K HDR HEVC title (`The Invite (2026)`) hitting
+`FFmpeg exited with code 237` (VAAPI init failure) repeatedly. Checked Playback Reporting for
+the last 30 days: 67 direct plays vs 61 "transcode" sessions, but most of those were
+audio-only remuxes (video copied direct) — only ~13 sessions needed real video re-encoding,
+which is where the missing GPU access actually hurt (forced CPU-only software fallback on the
+heaviest content: 4K HDR/AV1).
+**Decision**: Confirmed no one was actively watching (`GET /Sessions`) before touching the
+container. Added `devices: [/dev/dri:/dev/dri]` and `group_add: ["993"]` (host `render` group,
+owns `/dev/dri/renderD128`) to the `jellyfin` service in `/opt/docker/docker-compose.yml`,
+recreated the container. Verified: `/dev/dri` now visible inside the container with the
+`render` GID mapped in as a supplementary group; re-ran the exact 4K HDR file that failed
+before through `ffmpeg -hwaccel vaapi` manually inside the container — encoded cleanly at
+1.32x realtime speed, zero errors.
+**Rationale**: The GPU was already sitting idle and Jellyfin's software config already assumed
+it was available — this was a one-line infra gap, not a design decision, and low-risk (device
+passthrough only, no data touched, instantly revertible). With multiple family members
+streaming concurrently, freeing 4K/HDR transcodes from the CPU meaningfully reduces contention
+risk under simultaneous playback.
+
 ## 2026-08-12 (later still) — Migrated Jellyseerr → Seerr (2.7.3 → 3.4.1)
 
 **Context**: Matias noticed the running Jellyseerr (`fallenbagel/jellyseerr:latest`, but stuck

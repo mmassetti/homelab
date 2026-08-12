@@ -29,6 +29,27 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
   → auto-rename/move to NAS → Bazarr (subtitles: Spanish + English) → Jellyfin (auto-scan)
 ```
 
+### Hardware Transcoding (fixed 2026-08-12)
+
+- Host has an AMD Radeon 780M iGPU (Phoenix3, VCN video engine) exposing `/dev/dri/card1` +
+  `/dev/dri/renderD128` (owned by host group `render`, gid 993). Jellyfin's own encoding config
+  was already set to VAAPI (`HardwareAccelerationType: vaapi`, `VaapiDevice:
+  /dev/dri/renderD128`) but the `jellyfin` service in `/opt/docker/docker-compose.yml` never
+  had the device passed through — every real video transcode (not just audio remux) was
+  silently failing (`FFmpeg exited with code 237`) and presumably falling back to CPU-only
+  software encoding, or failing outright on heavy 4K/HDR content.
+- Fixed by adding to the `jellyfin` service:
+  ```yaml
+  devices:
+    - /dev/dri:/dev/dri
+  group_add:
+    - "993"   # host render group, owns /dev/dri/renderD128
+  ```
+- Verified with a direct `ffmpeg -hwaccel vaapi` re-encode of a 2160p HDR HEVC title inside the
+  container: 1.32x realtime speed, zero errors. See decision log for full investigation
+  (Playback Reporting showed ~13 real video-transcode sessions in the last 30 days that would
+  have been hitting this).
+
 ### Jellyfin Customization (since 2026-08-09/10)
 
 - **Custom CSS**: applied live via Dashboard → General → Branding → Custom CSS (no
