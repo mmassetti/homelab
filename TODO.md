@@ -6,10 +6,6 @@ as they come up.
 
 ## Open
 
-- [ ] **OpenClaw / Claudito — revive or retire** — fully torn down (no containers, no
-      network), but docs used to describe it as an active daily service (Telegram bot, morning
-      brief). Either bring it back properly or remove the historical section from
-      `services/services.md` so it stops implying it's live.
 - [ ] **Stats plugin — decide if Playback Reporting (already installed) is enough**, or if it's
       worth adding Jellystat for a nicer visual dashboard (needs its own container + Postgres).
 
@@ -24,3 +20,4 @@ as they come up.
 - [x] Sonarr auth hardened (`disabledForLocalAddresses` → `enabled`, matches Radarr/Prowlarr/Lidarr) (2026-08-12)
 - [x] Cloudflare Access added on 15 admin-only hostnames, email-OTP to matiasmassetti@gmail.com, 168h sessions; `media`/`pedidos` (Jellyfin/Jellyseerr) deliberately left open for family/friends (2026-08-12)
 - [x] `ricota-db/` committed to git with real secrets excluded — found and fixed a hardcoded DB password in `init/01-roles.sql` before it ever reached GitHub (2026-08-12)
+- [x] OpenClaw formally retired in docs; Morning Brief rebuilt standalone (direct Telegram Bot API, no agent dependency), content revamped (Spanish tech news, Twitter/X trends, TV football matches, Jellyseerr pending, last-24h downloads), cron re-enabled (2026-08-12)

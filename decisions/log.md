@@ -1,5 +1,65 @@
 # Architecture Decision Records
 
+## 2026-08-12 (later still) — Retired OpenClaw, rebuilt Morning Brief standalone
+
+**Context**: OpenClaw had already been fully torn down (see the 2026-08-11 audit entry below)
+but was still documented as if it might come back, and its one real remaining artifact — the
+Morning Brief cron script — was broken because it shelled out to `docker exec openclaw-gateway
+...` for both the infra check and, critically, for actually sending the Telegram message. With
+Remote Control now covering the "chat with an agent from my phone" need that OpenClaw used to
+serve (see the mobile-access conversation earlier the same day), reviving OpenClaw for that
+purpose stopped making sense — it would mean maintaining a second agent stack (Docker socket
+exposure, third-party ClaWHub skills with a known supply-chain flag) for no remaining benefit
+except the proactive daily push, which doesn't need a whole agent framework to achieve.
+**Decision**: Formally retired OpenClaw in the docs (`services/services.md`, `CLAUDE.md`) —
+trimmed the long "currently not running" writeups down to short pointers at this entry, rather
+than leaving them looking like a paused-but-resumable service. Rebuilt `morning-brief.sh` to
+be fully standalone: sends via the Telegram Bot API directly (`@masa_server_bot`) instead of
+OpenClaw's CLI, checks infra with a plain `docker ps` instead of `docker exec`ing into a
+container that no longer exists. Along the way, revamped the content per Matias's requests:
+- **Tech/AI section switched from TechCrunch (English) to WWWhat's New RSS (Spanish)** —
+  tried Xataka first (a more prominent Spanish tech outlet) but neither its tag nor category
+  `/rss` URLs actually serve RSS/XML (they 200 into an ordinary HTML article page instead,
+  despite the URL shape suggesting a feed) and its homepage has no `<link rel="alternate"
+  type="application/rss+xml">` either — no accessible feed found. WWWhat's New's `/feed/`
+  works cleanly and is AI/tech-focused.
+- **Added Twitter/X trending topics (Buenos Aires)** — X's own trends API requires paid
+  access now, so this scrapes `trends24.in/argentina/buenos-aires/` directly (plain HTML,
+  no JS rendering needed — the current snapshot is the first `<ol class=trend-card__list>`
+  block on the page).
+- **Added today's TV-broadcast football matches** — no official Promiedos API exists;
+  community wrapper projects on GitHub all scrape Promiedos's HTML themselves (via Cheerio),
+  so rather than depend on someone else's hosted scraper, fetched `promiedos.com.ar` directly
+  and found it embeds full structured match data (teams, times, status, TV network, even
+  odds) in a `__NEXT_DATA__` script tag — standard Next.js server-side props, no headless
+  browser needed. Filtered to games with a non-empty `tv_networks` list as the "interesting"
+  heuristic (broadcasters only air notable games).
+- **Added Jellyseerr pending requests and Radarr/Sonarr last-24h downloads** — straightforward
+  API calls now that the pattern was established earlier in the day for the Telegram
+  notification work; the tricky part for Radarr/Sonarr was discovering the `includeMovie=true`
+  / `includeSeries=true&includeEpisode=true` query params, since the history endpoint returns
+  only bare IDs (`movieId`/`seriesId`/`episodeId`) by default, not human-readable titles.
+- **Title changed to "☀️ Resumen Matutino"** (was "Morning Brief"), **removed the 🦞 emoji**
+  from the closing line (that was Claudito/OpenClaw's mascot, no longer relevant).
+- Re-enabled the host crontab entry (`0 11 * * *` UTC = 8:00 AM ART) that had been sitting
+  commented-out.
+**A real bug caught during testing**: the football section came up empty on first run. Root
+cause: the mini PC's system timezone is UTC, and the football-matching code used a bare
+`datetime.now()` to compute "today's date" for filtering — in the evening in Argentina (UTC-3),
+that's already tomorrow in UTC, so it filtered for the wrong day and got zero matches. Fixed by
+passing in `TZ="America/Argentina/Buenos_Aires" date +%d-%m-%Y` explicitly instead of trusting
+system-local time inside Python. `gcal-today.py` was checked too and turned out to already
+handle this correctly (`ZoneInfo("America/Argentina/Buenos_Aires")`), so it wasn't a systemic
+bug — but it's exactly the kind of mistake that's easy to reintroduce in future edits to this
+script, noted explicitly in `services/services.md` as a gotcha.
+**Rationale**: A script that depends on a torn-down agent for its actual delivery mechanism is
+worse than useless — it fails silently (cron redirects output to a log nobody's tailing) while
+looking configured. Standalone + no agent dependency means it can't break again the same way
+OpenClaw broke it. Content changes were straightforward preference (Spanish sources, sports
+interest) but each new data source got verified live (actual HTTP requests, actual response
+inspection) rather than assumed to exist, which is what caught both the Xataka dead-end and the
+timezone bug before they shipped silently broken.
+
 ## 2026-08-12 (later same day) — Committed ricota-db to git, caught a hardcoded password first
 
 **Context**: `ricota-db/` (Postgres 17 + PostgREST + Caddy, a Supabase-style REST API stack)

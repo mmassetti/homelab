@@ -163,70 +163,56 @@ Router should point DNS to 192.168.1.239 for whole-network ad blocking.
 
 **Nextcloud decommissioned** — `nextcloud` and `nextcloud-db` containers, and their entries in `/opt/docker/docker-compose.yml`, no longer exist. The `nextcloud-db`/`nextcloud-app` named volumes below may be orphaned leftovers; check with `docker volume ls` / `docker system df -v` before assuming they're safe to prune, in case anything was never migrated off them.
 
-## OpenClaw (AI Agent) — ⚠️ NOT CURRENTLY RUNNING (verified 2026-08-11)
+## OpenClaw (AI Agent) — RETIRED (2026-08-12)
 
-`docker ps -a` shows **zero** `openclaw-*` containers — not stopped, gone entirely — and the `openclaw_network` (172.31.0.0/24) doesn't exist anymore either. The compose file below is still present on disk but nothing in this section should be assumed active (Telegram bot, Morning Brief, Mission Control) until re-verified. Everything below this line is historical/as-configured-on-disk, not as-deployed.
+Formally retired, not just dormant. Was already fully torn down (zero `openclaw-*` containers,
+`openclaw_network` gone) as of the 2026-08-11 audit; its one remaining active dependent — the
+Morning Brief cron job — has since been rebuilt to run standalone (see below), so nothing on
+this server depends on OpenClaw anymore. The compose file and workspace config are still on
+disk at `/opt/docker/configs/openclaw/` if it's ever worth reviving, but treat that as archived,
+not "paused." Full history (what it was, the security hardening it had, why it was replaced by
+Claude Code's own Remote Control feature for phone access) is in `decisions/log.md` rather than
+duplicated here — this used to be a long section describing an actively-run service; keeping
+that framing after retirement was itself misleading, so it's trimmed to this pointer.
 
-Separate compose file: `/opt/docker/configs/openclaw/docker-compose.yml`
-Dedicated `openclaw_network` (172.31.0.0/24), isolated from all other stacks.
+## Morning Brief (Host Crontab)
 
-| Service | Container | Port | Image | Config | Notes |
-|---------|-----------|------|-------|--------|-------|
-| OpenClaw Gateway | openclaw-gateway | 127.0.0.1:18789, 127.0.0.1:18790, 127.0.0.1:3333 | openclaw:local (built from source) | /opt/docker/configs/openclaw | AI agent with Telegram integration |
-| Mission Control | openclaw-mission-control | 3333 (shared via network_mode) | openclaw:local | /opt/docker/configs/openclaw/workspace/mission-control | Web dashboard for agent management |
+Standalone since 2026-08-12 — previously sent via OpenClaw's `message send` CLI, now posts
+directly to the Telegram Bot API (`@masa_server_bot`), so it has no dependency on any agent
+being up. Runs from host crontab, not Claude Code or any scheduler — reliability for something
+that must fire at a fixed time every day beats the flexibility of an AI-driven trigger here.
 
-### Security Hardening
-- **Ports**: Bound to `127.0.0.1` only — not accessible from LAN or internet
-- **Filesystem**: `read_only: true` with `tmpfs: /tmp`
-- **Capabilities**: `cap_drop: ALL`, `cap_add: NET_BIND_SERVICE`
-- **Privileges**: `no-new-privileges: true`
-- **Network**: Isolated `openclaw_network`, not connected to arr/dns/homelab networks
-- **Sandbox**: Agent commands run in throwaway containers (`openclaw-sandbox-bookworm-slim`) with `network: none`
-- **Telegram**: Outbound polling only, user ID allowlisted
-- **Docker socket**: Mounted for sandbox spawning + container monitoring. `group_add: "987"` (docker GID) allows gateway process to query socket API
-- **NOT exposed via Cloudflare Tunnel** — access Web UI via SSH tunnel only
+| Job | Schedule (crontab, UTC) | Local time | Delivery |
+|-----|--------------------------|------------|----------|
+| Resumen Matutino | `0 11 * * *` | 8:00 AM America/Argentina/Buenos_Aires | Telegram Bot API `sendMessage` |
 
-### Bot Personality ("Claudito" 🦞)
-- Workspace files fully personalized at `/opt/docker/configs/openclaw/workspace/`
-- Files: IDENTITY.md, SOUL.md, USER.md, TOOLS.md, AGENTS.md, MEMORY.md, HEARTBEAT.md
-- Monitoring scripts: `workspace/scripts/docker-status.js` (full report), `workspace/scripts/docker-quick.js` (summary)
-- Spanish by default, English when addressed in English
-- Model: OpenRouter `auto` (routes to cheapest adequate model)
-
-### Installed ClaWHub Skills (workspace/skills/)
-| Skill | Version | Purpose |
-|-------|---------|---------|
-| qmd | 1.0.0 | Local semantic search for markdown/docs (BM25 + vectors), reduces token usage |
-| prompt-injection-guard | 1.0.0 | Prompt injection defense — detects and blocks malicious prompts |
-| openclaw-mission-control | 1.0.0 | Skill manifest for Mission Control dashboard integration |
-| morning-brief | — | Reference for daily morning brief cron job (management commands) |
-
-ClaWHub CLI installed at: `workspace/.npm-global/bin/clawhub`
-QMD binary installed at: `workspace/tools/qmd/` (npm local install with better-sqlite3 compiled)
-
-### Morning Brief (Host Crontab)
-| Job | Schedule | Delivery | Description |
-|-----|----------|----------|-------------|
-| Morning Brief | 8:00 AM daily | Telegram via `message send` | Weather, calendar, dollar, news, infra, disk |
-
-Host crontab script: `~/homelab/scripts/morning-brief.sh`
+Script: `~/homelab/scripts/morning-brief.sh` (committed, no secrets in it)
 Helper: `~/homelab/scripts/gcal-today.py` (Google Calendar OAuth2 API, Workspace account `matias@honeydewcare.com`)
-Sources: wttr.in (weather), Google Calendar OAuth2 (agenda, weekdays), dolarapi.com (Blue/Oficial/MEP), La Brújula 24 RSS (local), La Nación RSS (national), TechCrunch RSS (tech/AI, weekdays), Olé RSS (sports, daily), docker-quick.js (infra), df (disk)
-Weekend mode: No calendar, no tech/AI section
-Secrets: `~/.config/secrets/gcal_oauth.json` (OAuth2 client_id, client_secret, refresh_token — perms 600)
+Secrets: `~/.config/secrets/morning_brief.env` (Telegram bot token/chat id, Radarr/Sonarr/Jellyseerr API keys — 0600, not committed) + `~/.config/secrets/gcal_oauth.json`
 Log: `/tmp/morning-brief.log`
 
-### Ongoing Maintenance
-- **ClaWHub skills**: Allowed with audit — always inspect skills before installing, watch for VirusTotal flags. VAN-210 (hidden npm script attack) is partially mitigated by `--ignore-scripts` default.
-- **Never install VS Code extensions** for OpenClaw — fake extensions distribute malware
-- **To update**: `cd /opt/docker/configs/openclaw/source && git pull`, rebuild image, restart — **never re-run `docker-setup.sh`** (overwrites security config)
-- **Check logs periodically**: `docker logs openclaw-gateway --tail 50`
-- **Mission Control logs**: `docker logs openclaw-mission-control --tail 50`
+**Sources**:
+- Weather: wttr.in
+- Agenda: Google Calendar (weekdays only)
+- Dollar: dolarapi.com (Blue/Oficial/MEP)
+- Bahía Blanca news: La Brújula 24 RSS
+- Argentina news: La Nación RSS
+- Tech/AI: WWWhat's New RSS, Spanish-language (weekdays only) — replaced TechCrunch (English) per request
+- Sports news: Olé RSS
+- Twitter/X trends: `trends24.in/argentina/buenos-aires/`, scraped from static HTML (no official API — X's own trends API requires paid access)
+- Football matches with TV coverage today: scraped from `promiedos.com.ar`'s embedded Next.js `__NEXT_DATA__` JSON (no official API either; this is the same technique as the trends scrape, not a third-party wrapper). Filtered to games with a `tv_networks` entry as a proxy for "worth mentioning" — un-televised games are omitted
+- Infra: `docker ps` on the host directly (was `docker exec openclaw-gateway ...`)
+- Disk: `df` (NAS + Mini PC)
+- Jellyseerr: pending request count + titles via its own API
+- Downloads: Radarr/Sonarr history API, items imported in the last 24h
 
-### Access
-- **Primary**: Telegram bot (`@clauditomassetti_bot`)
-- **Web UI**: `ssh -L 18789:127.0.0.1:18789 matias@192.168.1.239` then open `http://127.0.0.1:18789`
-- **Mission Control**: `ssh -L 3333:127.0.0.1:3333 matias@192.168.1.239` then open `http://127.0.0.1:3333`
+Weekend mode: no calendar section, no tech/AI section.
+
+**Gotcha for future edits**: the football-matching and any other "what's today" logic must use
+`TZ="America/Argentina/Buenos_Aires" date` (or pass that computed date string into any embedded
+Python), never a bare `datetime.now()` — **the host's system timezone is UTC**, not Argentina,
+so naive local-time code silently computes the wrong calendar day for a chunk of each evening.
+This bit the football section on first build (empty results) until fixed.
 
 ## Project Containers (Separate Compose Files)
 
