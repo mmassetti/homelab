@@ -97,7 +97,7 @@ Pulled from the tunnel's live ingress config via the Cloudflare API on 2026-08-1
 
 **Removed 2026-08-11**: `nas.matiasmassetti.com` → `192.168.1.119:5000` was exposing the Synology DSM login page directly to the internet, with no Cloudflare Access policy visible in front of it — Matias didn't know it was there. Both the tunnel ingress rule and the DNS CNAME record (`d9a9622c...`, pointed at the tunnel's `.cfargotunnel.com` address, created 2026-02-08) were deleted via API once the token got `Zone:DNS:Edit`. The hostname no longer resolves at all. Remote NAS access still available via Tailscale.
 
-**Not audited**: whether any of the remaining hostnames sit behind a Cloudflare Access policy (email OTP, etc.) — the API token used for this audit can't read Access config. Several ARR-stack subdomains may be relying only on their own app-level login for internet-facing protection.
+**Cloudflare Access added 2026-08-12**: 15 of the 17 hostnames above now sit behind a Cloudflare Access policy (email OTP to `matiasmassetti@gmail.com`, 168h session) in addition to their own app login — everything except `media.matiasmassetti.com` (Jellyfin) and `pedidos.matiasmassetti.com` (Jellyseerr), left open deliberately since family/friends use those two directly. Full list and rationale in `decisions/log.md`. Managed via the same API token (`Access: Apps and Policies: Edit` was added to it for this).
 
 ## Router
 

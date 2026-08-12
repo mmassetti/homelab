@@ -6,13 +6,6 @@ as they come up.
 
 ## Open
 
-- [ ] **Audit Cloudflare Access on exposed ARR subdomains** (found 2026-08-11) — Radarr,
-      Sonarr, Bazarr, Prowlarr, Lidarr, Profilarr (and others) are reachable over the public
-      internet via the Cloudflare Tunnel. Unknown whether any Access policy (email OTP, etc.)
-      sits in front of them, or if they rely solely on their own app-level login. The
-      Cloudflare API token used so far (`~/.config/secrets/cloudflare_api_token`) can't read
-      Access config — needs either a broader token or a manual check in the Zero Trust
-      dashboard (Access → Applications).
 - [ ] **Decide on `ricota-db/`** — lives inside the homelab repo (`~/homelab/ricota-db/`) but
       is untracked in git; has `.env` and `keys.txt` with real secrets in it. Either commit it
       with secrets stripped out (`.env.example` instead) and add real `.env`/`keys.txt` to
@@ -32,3 +25,5 @@ as they come up.
 - [x] `home.matiasmassetti.com` tunnel target fixed, Homarr → homepage (2026-08-11)
 - [x] `nas.matiasmassetti.com` — removed public DSM exposure, ingress rule + DNS record both deleted (2026-08-11)
 - [x] `CLAUDE.md` / `services/services.md` / `network/network.md` synced with real running stack (2026-08-11)
+- [x] Sonarr auth hardened (`disabledForLocalAddresses` → `enabled`, matches Radarr/Prowlarr/Lidarr) (2026-08-12)
+- [x] Cloudflare Access added on 15 admin-only hostnames, email-OTP to matiasmassetti@gmail.com, 168h sessions; `media`/`pedidos` (Jellyfin/Jellyseerr) deliberately left open for family/friends (2026-08-12)

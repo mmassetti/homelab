@@ -1,6 +1,44 @@
 # Architecture Decision Records
 
-## 2026-08-11 (later same day) — Cloudflare API token + tunnel cleanup, found NAS exposed to internet
+## 2026-08-12 — Cloudflare Access on admin-only hostnames + Sonarr auth fix
+
+**Context**: Follow-up to the previous day's tunnel audit item "check whether the exposed
+ARR-stack subdomains have any protection beyond their own app login." Rather than trust config
+files, tested live against the public URLs (`curl` against `/api/.../system/status` etc. on
+Radarr/Sonarr/Bazarr/Prowlarr/Lidarr/Profilarr/qBittorrent) — all correctly returned 401/403
+without credentials. One inconsistency found: Sonarr's `authenticationRequired` was
+`disabledForLocalAddresses` (the rest were `enabled`). In practice this wasn't currently
+exploitable — Cloudflare-tunneled requests weren't being treated as "local" by Sonarr, 401
+either way — but it was the one config that could silently break if network path, app version,
+or proxy header handling ever changed. Fixed via `PUT /api/v3/config/host` (full round-trip:
+GET the object, flip one field, PUT it back — the password field comes back pre-hashed and
+must be sent back unchanged, same pattern the Sonarr web UI itself uses). Verified 401 now even
+from `localhost` with no API key.
+**Decision**: Added a Cloudflare Access application + policy (decision: allow, email OTP to
+`matiasmassetti@gmail.com`, 168h session so it's not naggy) in front of 15 hostnames — every
+admin/internal tool and personal project, but deliberately **not** `media.matiasmassetti.com`
+(Jellyfin) or `pedidos.matiasmassetti.com` (Jellyseerr), since those two are used directly by
+family/friends and an extra login screen there would be pure friction for people who aren't the
+security audience for this change. Full list: Radarr, Sonarr, Bazarr, Prowlarr, Lidarr,
+Profilarr, qBittorrent (`descargas`), SABnzbd (`usenet`), Cinemateca, CEN Dashboard (`cen-api`),
+Ricota API (`ricota-api`), Image Server (`assets`), OpenCloud (`cloud`), Homepage (`home`),
+Uptime Kuma (`status`). Created via the Cloudflare API (`POST .../access/apps` then
+`POST .../access/apps/{id}/policies` per hostname) after Matias added `Access: Apps and
+Policies: Edit` to the same scoped token used for the tunnel/DNS work. Verified after: all 15
+redirect to `mmassetti.cloudflareaccess.com` when hit unauthenticated; `media`/`pedidos` still
+redirect to their own app's native login (`/web/`, `/login`) as before, untouched.
+**Rationale**: Every app already had its own login, so this isn't closing an open door — it's
+adding a second, independent lock in front of the doors nobody but Matias should ever open, so
+a leaked/weak/reused app password alone isn't enough to reach it from the internet. Scoping it
+to "who actually needs frictionless access" (family/friends → Jellyfin/Jellyseerr only) instead
+of applying it uniformly avoids the classic failure mode of security work driving people to
+route around it out of annoyance.
+**Follow-ups not done yet**: session length (168h) was picked as a reasonable default, not
+discussed in depth — revisit if it turns out to be too naggy or too loose. Also still open: the
+"OpenClaw revive or retire" and "ricota-db git status" items from the prior day's audit remain
+unresolved (see `TODO.md`).
+
+## 2026-08-11 — Cloudflare API token + tunnel cleanup, found NAS exposed to internet
 
 **Context**: Follow-up to the stack audit earlier the same day. `home.matiasmassetti.com` was
 confirmed already fixed (pointing at homepage's :3000, not Homarr's old :7575 — turned out
