@@ -1,0 +1,48 @@
+name: ricota-db
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_SUPER_PW}
+      POSTGRES_DB: ricota
+    volumes:
+      - ./data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+    networks: [ricota]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ricota"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rest:
+    image: postgrest/postgrest:latest
+    restart: unless-stopped
+    environment:
+      PGRST_DB_URI: "postgres://authenticator:${AUTH_PW}@db:5432/ricota"
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [ricota]
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: ricota-caddy
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    networks: [ricota, homelab]
+
+networks:
+  ricota:
+    driver: bridge
+  homelab:
+    external: true
+    name: docker_homelab

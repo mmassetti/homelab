@@ -1,0 +1,29 @@
+:80 {
+	# CORS preflight — answer it ourselves so PostgREST never blocks headers
+	@options method OPTIONS
+	handle @options {
+		header {
+			Access-Control-Allow-Origin "*"
+			Access-Control-Allow-Methods "GET, POST, PATCH, PUT, DELETE, OPTIONS"
+			Access-Control-Allow-Headers "Authorization, apikey, Content-Type, Prefer, Accept, Accept-Profile, Content-Profile, X-Client-Info, Range, Range-Unit, X-Supabase-Api-Version"
+			Access-Control-Max-Age "300"
+		}
+		respond 204
+	}
+
+	# supabase-js hits {url}/rest/v1/<table>; PostgREST serves <table> at root
+	handle_path /rest/v1/* {
+		reverse_proxy rest:3000 {
+			header_down Access-Control-Allow-Origin "*"
+			header_down Access-Control-Expose-Headers "Content-Range, Content-Profile, Content-Location"
+		}
+	}
+
+	handle /health {
+		respond "ok" 200
+	}
+
+	handle {
+		respond "ricota-db ok" 200
+	}
+}

@@ -1,0 +1,6 @@
+# Copy to keys.txt and fill in real values.
+# ANON_KEY / SERVICE_KEY are JWTs signed with JWT_SECRET (from .env), roles "anon" and
+# "service_role" respectively — same pattern as self-hosted Supabase. Generate with any
+# JWT tool (e.g. jwt.io, or a small script) using JWT_SECRET as the HS256 signing key.
+ANON_KEY=changeme
+SERVICE_KEY=changeme

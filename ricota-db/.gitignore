@@ -1,0 +1,7 @@
+# Secrets (real values — see .env.example / keys.example.txt / init/01-roles.sql.example for the shape)
+.env
+keys.txt
+init/01-roles.sql
+
+# Postgres runtime data — never belongs in git
+data/

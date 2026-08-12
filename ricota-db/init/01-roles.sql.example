@@ -1,0 +1,15 @@
+-- PostgREST roles (Supabase-compatible)
+-- Copy to 01-roles.sql and replace the placeholder password with the real value
+-- of AUTH_PW from .env before first container start (this only runs once, on an
+-- empty data volume — editing it later has no effect on an already-initialized DB).
+DO $$ BEGIN
+  CREATE ROLE anon NOLOGIN;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  CREATE ROLE service_role NOLOGIN BYPASSRLS;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  CREATE ROLE authenticator NOINHERIT LOGIN PASSWORD 'changeme-match-AUTH_PW-in-.env';
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+GRANT anon TO authenticator;
+GRANT service_role TO authenticator;
