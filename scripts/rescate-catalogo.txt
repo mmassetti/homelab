@@ -1,0 +1,114 @@
+# Lista curada para la sección "Rescate del catálogo" del Viernes de Novedades.
+# Un título por línea, tal cual figura en Jellyfin (el script valida contra la
+# biblioteca real y descarta los que no matcheen exacto, sin frenar el envío).
+# Editá este archivo cuando quieras agregar o sacar títulos.
+#
+# Armada por Claude 2026-08-12: clásicos + cine argentino, verificados uno por
+# uno contra tu biblioteca real (105 títulos, no son inventados ni por rating
+# ciego — el enfoque de "sort by CommunityRating" da resultados raros con
+# películas de 3 votos en 10).
+The Godfather
+12 Angry Men
+Vertigo
+Psycho
+Rear Window
+North by Northwest
+Some Like It Hot
+Lawrence of Arabia
+2001: A Space Odyssey
+A Clockwork Orange
+Chinatown
+Taxi Driver
+Raging Bull
+The Shining
+Star Wars
+Raiders of the Lost Ark
+The Terminator
+Terminator 2: Judgment Day
+Back to the Future
+Pulp Fiction
+Reservoir Dogs
+Se7en
+Fight Club
+The Matrix
+GoodFellas
+Casino
+Heat
+The Silence of the Lambs
+American Beauty
+The Big Lebowski
+No Country for Old Men
+There Will Be Blood
+Saving Private Ryan
+Good Will Hunting
+L.A. Confidential
+Léon: The Professional
+Inglourious Basterds
+Django Unchained
+Zodiac
+Gone Girl
+The Social Network
+Joker
+Nomadland
+Dune
+Dune: Part Two
+Poor Things
+The Zone of Interest
+Anora
+Interstellar
+Arrival
+Moon
+Blade Runner 2049
+Full Metal Jacket
+Das Boot
+El secreto de sus ojos
+Relatos salvajes
+Nueve reinas
+La historia oficial
+El clan
+La Ciénaga
+Rojo
+La odisea de los giles
+Volver
+Monty Python and the Holy Grail
+Groundhog Day
+Anchorman: The Legend of Ron Burgundy
+The Exorcist
+Skyfall
+Casino Royale
+The Wolf of Wall Street
+Spider-Man: Into the Spider-Verse
+The Lion King
+Munich
+Bridge of Spies
+Ford v Ferrari
+The Big Short
+First Man
+John Wick
+Edge of Tomorrow
+Coherence
+Mission: Impossible – Fallout
+Un cuento chino
+El robo del siglo
+Zama
+Pizza, birra, faso
+Esperando la carroza
+Un oso rojo
+Historias mínimas
+El bonaerense
+Whisky
+La niña santa
+Leonera
+Carancho
+Kóblic
+La Suerte en tus Manos
+El faro de las orcas
+Luna de Avellaneda
+El aura
+Tesis sobre un homicidio
+Killers of the Flower Moon
+Past Lives
+The Holdovers
+American Fiction
+The Substance
+A Complete Unknown

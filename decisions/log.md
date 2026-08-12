@@ -1,5 +1,70 @@
 # Architecture Decision Records
 
+## 2026-08-12 (yet later) — Built "Viernes de Novedades" weekly digest
+
+**Context**: Matias wanted a weekly (not per-title) heads-up for Jellyseerr users about new
+content, rather than the per-request notifications set up earlier in the day. Built as a
+sibling to Morning Brief: same standalone host-cron + direct Telegram Bot API architecture, but
+broadcast instead of single-recipient — every Jellyseerr user with Telegram notifications
+enabled and a chat ID gets it, discovered live via Jellyseerr's own user API each run (no
+hardcoded list, so newly-linked users are picked up automatically with zero script changes).
+**Decision, in the order features were added/iterated**:
+1. Base digest: what got added to the server in the last 7 days (Radarr/Sonarr history, same
+   pattern as Morning Brief's 24h version) + trending suggestions not in the library
+   (Jellyseerr's `/discover/trending`, filtered to `mediaInfo.status` None/1). Skips sending
+   entirely if both are empty that week — no filler message.
+2. Added cinema releases: scraped `carteleraargentina.com.ar`'s "Estrenos de la semana" block.
+   First attempt at a "still showing" companion section used poster-upload-date-on-the-national-
+   site as a recency heuristic — **replaced** once Matias pointed at Cinemacenter's own Bahía
+   Blanca listing, which turned out to publish a real weekly schedule PDF
+   (`horariospdf.php?cityId=2`) extractable with `pdftotext -layout`. Swapped the heuristic for
+   this authoritative source without hesitation — a real per-cinema listing beats an inference
+   from a national site every time it's available. Titles get deduped across the format
+   variants the PDF lists separately (2D/3D/Sala Turbo showings of the same film) and
+   cross-excluded against the national Estrenos list via accent/case-insensitive matching so a
+   film isn't shown in both sections.
+3. Added "lo más visto esta semana" via the same Playback Reporting SQL-query API used in
+   earlier notification work, and direct `pedidos.matiasmassetti.com/{type}/{id}` links on each
+   suggestion so tapping goes straight to a request instead of requiring a manual search.
+4. Added a poster image (Telegram `sendPhoto`) for the top suggestion, sent before the text
+   digest — visual variety instead of an all-text message.
+5. Added a "rescate del catálogo" pick — originally algorithmic (never-played + added 90+ days
+   ago, via a Playback Reporting distinct-titles query intersected with Jellyfin's item list).
+   Matias asked to replace it with a manually curated list instead — better taste signal than
+   an algorithm, and gives him control over what actually gets recommended. Built
+   `scripts/rescate-catalogo.txt` (one title per line) and had Claude seed it with ~105 titles:
+   not a blind `ORDER BY CommunityRating` (which surfaces obscure films with 2-3 perfect-10
+   votes ahead of anything actually well-known — the same trap the pre-existing "Imprescindibles"
+   Jellyfin collection had already fallen into, checked and confirmed rather than reused),
+   instead a hand-built canon of acclaimed films cross-referenced title-by-title against the
+   real Jellyfin library via its API, keeping only confirmed exact matches.
+6. Renamed "Rescate del catálogo" → "🎯 Pick de la semana" (Matias: the old name "didn't say
+   anything" to him) and enriched it with year, up to 2 genres, and a trimmed synopsis pulled
+   from Jellyfin (`Fields=Genres,ProductionYear,Overview`) instead of a bare title.
+7. Renamed "Se sumó esta semana" → "Se sumó al server de Masa" to disambiguate from the new
+   cinema sections once there were two different kinds of "movie news" in the same message.
+8. Added tiered NAS free-space messaging instead of bare numbers: >100GB free → "pedí tranqui,
+   hay espacio 😌"; ≤30GB → "se está quedando sin espacio, pedí con cuidado ⚠️"; in between,
+   just the numbers. Deliberately keyed off absolute GB free rather than percent-used, since
+   this NAS runs around 96% used by design (large array with redundancy headroom) — a
+   percent-based threshold would cry wolf every single week.
+9. Added `DRY_RUN=1` (prints, sends nothing) and `TEST_CHAT_ID=<id>` (real send, one recipient
+   only, bypasses normal discovery) modes from the start, specifically because this script
+   broadcasts to real people (not just Matias) — every iteration during this build was tested
+   dry or single-recipient, never against the live broadcast list, per explicit instruction.
+10. Scheduled `0 19 * * 5` UTC (4:00 PM ART, Fridays) — Matias's first ask was 6 PM, revised to
+    4 PM after seeing the built digest.
+**Rationale**: Same "verify live, don't assume" discipline as the rest of the day's work — the
+Cinemacenter PDF swap and the Imprescindibles-collection check both came from actually looking
+rather than trusting a plausible-sounding first approach. The `DRY_RUN`/`TEST_CHAT_ID` modes
+exist because this is the first script built today that talks to people other than Matias by
+default — a bug here doesn't just clutter his own chat, it reaches Bianca and negro too.
+**Follow-ups not done yet**: `rescate-catalogo.txt`'s synopses come back in English (Jellyfin's
+stored `Overview` reflects whatever language its metadata agent pulled, not per-request
+localization like Jellyseerr's discover endpoint uses) — not raised as an issue yet, but if it
+comes up, fixing it would mean a TMDB call for a translated overview rather than trusting
+Jellyfin's cached field.
+
 ## 2026-08-12 (later still) — Retired OpenClaw, rebuilt Morning Brief standalone
 
 **Context**: OpenClaw had already been fully torn down (see the 2026-08-11 audit entry below)

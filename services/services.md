@@ -188,7 +188,7 @@ that must fire at a fixed time every day beats the flexibility of an AI-driven t
 
 Script: `~/homelab/scripts/morning-brief.sh` (committed, no secrets in it)
 Helper: `~/homelab/scripts/gcal-today.py` (Google Calendar OAuth2 API, Workspace account `matias@honeydewcare.com`)
-Secrets: `~/.config/secrets/morning_brief.env` (Telegram bot token/chat id, Radarr/Sonarr/Jellyseerr API keys — 0600, not committed) + `~/.config/secrets/gcal_oauth.json`
+Secrets: `~/.config/secrets/homelab_bots.env` (Telegram bot token/chat id, Radarr/Sonarr/Jellyseerr/Jellyfin API keys — 0600, not committed, shared with Viernes de Novedades below) + `~/.config/secrets/gcal_oauth.json`
 Log: `/tmp/morning-brief.log`
 
 **Sources**:
@@ -213,6 +213,60 @@ Weekend mode: no calendar section, no tech/AI section.
 Python), never a bare `datetime.now()` — **the host's system timezone is UTC**, not Argentina,
 so naive local-time code silently computes the wrong calendar day for a chunk of each evening.
 This bit the football section on first build (empty results) until fixed.
+
+## Viernes de Novedades (Host Crontab)
+
+Weekly digest, added 2026-08-12, same standalone architecture as Morning Brief (host cron,
+direct Telegram Bot API, no agent dependency). Unlike Morning Brief it's a broadcast: every
+Jellyseerr user with Telegram notifications enabled + a chat ID set gets it, auto-discovered
+via Jellyseerr's own user API each run — no hardcoded recipient list, so newly-linked users are
+included automatically. If there's nothing to report (no downloads, no cinema data, no
+suggestions) that week, no message is sent at all — no filler "nothing new this week" text.
+
+| Job | Schedule (crontab, UTC) | Local time | Delivery |
+|-----|--------------------------|------------|----------|
+| Viernes de Novedades | `0 19 * * 5` | 4:00 PM America/Argentina/Buenos_Aires, Fridays | Telegram Bot API `sendPhoto` (top suggestion's poster) then `sendMessage` |
+
+Script: `~/homelab/scripts/weekly-digest.sh` (committed, no secrets)
+Curated list: `~/homelab/scripts/rescate-catalogo.txt` — one title per line, edit anytime; script
+validates each against the real Jellyfin library and silently skips anything that doesn't match
+Secrets: `~/.config/secrets/homelab_bots.env` (shared with Morning Brief)
+Log: `/tmp/weekly-digest.log`
+Testing: `DRY_RUN=1 ./weekly-digest.sh` prints without sending; `TEST_CHAT_ID=<id> ./weekly-digest.sh`
+sends a real message to one chat only, bypassing the normal recipient discovery — use this
+instead of the real run whenever testing changes, so edits don't spam every linked user.
+
+**Sections** (each optional — only appears if it has content):
+- Estrenos en cines esta semana: `carteleraargentina.com.ar` homepage, `<h2>Estrenos de la
+  semana</h2>` block scraped for `<h3>` titles (no official API)
+- En cartelera en Bahía Blanca: **not a heuristic** — the real current listing for Matias's
+  local Cinemacenter, extracted from their own published weekly schedule PDF
+  (`cinemacenter.com.ar/pdf/horariospdf.php?cityId=2`) via `pdftotext -layout`, deduped across
+  formats (2D/3D/Sala Turbo all list the same film separately in the PDF) and cross-excluded
+  against the national Estrenos list (accent/case-insensitive match) to avoid repeating a title
+  in both sections. An earlier version approximated "still showing" from poster upload dates on
+  the national site — replaced once a real per-cinema source was found; prefer an authoritative
+  source over a heuristic whenever one exists
+- Se sumó al server de Masa: Radarr/Sonarr history, items imported in the last 7 days (same
+  history-API pattern as Morning Brief's 24h version, wider window)
+- Lo más visto esta semana: Jellyfin Playback Reporting plugin, direct SQL via
+  `/user_usage_stats/submit_custom_query` (`GROUP BY ItemName ... last 7 days`)
+- Tendencias que todavía no tenemos: Jellyseerr's `/discover/trending` (TMDB-backed, Spanish
+  titles), filtered to `mediaInfo.status` of `None` or `1` (unknown/not requested — excludes
+  anything already pending/processing/available), each with a direct
+  `pedidos.matiasmassetti.com/{movie,tv}/{tmdbId}` link so tapping goes straight to the request
+  page. The first suggestion's poster is sent as a Telegram photo before the text digest.
+- 🎯 Pick de la semana: random pick from the curated `rescate-catalogo.txt` list (validated
+  against the live library), shown with year, up to 2 genres, and a trimmed synopsis — all
+  pulled from Jellyfin's `Fields=Genres,ProductionYear,Overview`. Originally an algorithmic
+  "never played + added 90+ days ago" pick; replaced with a manually curated list per request
+  (more reliable taste signal than an algorithm, and Matias wanted control over what gets
+  suggested here)
+- Espacio libre: NAS free space, with a tiered message rather than bare numbers — **>100GB
+  free**: "pedí tranqui, hay espacio 😌"; **≤30GB free**: "se está quedando sin espacio, pedí
+  con cuidado ⚠️"; in between: just the numbers, no extra line. Based on absolute GB free, not
+  percent-used — this NAS runs at ~96% used by design (large array, redundancy headroom) so a
+  percent-based threshold would falsely alarm every week
 
 ## Project Containers (Separate Compose Files)
 

@@ -19,11 +19,11 @@
 #   Downloads: Radarr/Sonarr history, last 24h imports
 #
 # Secrets (Telegram bot token/chat id, Radarr/Sonarr/Jellyseerr API keys) live in
-# ~/.config/secrets/morning_brief.env — NOT committed, this script is pushed to GitHub.
+# ~/.config/secrets/homelab_bots.env — NOT committed, this script is pushed to GitHub.
 
 set -uo pipefail
 
-SECRETS="/home/matias/.config/secrets/morning_brief.env"
+SECRETS="/home/matias/.config/secrets/homelab_bots.env"
 if [ -f "$SECRETS" ]; then
     set -a
     source "$SECRETS"
