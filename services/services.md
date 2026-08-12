@@ -185,6 +185,19 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent (do
   zones, but not read/write DNS records for this zone specifically — scope mismatch not yet
   diagnosed). Matias opted to leave it local/Tailscale-only for now rather than debug the token;
   revisit if he wants it public later.
+- **Login bug fixed same day**: the frontend hashes the password with SHA3 client-side before
+  sending it to `/auth/login`, but `/auth/createuser` and `/api/updatePassword` store whatever
+  they're sent verbatim (no hashing). Any password set via those API endpoints directly (as
+  opposed to through Jellystat's own web UI forms) will silently never work. Fixed by writing
+  the correct `SHA3(password)` value straight into `app_config.APP_PASSWORD` via `psql`. Always
+  change the Jellystat password through its own UI going forward, or replicate the SHA3 hash
+  manually if scripting it.
+- **Historical data imported**: by default Jellystat starts empty and only captures activity
+  going forward via its Jellyfin websocket connection — it does *not* backfill automatically.
+  Triggered the backfill manually: `GET /sync/syncPlaybackPluginData` (JWT-authenticated, not
+  listed in the served `/swagger.json` — found by reading `routes/sync.js` directly) pulls in
+  everything from Jellyfin's Playback Reporting plugin. Took the activity table from 1 row to
+  860, covering 2025-10-26 through today.
 
 ### Notifications (added 2026-08-11)
 
