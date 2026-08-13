@@ -17,6 +17,14 @@ as they come up.
 - [ ] **9 movies Radarr couldn't find after the 2026-08-12 backfill** (likely folder name
       casing) + **2 loose files directly in `Peliculas/` root** ("El Partido", "La cara
       oculta") with no enclosing folder — see decision log for the full list.
+- [ ] **NAS backup strategy incomplete** — SHR redundancy (2nd drive) is done, but Btrfs
+      snapshots and an actual off-pool backup (Hyper Backup to USB, offsite B2/Wasabi) were
+      never confirmed as set up. Redundancy alone doesn't cover accidental deletion or pool
+      corruption. See `hardware/nas.md` § Backup Strategy.
+- [ ] **NAS at 97% full (419GB free)** — 3rd drive not landing until Feb 2027 (US trip). Worth
+      keeping an eye on growth rate between now and then; may need to free up space earlier
+      (e.g. more aggressive quality profile downgrades, pruning the 99%-full legacy Seagate
+      instead of NAS where possible).
 
 ## Done (kept for context, remove once stale)
 

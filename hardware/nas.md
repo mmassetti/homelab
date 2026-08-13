@@ -17,16 +17,17 @@
 | Bay | Drive | Size | Type | Status |
 |-----|-------|------|------|--------|
 | 1 | WD Red Pro 14TB (WD142KFGX) | 14TB | 3.5" SATA, CMR, 7200 RPM, 512MB cache | Installed |
-| 2 | (empty) | — | — | Planned: WD Red Pro 14TB (June 2026 USA trip) |
-| 3 | (empty) | — | — | Planned: WD Red Pro 14TB (optional) |
+| 2 | WD Red Pro 14TB (WD142KFGX) | 14TB | 3.5" SATA, CMR, 7200 RPM, 512MB cache | Installed 2026-07 — **redundancy, not capacity** (see below) |
+| 3 | (empty) | — | — | Planned: WD Red Pro 14TB, to be bought Feb 2027 (US trip) — first drive to actually grow usable capacity |
 | 4 | (empty) | — | — | Available |
 
 ## Storage Pool
 
-- **RAID**: SHR (Synology Hybrid RAID) — currently single drive, no redundancy yet
+- **RAID**: SHR (Synology Hybrid RAID), 2 drives, 1-disk redundancy
 - **Filesystem**: Btrfs (snapshots, checksums, data integrity)
-- **Usable**: ~12.7TB (single 14TB drive)
-- **Future**: Add 1-2 more drives in June 2026 for SHR redundancy
+- **Usable**: ~12.7TB — unchanged from the single-drive figure, since the 2026-07 disk went to redundancy (mirroring), not pool growth
+- **Current usage**: 97% full, ~419GB free as of 2026-08-13 — tight until the 3rd drive lands
+- **Future**: 3rd drive (Feb 2027) is the next real capacity increase
 
 ## Shares & Mounts
 
@@ -76,11 +77,15 @@ docker compose -f /opt/docker/docker-compose.yml start opencloud
 ## Backup Strategy
 
 ### Current
-- Single drive, no redundancy — **critical to add 2nd drive ASAP**
+- **Level 2 done**: SHR 1-disk redundancy (2nd drive added 2026-07)
 - Seagate 4TB USB on mini PC as legacy copy of older media
 
-### Planned (After 2nd Drive)
+### Still Pending (not yet confirmed set up — no decision log entry either way)
 - **Level 1**: Btrfs snapshots (hourly keep 24, daily keep 7, weekly keep 4)
-- **Level 2**: SHR 1-disk redundancy
 - **Level 3**: External USB drive via Hyper Backup (weekly, Sunday 3 AM)
 - **Future**: Offsite cloud backup (B2/Wasabi) for 3-2-1 rule
+
+Redundancy (mirroring) protects against a single drive failing — it does **not** protect
+against accidental deletion, ransomware, or Btrfs pool corruption. Snapshots + an actual
+off-pool backup (Level 1/3 above) are the parts that still matter and haven't been verified
+as configured.
