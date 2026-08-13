@@ -1108,4 +1108,28 @@ and 2210-title backfills (lookup by TMDB id, `monitored:false`+`searchForMovie:f
 to link the existing file, verify `hasFile:true` before flipping `monitored:true`). Left the
 89 remaining titles (13 MEDIUM, 9 LOW, 11 non-movie, 56 NONE) untouched — see `TODO.md`.
 
+## 2026-08-13 (later) — Linked the 31 newly-identified movies into Radarr
+
+**Context**: Follow-up to the same day's TMDB-id backfill — the 31 movies (25 high-confidence +
+6 manually-found) had a TMDB id in Jellyfin but weren't tracked by Radarr yet, same gap the
+2210-title 2026-08-12 backfill closed for the rest of the library.
+**Decision**: Same pattern as before — `GET /api/v3/movie/lookup/tmdb` for the full metadata
+template, `POST /api/v3/movie` with `qualityProfileId:17` (2160p Efficient, matches 2284/2361
+of the existing library), `monitored:false`, `addOptions:{monitor:"none",searchForMovie:false}`,
+`path` set to the existing NAS folder translated from Jellyfin's `/data/movies/...` mount to
+Radarr's `/movies/...` mount. Canaried on one title ("Carroceros") first, verified
+`hasFile:true` after a `RescanMovie` command and confirmed zero grabs/queue activity before
+batching the remaining 30. One of the 31 ("El gran dictador (Subtitulada)") was correctly
+rejected by Radarr with "Path already configured for an existing movie" — it's a second
+audio-track file sitting in the *same* folder as "El gran dictador (Español)", so it's the same
+Radarr movie, not a separate one; both Jellyfin entries already carry the right TMDB id, only
+one needed a Radarr entry. The other 29 rescans showed `hasFile:false` transiently (async
+processing, matching the "51 of 60 were exactly this false-negative timing issue" note from the
+2026-08-12 backfill) — polled every 10s and all 30 (29 + the canary) settled on `hasFile:true`
+within the first poll. Verified zero entries in Radarr's queue and zero `grabbed` events across
+all 30 movie histories before flipping every one to `monitored:true`. Final check: Radarr's
+total movie count went from 2361 → 2391, all 30 new entries `monitored:true` + `hasFile:true`.
+**Rationale**: Bazarr's existing Radarr sync will pick these up automatically for subtitle
+management on its next cycle — no manual trigger needed, same as the earlier 8-title backfill.
+
 <!-- Add new decisions above this line, newest first -->
