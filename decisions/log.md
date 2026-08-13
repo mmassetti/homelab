@@ -1073,4 +1073,39 @@ rather than mixed in with everything else.
 **Decision**: `docker compose pull pihole && up -d pihole` to update; raised Unbound `num-threads` 1→4 (and matching cache slabs 2→4) in `/opt/docker/configs/unbound/unbound.conf`; set `dns.revServers = ["true,192.168.1.0/24,192.168.1.1"]` via `pihole-FTL --config` so Pi-hole forwards local PTR/hostname lookups to the router (192.168.1.1).
 **Rationale**: Single-threaded Unbound was a plausible bottleneck for the intermittent TCP errors given the host's periodic load spikes — cheap to fix, no downside on a 16-thread host. Conditional forwarding is the standard fix for IP-only client names. Verified post-change: both containers healthy, DNS resolution and ad-blocking still working (`doubleclick.net` → `0.0.0.0`), `dns.revServers` persisted.
 
+## 2026-08-13 — Identified and applied TMDB ids for 31 of the 120 unmatched movies
+
+**Context**: Following up on the 2026-08-12 backfill's leftover "105 with no TMDB id" bucket
+(120 in practice by now — the library grew since the original audit). Built a script that runs
+each title through Jellyfin's own TMDB-backed `RemoteSearch` (with year, falling back to a
+year-less search), scored candidates by title similarity (difflib) + year proximity, and
+sorted into HIGH (title ~exact, year within 1), MEDIUM (exact title, year off by more), LOW
+(weak title match), and NONE (nothing usable). Result: 25 HIGH, 13 MEDIUM, 11 LOW, 71 NONE.
+Spot-checking NONE turned up two more useful findings: 6 titles failed only because of the
+search string (audio-track suffix, romanized Japanese title, French title, director's name
+baked into the title) — retried with cleaned titles and got confident matches (e.g. "El gran
+dictador (Español)" → *The Great Dictator* tmdb:914, "Schichinin no samurai" → *Seven Samurai*
+tmdb:346); and 11 more weren't real standalone movies at all — TV episodes ("dead set 1/4/5",
+from the miniseries *Dead Set*), bonus interviews/making-of/restoration featurettes, and a
+2-disc rip's two halves each indexed as their own "movie" (`cast1.part1`/`cast2.part1` inside
+*Castaway on the Moon (2009)*'s own folder) — these need a Jellyfin library reorg, not a TMDB
+match, and were pulled out of the confidence buckets so they don't get miscounted.
+Published all of this as a review artifact (grouped by tier, TMDB links for one-click
+verification) rather than auto-applying blind, given the 2026-08-12 session's own "Winx Club"
+misidentification lesson — Matias reviewed and approved the 25 HIGH + 6 manually-found (31
+total) for batch application.
+**Decision**: Applied via `POST /Items/RemoteSearch/Apply/{itemId}` (same endpoint used for the
+"The Club" metadata fix), one call per movie, `ReplaceAllImages=false`. Canaried on one title
+first ("Carroceros") and verified via `GET /Items?Ids=...` that Jellyfin correctly wrote
+`ProviderIds.Tmdb` and pulled fresh Overview/CommunityRating/artwork before running the rest.
+Ran into `ReadTimeout`s on a few calls (Jellyfin apparently blocks on synchronous image
+downloads for some titles) — confirmed via a follow-up GET that the timed-out calls had in fact
+applied successfully server-side despite the client timeout, then re-ran the remainder with a
+longer timeout. Final verification: bulk `GET /Items?Ids=<all 31>` showed all 31 with
+`ProviderIds.Tmdb` set, zero missing.
+**Rationale**: Not linked to Radarr yet — that's the next step, same pattern as the existing 8-
+and 2210-title backfills (lookup by TMDB id, `monitored:false`+`searchForMovie:false`, rescan
+to link the existing file, verify `hasFile:true` before flipping `monitored:true`). Left the
+89 remaining titles (13 MEDIUM, 9 LOW, 11 non-movie, 56 NONE) untouched — see `TODO.md`.
+
 <!-- Add new decisions above this line, newest first -->

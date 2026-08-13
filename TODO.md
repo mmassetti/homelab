@@ -9,8 +9,12 @@ as they come up.
 - [ ] **Cloudflare API token DNS scope** — gets "Authentication error" reading DNS records for
       the zone despite having Zone:DNS:Edit; blocked exposing Jellystat publicly. Not urgent
       (Jellystat is Tailscale/LAN-only for now).
-- [ ] **105 movies with no TMDB id in Jellyfin** — need manual identification before they can
-      be linked to Radarr for subtitle management. See decision log 2026-08-12 backfill entry.
+- [ ] **89 movies still with no TMDB id in Jellyfin** (was 105/120 — 31 identified and applied
+      2026-08-13: 25 high-confidence auto-matches + 6 found via manual title cleanup). Still
+      open: 13 medium-confidence (year mismatch, need a quick eyeball), 9 weak candidates
+      (need manual TMDB search), 11 turned out to not be real movies (TV episodes/extras
+      indexed as movies — needs Jellyfin reorg, not TMDB matching), 56 with no match found at
+      all (likely obscure Argentine titles absent from TMDB). See decision log 2026-08-13 entry.
 - [ ] **58 movies in nested/multi-file folders** — mostly legitimate extras or multi-part rips,
       but at least one real folder-mismatch bug found ("A Cure For Wellness" living inside
       "25th Hour"'s folder) — worth eyeballing the rest for similar issues.
