@@ -26,7 +26,7 @@
 - **Modem**: I-CON IC455WDB (bridge mode)
 - **Domain**: matiasmassetti.com (Porkbun, DNS via Cloudflare)
 - **Remote access**: Cloudflare Tunnel (public services) + Tailscale (private VPN)
-- **DNS**: Pi-hole (192.168.1.239:53) → Unbound (172.30.0.2:5335, recursive), DNSSEC on
+- **DNS**: Pi-hole (192.168.1.239:53) → Unbound (172.30.0.2:5335, recursive), DNSSEC on, conditional forwarding to router (192.168.1.1) for hostnames, Unbound running 4 threads (since 2026-08-13)
 
 ## Docker — Main Stack (`/opt/docker/docker-compose.yml`)
 Config base: `/opt/docker/configs/<service>/`

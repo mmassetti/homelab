@@ -1067,4 +1067,10 @@ rather than mixed in with everything else.
 
 ---
 
+## 2026-08-13 — Pi-hole/Unbound health check + tuning
+
+**Context**: Routine audit found 3 things worth fixing: Pi-hole was 1-2 minor versions behind (Core v6.3→6.4.3, Web v6.4→6.6, FTL v6.4.1→6.7); recurring `Connection error ... TCP connection failed` bursts from Pi-hole to Unbound in FTL logs (05-jul, 21-jul, 31-jul, 13-aug), correlated with host load briefly exceeding core count (12.7-16.4 load avg on 16 threads); no conditional forwarding configured, so Top Clients only ever showed bare IPs.
+**Decision**: `docker compose pull pihole && up -d pihole` to update; raised Unbound `num-threads` 1→4 (and matching cache slabs 2→4) in `/opt/docker/configs/unbound/unbound.conf`; set `dns.revServers = ["true,192.168.1.0/24,192.168.1.1"]` via `pihole-FTL --config` so Pi-hole forwards local PTR/hostname lookups to the router (192.168.1.1).
+**Rationale**: Single-threaded Unbound was a plausible bottleneck for the intermittent TCP errors given the host's periodic load spikes — cheap to fix, no downside on a 16-thread host. Conditional forwarding is the standard fix for IP-only client names. Verified post-change: both containers healthy, DNS resolution and ad-blocking still working (`doubleclick.net` → `0.0.0.0`), `dns.revServers` persisted.
+
 <!-- Add new decisions above this line, newest first -->

@@ -57,6 +57,8 @@ ssh matias@100.112.136.118  # fallback if MagicDNS resolution misbehaves
 - Pi-hole listens on port 53 (192.168.1.239)
 - Pi-hole upstream → Unbound (172.30.0.2:5335, recursive resolver)
 - DNSSEC enabled
+- Conditional forwarding (reverse server) → router (192.168.1.1, 192.168.1.0/24) since 2026-08-13, so Top Clients shows device hostnames instead of bare IPs
+- Unbound `num-threads: 4` (raised from 1 on 2026-08-13) — fixes intermittent `Connection error ... TCP connection failed` bursts seen in FTL logs, correlated with host load spikes (see `decisions/log.md`)
 
 ### For the network
 - Router DNS should point to 192.168.1.239 (Pi-hole) for whole-network ad blocking
