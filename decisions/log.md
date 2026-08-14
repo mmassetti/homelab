@@ -1384,4 +1384,23 @@ before flipping `monitored:true`. Radarr total: 2418 → 2420.
 **Rationale**: This closes every open item from the 2026-08-12 backfill's original error/review
 list (7 errors + 58 nested-folder set-aside + 9 "couldn't find"), three separate sessions later.
 
+## 2026-08-14 (very last) — Deleted the 9 silent files, kept folders + Radarr entries for later
+
+**Context**: The 9 movies diagnosed earlier today as having no audio track (8 confirmed
+broken, plus *The Man from Earth* from an earlier session) are unwatchable and were taking up
+~12GB combined on the 97%-full NAS. Matias asked to delete them and keep a note to redownload
+later.
+**Decision**: Deleted only the video/subtitle files inside each folder, **left the empty,
+correctly-named folders in place** (`Title (Year)/`) rather than removing them entirely — a
+future redownload just needs to land in the existing folder, no need to recreate naming. Also
+deliberately left the existing Radarr entries untouched (still `monitored:false`, correct
+`tmdbId` and `path`) rather than deleting them — once a real file lands, a `RescanMovie` +
+`monitored:true` flip is all that's needed, no need to re-add from scratch. Ran a full Jellyfin
+library scan afterward; it correctly dropped all 9 stale items (they'd re-appear on the next
+scan once a real file exists). Redownload wishlist (title/year/size/folder) recorded in
+`TODO.md` beforehand, so nothing about what to look for is lost.
+**Rationale**: Deleting the *content* while preserving the *structure* (folder names + Radarr
+tracking) makes a future redownload close to a no-op — drop the file in, rescan, done — instead
+of redoing identification work from scratch.
+
 <!-- Add new decisions above this line, newest first -->

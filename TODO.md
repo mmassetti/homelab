@@ -117,6 +117,11 @@ as they come up.
         - Snowtown — 2011 — 752M — `Snowtown (2011)/`
         - Stranger Than Fiction — 2006 — 1.6G — `Stranger Than Fiction (2006)/`
         - The Man from Earth — 2007 — 601M — `The Man from Earth (2007)/The Man From the Earth (2007)/`
+        - ✅ **All 9 deleted 2026-08-14** to reclaim the ~12GB — only the video/subtitle files,
+          the empty correctly-named folders above and their Radarr entries (still
+          `monitored:false`, correct tmdbId/path) were kept on purpose: drop a real file into
+          the same folder later, `RescanMovie`, flip `monitored:true` — no need to redo any
+          identification work.
       - **1 is fine but Radarr can't represent it**: *The Mother and the Whore (1973)* is a
         VHS-era CD1/CD2 split of one film — has real audio, plays correctly in Jellyfin as one
         continuous item, but Radarr explicitly rejects multi-part files. Same situation as
