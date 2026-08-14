@@ -12,11 +12,40 @@ as they come up.
 - [ ] **89 movies still with no TMDB id in Jellyfin** (was 105/120 — 31 identified, applied to
       Jellyfin, and linked into Radarr 2026-08-13: 25 high-confidence auto-matches + 6 found
       via manual title cleanup, all `monitored:true`/`hasFile:true`, Bazarr will pick up
-      subtitles on its next Radarr sync). Still open: 13 medium-confidence (year mismatch,
-      need a quick eyeball), 9 weak candidates (need manual TMDB search), 11 turned out to not
-      be real movies (TV episodes/extras indexed as movies — needs Jellyfin reorg, not TMDB
-      matching), 56 with no match found at all (likely obscure Argentine titles absent from
-      TMDB). See decision log 2026-08-13 entries.
+      subtitles on its next Radarr sync). Matching report: `tmdb_match_results.json` was only
+      in the session scratchpad, not saved to the repo — if it's gone, regenerate by re-running
+      the same Jellyfin-RemoteSearch-based matching approach (see decision log 2026-08-13 entry
+      for the method). Three sub-groups still open, Matias plans to do these by hand later:
+      - **13 medium-confidence** (title matches, year is off by more than 1 — usually shooting
+        vs. release year, but check before applying): 3030 (2001) → *El 30-30* tmdb:807680;
+        Diarios patagónicos 1 (1973) → tmdb:399671; El ausente (1987) → *El diente ausente*
+        tmdb:1737730; El profes1on4l (2019) → *The Professional* tmdb:653348; Esteros (2012) →
+        tmdb:418718; Héroe corriente (2017) → tmdb:684021; Kill Bill - The Whole Bloody Affair
+        (2004) → tmdb:414419; La nueva cigarra (1975) → tmdb:773918; Last And First Men (2017)
+        → tmdb:566038; Lectura según Justino (2019) → tmdb:662609; Los decentes (2019) →
+        *Nosotros, los decentes* tmdb:322440; Negro Buenos Aires (2009) → *Black Buenos Aires*
+        tmdb:109817; **Workshop (1971) → tmdb:650842 — flagged high-risk, generic title + ~50
+        year gap, likely the wrong film, double-check carefully before applying.**
+      - **9 weak candidates** (no confident algorithmic match, need a manual themoviedb.org
+        search): Al centro de la tierra (2018), Anida y el circo flotante (2016), Antes del
+        estreno (2010), Cuando dejes de quererme (2019), El hombre del futuro (2020), La mala
+        verdad (2010), La playa del amor (1979), La vida por Perón (2004), Los pibes (2019).
+      - **11 aren't real standalone movies** — they're extras/episodes sitting inside a
+        correctly-identified movie's folder, misindexed by Jellyfin as separate films. Fix is
+        a Jellyfin reorg (rename the extra's subfolder to `extras/` so it's associated as
+        bonus content), not a TMDB match: `cast1.part1`/`cast2.part1` (2-disc rip halves,
+        inside *Castaway on the Moon (2009)*'s own folder), `Interview with Lisandro Alonso`
+        (inside *La Libertad (2001)*), `Alternative opening scene` + `Interview with Lisandro
+        Alonso on Los Muertos` (inside *Los Muertos (2004)*), `Presentación de Martin
+        Scorsese` + `Restauración de Prisioneros de la tierra` (inside *Prisioneros de la
+        tierra (1939)*), `Los guantes mágicos (Making of) (2003)` (loose, own folder). Separately,
+        `dead set 1`/`4`/`5` are episodes of the 2008 British TV miniseries *Dead Set* filed
+        under the movie library — needs a bigger call (delete, move to a TV library, or
+        ignore), not just a folder rename.
+      - **56 with no match found at all** — mostly very obscure Argentine shorts/documentaries;
+        several may genuinely not be catalogued on TMDB, in which case they can't ever get a
+        Radarr/Bazarr entry. Full list in the artifact report from 2026-08-13 (not saved to
+        the repo — ask to regenerate if the link's gone stale).
 - [ ] **58 movies in nested/multi-file folders** — mostly legitimate extras or multi-part rips,
       but at least one real folder-mismatch bug found ("A Cure For Wellness" living inside
       "25th Hour"'s folder) — worth eyeballing the rest for similar issues.
