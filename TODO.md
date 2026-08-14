@@ -64,12 +64,13 @@ as they come up.
         and added fresh correct entries for both *Happiness* and the real *Happy Together*
         (which had been sitting correctly tagged in Jellyfin all along but never linked). Both
         `monitored:true`/`hasFile:true`, zero duplicate tmdbIds in Radarr. See decision log.
-      - **3 real misplaced-file bugs** (need an actual `mv` on the NAS, not a metadata fix):
-        *A Cure For Wellness (2016)* sitting inside "25th Hour (2002)"'s folder (25th Hour
-        itself isn't even in the library — the folder is just mislabeled); *Jeff, Who Lives at
-        Home (2011)* inside "Klute (1971)"'s folder (Klute itself is fine); *Pirates of the
-        Caribbean: Dead Man's Chest (2006)* inside "Curse of the Black Pearl (2003)"'s folder
-        (Curse of the Black Pearl itself is fine).
+      - ✅ **Fixed 2026-08-14: 3 misplaced-file bugs.** `mv`'d each to its own top-level folder
+        on the NAS — *A Cure For Wellness (2016)* out of "25th Hour (2002)"'s folder (25th Hour
+        itself was never actually in the library — that folder now only holds a stray leftover
+        `.parts` file, left alone); *Jeff, Who Lives at Home (2011)* out of "Klute (1971)"'s
+        folder; *Pirates of the Caribbean: Dead Man's Chest (2006)* out of "Curse of the Black
+        Pearl (2003)"'s folder. Re-scanned in Jellyfin (kept the same correct TMDB ids) and
+        linked all 3 into Radarr, `monitored:true`/`hasFile:true`. See decision log.
       - **4 more wrong-TMDB-tag cases** (real content, but tagged as an unrelated movie — not
         caught by the earlier "no TMDB id" audit since these already had *a* tmdb id, just the
         wrong one): `dead set 2`/`dead set 3` (both tagged as an unrelated documentary, "Civil

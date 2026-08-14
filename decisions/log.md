@@ -1218,4 +1218,30 @@ resolved `hasFile:true` on the first poll, zero queue/grab activity confirmed, b
 (IMDb id already on file, not just a fresh title search) before overwriting an existing tag,
 and confirm the delete didn't touch the underlying file before moving on.
 
+## 2026-08-14 (later still) — Fixed the 3 misplaced-file bugs from the nested-folder triage
+
+**Context**: Group 2 of the 58-folder triage — 3 movies whose file sat inside a *different*
+movie's top-level folder, rather than a genuine metadata problem.
+**Decision**: `mv`'d each nested subfolder up to its own top-level folder on the NAS (checked
+first that none of the three target folder names already existed, to rule out a collision):
+`A Cure For Wellness (2016)` out of `25th Hour (2002)`'s folder; `Jeff, Who Lives at Home
+(2011) [1080p]` out of `Klute (1971)`'s folder; `Pirates of the Caribbean Dead Man's Chest
+(2006)` out of `Curse of the Black Pearl (2003)`'s folder. Verified after each move that the
+"host" folder still had its own correct content intact (Klute and Curse of the Black Pearl both
+still had their own file untouched; `25th Hour (2002)` was left with only a stray 124KB `.parts`
+file — that folder never actually contained the real "25th Hour", so nothing of value was lost
+by moving the misplaced file out).
+Triggered Jellyfin's "Scan Media Library" task (the plain `/Library/Refresh` call alone wasn't
+enough — the 3 items didn't reappear until the actual scan task, polled via
+`/ScheduledTasks/{id}`, finished ~2 minutes later). All 3 came back re-identified with the same
+correct TMDB/IMDb ids as before the move (new Jellyfin item ids, since Jellyfin treats a moved
+file as a removed-then-readded item rather than an in-place path update — total library count
+returned to the same 2519 afterward, confirming no orphans or duplicates). Added all 3 to
+Radarr with the same verified pattern as the rest of the week (`monitored:false` → add → rescan
+→ confirm `hasFile:true` and zero queue/grab activity → `monitored:true`). Radarr total: 2414 →
+2417, zero duplicate tmdbIds.
+**Rationale**: None of these needed a metadata fix, only a filesystem move — the TMDB
+identification was already correct in all three cases, the files were just living in the wrong
+directory.
+
 <!-- Add new decisions above this line, newest first -->
