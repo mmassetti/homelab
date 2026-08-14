@@ -104,7 +104,19 @@ as they come up.
       - **8 have no audio track at all** (broken files, need a fresh download — not fixable via
         metadata/relinking): *The Boat That Rocked*, *Fresno*, *Hotel Monterey*, *La chambre*,
         *Nightwatching*, *Popstar: Never Stop Never Stopping*, *Snowtown*, *Stranger Than
-        Fiction*.
+        Fiction*. Plus *The Man from Earth (2007)*, found silent in an earlier session the same
+        day — 9 silent files total, ~12GB combined. Redownload wishlist (title — year — size —
+        folder, all in `Peliculas/`, all with a correct TMDB id already in Jellyfin so a fresh
+        file just needs to land in the same folder):
+        - The Boat That Rocked — 2009 — 1.1G — `The boat that rocked (2009)/`
+        - Fresno — 2014 — 70M — `Fresno (2014)/`
+        - Hotel Monterey — 1972 — 3.6G — `Hotel Monterey (1972)/`
+        - La chambre — 1972 — 329M — `La chambre (1972)/`
+        - Nightwatching — 2007 — 2.2G — `Nightwatching (2007)/`
+        - Popstar: Never Stop Never Stopping — 2016 — 1.3G — `Popstar Never Stop Never Stopping (2016)/`
+        - Snowtown — 2011 — 752M — `Snowtown (2011)/`
+        - Stranger Than Fiction — 2006 — 1.6G — `Stranger Than Fiction (2006)/`
+        - The Man from Earth — 2007 — 601M — `The Man from Earth (2007)/The Man From the Earth (2007)/`
       - **1 is fine but Radarr can't represent it**: *The Mother and the Whore (1973)* is a
         VHS-era CD1/CD2 split of one film — has real audio, plays correctly in Jellyfin as one
         continuous item, but Radarr explicitly rejects multi-part files. Same situation as
