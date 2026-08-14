@@ -1360,4 +1360,28 @@ correctly reflecting their real state (8 broken files, 1 Radarr-incompatible mul
 rather than a fixable metadata problem. Documented per-title so a future redownload pass
 (the 8 broken ones) doesn't need to re-derive which titles or why.
 
+## 2026-08-14 (final) — Fixed the 2 loose files from the 2026-08-12 backfill
+
+**Context**: The last open item from the original backfill's 7 errors — 2 files sitting where
+the path-parent logic used for that run couldn't handle them.
+**Decision — El Partido (2026)**: genuinely a loose `.mp4` directly in `Peliculas/` root, no
+enclosing folder. Created `El Partido (2026)/` and moved the file in. After a full Jellyfin
+rescan it re-identified correctly (same tmdb:1666712/imdb:tt41593328) but under its English
+title "The Match" instead of "El Partido" — fixed via the same direct item-DTO `Name` edit used
+all week, to stay consistent with the rest of the (Spanish-titled) library.
+**Decision — La cara oculta (2011)**: not actually a "loose file" problem — the folder already
+existed and already had a proper `La-Cara Oculta-(2011).mp4` (1.4GB) sitting in it. The real
+issue was a **leftover raw DVD-structure folder** (`VIDEO_TS`/`AUDIO_TS`, 4.4GB of `.VOB`/`.IFO`/
+`.BUP` files) sitting alongside it, which Jellyfin was indexing *instead of* the clean mp4 —
+explains the original "can't handle this" backfill error, and produced a nonsense ~27-hour
+runtime (`VideoType: Dvd`) when checked this session. Deleted the redundant `VIDEO_TS`/
+`AUDIO_TS` folders (the mp4 is a complete, playable copy of the same rip — nothing lost) to
+both fix the indexing and reclaim 4.4GB on the 97%-full NAS. After the rescan, Jellyfin
+correctly indexed just the mp4 with a sane runtime (~96 min).
+Added both to Radarr with the usual pattern — canary-free this time given how many times this
+exact flow has been verified today — confirmed `hasFile:true` and zero queue/grab activity
+before flipping `monitored:true`. Radarr total: 2418 → 2420.
+**Rationale**: This closes every open item from the 2026-08-12 backfill's original error/review
+list (7 errors + 58 nested-folder set-aside + 9 "couldn't find"), three separate sessions later.
+
 <!-- Add new decisions above this line, newest first -->

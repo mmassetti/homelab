@@ -111,8 +111,15 @@ as they come up.
         *La Flor* — left deliberately unlinked rather than force-importing just half of it.
       - Left all 9 `monitored:false` as-is, matching their real state. No fix applied, this was
         diagnosis only. See decision log.
-      - **2 loose files directly in `Peliculas/` root** ("El Partido", "La cara oculta") with no
-        enclosing folder — still untouched, separate from the above.
+      - ✅ **Fixed 2026-08-14: the 2 loose files.** *El Partido (2026)* was a genuine loose file
+        — given its own folder and linked to Radarr (Jellyfin had re-identified it under its
+        English title "The Match"; renamed back to "El Partido" for consistency with the rest
+        of the library). *La cara oculta (2011)* wasn't actually loose — it had a proper mp4
+        all along, but a leftover raw DVD-structure folder (`VIDEO_TS`/`AUDIO_TS`, 4.4GB) was
+        confusing Jellyfin into indexing that instead (nonsense ~27h runtime). Deleted the
+        redundant DVD folder, reclaiming 4.4GB, and linked the now-correctly-indexed mp4 to
+        Radarr. Both `monitored:true`/`hasFile:true`. This closes every item from the
+        2026-08-12 backfill's original error list. See decision log.
 - [ ] **NAS backup strategy incomplete** — SHR redundancy (2nd drive) is done, but Btrfs
       snapshots and an actual off-pool backup (Hyper Backup to USB, offsite B2/Wasabi) were
       never confirmed as set up. Redundancy alone doesn't cover accidental deletion or pool
