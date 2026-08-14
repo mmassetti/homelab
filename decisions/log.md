@@ -1299,4 +1299,28 @@ Spanish — the household's primary language — so subtitle need is minimal her
 physical files" — cleaner than either leaving 8 fake standalone movies or arbitrarily picking
 one file as "the" movie and hiding the rest.
 
+## 2026-08-14 (closing) — Resolved the last ambiguous case, closing out the 58-folder triage
+
+**Context**: The one remaining "ambiguous" item from the nested-folder triage — a file tagged
+as "Akira Kurosawa: It Is Wonderful to Create: 'High and Low'" (tmdb:523625, a real 37-minute
+Toho documentary) sitting inside the *Tengoku to jigoku* (*High and Low*, 1963) folder.
+**Finding**: Not a documentary at all. Compared file sizes — both `.avi` files in that folder
+are **byte-for-byte identical** (2,197,661,696 bytes each), nowhere near a plausible size for a
+37-minute doc. It's simply a duplicate rip of the main 163-minute film, mistagged with an
+unrelated documentary's TMDB id (same root-cause pattern as the other wrong-tag cases fixed
+earlier today).
+**Decision**: Retagged it to the correct id (tmdb:12493, matching the already-correct main
+file), then merged the two into one item via `MergeVersions` — same treatment as *La Flor*,
+appropriate here since, unlike La Flor's 8 distinct segments, these two files genuinely are the
+same content. No Radarr change needed; the main file was already linked from group 1. Left the
+now-clearly-redundant 2.1GB duplicate file on disk rather than deleting it — worth revisiting
+given the NAS is at 97% full, but deleting wasn't asked for and is harder to undo than a
+Jellyfin re-tag.
+**Closing note**: This was the last item of the original 58-folder bucket. Final tally: 26 safe
+(linked to Radarr), 3 misplaced-file bugs (moved + linked), 4 wrong-tag cases (Los Muertos
+retagged + linked, 3 others tag-cleared), 1 ambiguous (resolved as a duplicate, retagged +
+merged), 8 La Flor fragments (retagged + merged, deliberately not linked to Radarr), 6 harmless
+duplicates (no action), 10 already handled the day before. Radarr total after all of today's
+work: 2418 movies (was 2361 before this week's TMDB/Radarr work began), zero duplicate tmdbIds.
+
 <!-- Add new decisions above this line, newest first -->

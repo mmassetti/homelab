@@ -46,7 +46,8 @@ as they come up.
         several may genuinely not be catalogued on TMDB, in which case they can't ever get a
         Radarr/Bazarr entry. Full list in the artifact report from 2026-08-13 (not saved to
         the repo — ask to regenerate if the link's gone stale).
-- [ ] **58 movies in nested/multi-file folders** — reconstructed and fully triaged 2026-08-14
+- [x] **58 movies in nested/multi-file folders** — reconstructed, fully triaged, and fully
+      resolved 2026-08-14
       (wasn't saved anywhere before). Broke into 7 groups:
       - ✅ **26 safe, done** — correctly identified, just had an extra folder level or shared a
         folder with something else harmless. 22 newly linked into Radarr (`monitored:true`,
@@ -78,9 +79,12 @@ as they come up.
         Libertad*'s deleted scene) aren't real standalone films, so instead of hunting for a
         "correct" id, cleared their wrong TMDB tags entirely to match how `dead set 1`/`4`/`5`
         already look — no Radarr entry for these three. See decision log.
-      - **1 ambiguous** — a Kurosawa documentary about "High and Low" sitting inside the
-        "Tengoku to jigoku" (High and Low) folder; might be legitimate bonus content, might be
-        misfiled. Worth a quick look, not urgent.
+      - ✅ **Resolved 2026-08-14: the "Kurosawa documentary" wasn't one.** Turned out to be a
+        byte-for-byte duplicate rip of the main *High and Low (1963)* film, mistagged with an
+        unrelated real documentary's TMDB id. Retagged to the correct id and merged with the
+        main file via `MergeVersions`, same treatment as La Flor. The 2.1GB duplicate file is
+        still on disk, redundant — worth deleting given the NAS is at 97% full, but left alone
+        since that wasn't asked for.
       - ✅ **Fixed 2026-08-14: La Flor (2018) 8-file cluster.** Retagged all 8 fragments to the
         real film (tmdb:423778) then merged them via Jellyfin's `MergeVersions` API into one
         item with 8 selectable versions instead of 8 fake standalone movies. Deliberately *not*
