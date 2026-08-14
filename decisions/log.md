@@ -1323,4 +1323,12 @@ merged), 8 La Flor fragments (retagged + merged, deliberately not linked to Rada
 duplicates (no action), 10 already handled the day before. Radarr total after all of today's
 work: 2418 movies (was 2361 before this week's TMDB/Radarr work began), zero duplicate tmdbIds.
 
+**Follow-up same day**: deleted the now-redundant 2.1GB duplicate (`Tengoku to jigoku/
+Tengoku to jigoku.avi`, the nested copy — confirmed first via Radarr's `movieFile.path` that it
+tracks the *other*, top-level copy, so nothing linked would break) to reclaim space on the
+97%-full NAS. Verified the file gone, ran a full Jellyfin library scan to clean up the merged
+item's stale second `MediaSource` (library count 2519 → 2518, matching the one removed record),
+and confirmed Radarr's entry (still pointing at the surviving file) was unaffected —
+`hasFile:true`/`monitored:true` unchanged.
+
 <!-- Add new decisions above this line, newest first -->

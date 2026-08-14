@@ -82,9 +82,9 @@ as they come up.
       - ✅ **Resolved 2026-08-14: the "Kurosawa documentary" wasn't one.** Turned out to be a
         byte-for-byte duplicate rip of the main *High and Low (1963)* film, mistagged with an
         unrelated real documentary's TMDB id. Retagged to the correct id and merged with the
-        main file via `MergeVersions`, same treatment as La Flor. The 2.1GB duplicate file is
-        still on disk, redundant — worth deleting given the NAS is at 97% full, but left alone
-        since that wasn't asked for.
+        main file via `MergeVersions`, same treatment as La Flor. The redundant 2.1GB duplicate
+        was deleted the same day (verified against Radarr's tracked file path first) to help
+        with the NAS space situation.
       - ✅ **Fixed 2026-08-14: La Flor (2018) 8-file cluster.** Retagged all 8 fragments to the
         real film (tmdb:423778) then merged them via Jellyfin's `MergeVersions` API into one
         item with 8 selectable versions instead of 8 fake standalone movies. Deliberately *not*
