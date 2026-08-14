@@ -6,6 +6,12 @@ as they come up.
 
 ## Open
 
+- [ ] **Verify The Handmaiden (2016) Radarr re-grab loop stayed stopped** — RSS Sync kept
+      re-grabbing the same REPACK release every 30 min, deleting the good file each time on
+      import failure, and re-triggering the "Manual Interaction" Telegram alert. Blocklisted the
+      release (`POST /api/v3/history/failed/{id}`) 2026-08-14 ~12:27 to stop it; needs a check
+      after a couple more RSS Sync cycles to confirm it didn't just find a *different* release
+      of the same movie to loop on. See decision log for the full diagnosis.
 - [ ] **Cloudflare API token DNS scope** — gets "Authentication error" reading DNS records for
       the zone despite having Zone:DNS:Edit; blocked exposing Jellystat publicly. Not urgent
       (Jellystat is Tailscale/LAN-only for now).

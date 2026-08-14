@@ -1420,4 +1420,36 @@ unaffected (`hasFile:true`/`monitored:true`, still pointing at the surviving nes
 follow-up work (58-folder triage + 9 unresolved + 2 loose files + 6 duplicates), spread across
 several sessions this week.
 
+## 2026-08-14 — Diagnosed and stopped a Radarr re-grab loop on The Handmaiden (2016)
+
+**Context**: Matias kept getting repeated Telegram "Radarr - Manual Interaction" alerts for
+*The Handmaiden (2016)* (`A.Criada.2016.REPACK.HDR.2160p.WEB-DL.DDP5.1.H265-WATCHER.DUAL-Vinci`,
+a REPACK release). First pass looked like a one-off: a stuck queue entry showing
+`trackedDownloadState: importBlocked` with `"Failed to import movie, Destination already
+exists."`, while the movie's tracked file already matched the expected size — looked like an
+already-resolved import that just left a stale queue entry. Cleared the queue entry
+(`DELETE /api/v3/queue/{id}`, no blocklist) and, once confirmed redundant, deleted the leftover
+18GB source copy still sitting in `/downloads/complete/`.
+**Real problem, found when the alert kept recurring**: this was an active, self-sustaining loop,
+not a one-off. Radarr's **RSS Sync** (runs every 30 min) kept deciding this same REPACK was
+worth grabbing on *every* cycle, even with a good file already in place
+(`qualityCutoffNotMet: false`). Each cycle: grab → SABnzbd re-downloads the 18GB file → Radarr
+tries to import → `DestinationAlreadyExistsException` (the good file is still there) → Radarr's
+own upgrade-replace logic deletes the existing good file as part of the failed import attempt →
+import still fails → movie now genuinely has no file → next scan reports "Existing movie file
+missing from disk" → RSS Sync grabs it again. Confirmed via Radarr's live log
+(`docker logs radarr`), which showed this exact cycle repeating multiple times within minutes,
+each iteration burning bandwidth re-downloading 18GB and destroying the previously-good file.
+**Decision**: `POST /api/v3/history/failed/{historyId}` on the most recent `grabbed` history
+record for this movie — this blocklists the specific release so RSS Sync's decision-maker skips
+it going forward, without touching the currently-imported (good) file. Verified the file was
+still intact immediately after (`hasFile:true`, correct size) and confirmed the blocklist entry
+was created. Next RSS Sync cycle (~30 min out at the time) needed to fully confirm the loop is
+broken, but blocklisting a release via this exact API path is Radarr's standard mechanism for
+"never grab this specific release again," so this should hold.
+**Rationale**: The first fix (clear the queue entry) treated a symptom instead of the cause —
+worth remembering that a recurring identical alert, even after a queue looks clean, is a sign to
+check the *history* and live logs for a repeating pattern rather than assuming the same
+one-shot fix applies twice.
+
 <!-- Add new decisions above this line, newest first -->
