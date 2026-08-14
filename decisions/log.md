@@ -1132,4 +1132,60 @@ total movie count went from 2361 → 2391, all 30 new entries `monitored:true` +
 **Rationale**: Bazarr's existing Radarr sync will pick these up automatically for subtitle
 management on its next cycle — no manual trigger needed, same as the earlier 8-title backfill.
 
+## 2026-08-14 — Triaged the 58 nested/multi-file movie folders, linked 22 to Radarr, found 2 real bugs
+
+**Context**: The "58 movies in nested/multi-file folders" bucket set aside during the
+2026-08-12 backfill (safety filter: skip any movie whose file isn't directly one level under
+its own folder) had never actually been enumerated anywhere. Reconstructed it by re-running
+the same rule against the live Jellyfin library: any movie item that's either (a) more than one
+path segment below `/data/movies/`, or (b) sharing its top-level folder with another movie
+item. Got exactly 58, matching the original count.
+**Decision — safe backfill**: 26 of the 58 turned out to be correctly identified single files,
+just sitting one extra folder level deep (release-group subfolder) or coexisting harmlessly in
+a shared folder. Checked each for Radarr overlap before touching anything: 2 (`La libertad`,
+`Prisoners of the Land`) were already linked from the same week's TMDB-id backfill, 1 (`Curse
+of the Black Pearl`) was already correctly linked from the original 2026-08-12 backfill. Of the
+remaining 23, canaried on `Klute`, verified `hasFile:true` and zero queue/grab activity, then
+batched the other 22 via the same `lookup → add(monitored:false) → RescanMovie` pattern used
+all week — this time using the *top-level* folder as Radarr's `path` (not the deeper release-
+group subfolder) since Radarr's rescan recurses into subfolders on its own. 21 of 22 resolved
+`hasFile:true` within ~50s of polling and got flipped to `monitored:true`. Total Radarr count:
+2391 → 2413.
+**Finding — `The Man from Earth (2007)` has no audio track.** The 22nd file never resolved
+`hasFile:true`; Radarr's manual-import scan showed a permanent rejection, "No audio tracks
+detected". Cross-checked independently via Jellyfin's own `PlaybackInfo` stream probe — confirmed
+the file genuinely has only a video stream and two Spanish subtitle tracks, no audio at all.
+Left this one `monitored:false` in Radarr (relinking metadata can't fix a broken file) rather
+than silently forcing it — it needs an actual re-download to get a version with sound.
+**Finding — real cross-tagging bug: "Happy Together" ↔ "Happiness".** While checking Radarr
+overlap, found the existing Radarr entry for tmdb:18329 ("Happy Together") points at
+`/movies/Happiness (1997)/Happiness.1997.Criterion...mkv` — Todd Solondz's *Happiness*, a
+completely different film. Root cause is in Jellyfin, not Radarr: that Jellyfin item is
+literally named "春光乍洩" (Happy Together's original Chinese title) with `ProviderIds.Tmdb:
+18329`, i.e. the *Happiness* file was mistagged with *Happy Together*'s TMDB id at some point
+before this week's work, and the 2026-08-12 Radarr backfill (which trusted Jellyfin's TMDB id
+as ground truth) faithfully inherited the error. The real, correctly-tagged *Happy Together*
+file sits untouched in its own separate, correctly-named folder — never linked to Radarr.
+Excluded both from this batch rather than creating a second Radarr entry for the same tmdbId
+(which Radarr would have rejected anyway) or silently leaving the mislink in place. Not fixed
+yet — needs looking up *Happiness*'s real TMDB id, retagging the Jellyfin item, correcting the
+Radarr entry (id 432), and only then adding the real Happy Together file. Left for a dedicated
+pass rather than folding into this backfill, since it touches an existing library entry rather
+than just adding a new one.
+**Decision — everything else left for manual review**: 3 real misplaced-file bugs (need a `mv`
+on the NAS: *A Cure For Wellness* inside "25th Hour"'s folder, *Jeff, Who Lives at Home* inside
+"Klute"'s folder, *Pirates: Dead Man's Chest* inside "Curse of the Black Pearl"'s folder — in
+all three cases the "host" folder's own movie, where it has one, is unaffected and already
+correctly linked); 4 more wrong-TMDB-tag cases including — most notably — *Los Muertos (2004)*'s
+actual main film file being mistagged as a "making of" title, meaning the real film has no
+correct entry in the library at all; 1 ambiguous Kurosawa documentary; the 8-file *La Flor
+(2018)* cluster (each fragment individually mismatched to an unrelated title by Jellyfin's
+scraper — real tmdb id is 423778, found via manual search; recommended fix is Jellyfin's Merge
+Versions feature rather than 8 separate movie entries); and 6 harmless duplicate-copy cases
+needing no action. Full breakdown in `TODO.md`.
+**Rationale**: The pattern established all week (verify before batch-applying, never auto-fix
+an existing/live entry without flagging it) is what surfaced both bugs — a blind "trust
+Jellyfin's tmdb id" batch would have either silently duplicated or silently perpetuated the
+Happy Together/Happiness swap.
+
 <!-- Add new decisions above this line, newest first -->

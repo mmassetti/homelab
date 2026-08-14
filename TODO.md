@@ -46,9 +46,54 @@ as they come up.
         several may genuinely not be catalogued on TMDB, in which case they can't ever get a
         Radarr/Bazarr entry. Full list in the artifact report from 2026-08-13 (not saved to
         the repo — ask to regenerate if the link's gone stale).
-- [ ] **58 movies in nested/multi-file folders** — mostly legitimate extras or multi-part rips,
-      but at least one real folder-mismatch bug found ("A Cure For Wellness" living inside
-      "25th Hour"'s folder) — worth eyeballing the rest for similar issues.
+- [ ] **58 movies in nested/multi-file folders** — reconstructed and fully triaged 2026-08-14
+      (wasn't saved anywhere before). Broke into 7 groups:
+      - ✅ **26 safe, done** — correctly identified, just had an extra folder level or shared a
+        folder with something else harmless. 22 newly linked into Radarr (`monitored:true`,
+        `hasFile:true` confirmed), 2 (`La libertad`, `Prisoners of the Land`) were already
+        linked from the same day's earlier batch, 1 (`Curse of the Black Pearl`) was already
+        correctly in Radarr from before, and 1 (`The Man from Earth`) turned out to have **no
+        audio track at all** (confirmed independently via Jellyfin's own stream probe) — added
+        to Radarr but left `monitored:false` since relinking won't fix a broken file; needs a
+        fresh download to actually get audio.
+      - 🐛 **Real bug found: "Happy Together" / "Happiness" are cross-tagged.** The file at
+        `Happiness (1997)/Happiness.1997.Criterion...mkv` (Todd Solondz's film) is wrongly
+        tagged in Jellyfin with tmdb:18329, which is actually *Happy Together* (Wong Kar-wai,
+        original title 春光乍洩) — Radarr inherited this during the 2026-08-12 backfill, so its
+        "Happy Together" entry (id 432) points at the *Happiness* file. The real, correctly-
+        tagged *Happy Together* file sits untouched in its own folder
+        (`Happy Together (1997)/...`), never linked to Radarr. Fix needed: look up the real
+        *Happiness* (1998, Todd Solondz) tmdb id, retag the Jellyfin item, fix/recreate the
+        Radarr entry, then add the real Happy Together file fresh.
+      - **3 real misplaced-file bugs** (need an actual `mv` on the NAS, not a metadata fix):
+        *A Cure For Wellness (2016)* sitting inside "25th Hour (2002)"'s folder (25th Hour
+        itself isn't even in the library — the folder is just mislabeled); *Jeff, Who Lives at
+        Home (2011)* inside "Klute (1971)"'s folder (Klute itself is fine); *Pirates of the
+        Caribbean: Dead Man's Chest (2006)* inside "Curse of the Black Pearl (2003)"'s folder
+        (Curse of the Black Pearl itself is fine).
+      - **4 more wrong-TMDB-tag cases** (real content, but tagged as an unrelated movie — not
+        caught by the earlier "no TMDB id" audit since these already had *a* tmdb id, just the
+        wrong one): `dead set 2`/`dead set 3` (both tagged as an unrelated documentary, "Civil
+        War Life: Left for Dead"); *La Libertad*'s deleted scene (tagged as an unrelated 2010
+        film); and — most importantly — **the actual main film file of *Los Muertos (2004)*
+        is mistagged as "Cómo se hizo 'Los muertos'"**, meaning Los Muertos has no correctly-
+        identified file in the library at all right now.
+      - **1 ambiguous** — a Kurosawa documentary about "High and Low" sitting inside the
+        "Tengoku to jigoku" (High and Low) folder; might be legitimate bonus content, might be
+        misfiled. Worth a quick look, not urgent.
+      - **La Flor (2018) cluster, 8 files** — Mariano Llinás's ~14h film, released/ripped in
+        parts (`1.1`, `1.2`, `2.1`...`3.3`). Jellyfin's scraper matched each fragment
+        individually to a wildly unrelated title (an Atlético Madrid documentary, anime films,
+        "The House of Hate" (1918) four times, etc). Real TMDB id is **423778**. Clean fix is
+        probably Jellyfin's "Merge Versions" feature so the 8 files show as one item with 8
+        selectable versions, rather than 8 fake standalone movies.
+      - **6 harmless duplicate copies** of already-correctly-tagged movies, no action needed
+        unless disk space matters: *El gran dictador* (2 audio tracks, already resolved — only
+        the Spanish-audio copy is in Radarr), *Seven Samurai* (2 quality rips, one now in
+        Radarr), *Trenque Lauquen* (2 parts sharing one tmdb id — Radarr can't track both under
+        the same id, so at most one part can ever get a Radarr entry).
+      - **10 already resolved** in the 2026-08-13 TMDB-id session (the `cast1.part1`/`dead set
+        1,4,5`/interview/making-of/restoration items already flagged as "not real movies").
 - [ ] **9 movies Radarr couldn't find after the 2026-08-12 backfill** (likely folder name
       casing) + **2 loose files directly in `Peliculas/` root** ("El Partido", "La cara
       oculta") with no enclosing folder — see decision log for the full list.
