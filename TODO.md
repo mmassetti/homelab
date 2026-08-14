@@ -98,9 +98,21 @@ as they come up.
         the same id, so at most one part can ever get a Radarr entry).
       - **10 already resolved** in the 2026-08-13 TMDB-id session (the `cast1.part1`/`dead set
         1,4,5`/interview/making-of/restoration items already flagged as "not real movies").
-- [ ] **9 movies Radarr couldn't find after the 2026-08-12 backfill** (likely folder name
-      casing) + **2 loose files directly in `Peliculas/` root** ("El Partido", "La cara
-      oculta") with no enclosing folder — see decision log for the full list.
+- [ ] **9 movies Radarr couldn't find, diagnosed 2026-08-14** — turned out not to be a casing
+      issue at all (every path already matches Jellyfin exactly). Real causes, confirmed via
+      Radarr's manual-import rejections + an independent Jellyfin stream-probe cross-check:
+      - **8 have no audio track at all** (broken files, need a fresh download — not fixable via
+        metadata/relinking): *The Boat That Rocked*, *Fresno*, *Hotel Monterey*, *La chambre*,
+        *Nightwatching*, *Popstar: Never Stop Never Stopping*, *Snowtown*, *Stranger Than
+        Fiction*.
+      - **1 is fine but Radarr can't represent it**: *The Mother and the Whore (1973)* is a
+        VHS-era CD1/CD2 split of one film — has real audio, plays correctly in Jellyfin as one
+        continuous item, but Radarr explicitly rejects multi-part files. Same situation as
+        *La Flor* — left deliberately unlinked rather than force-importing just half of it.
+      - Left all 9 `monitored:false` as-is, matching their real state. No fix applied, this was
+        diagnosis only. See decision log.
+      - **2 loose files directly in `Peliculas/` root** ("El Partido", "La cara oculta") with no
+        enclosing folder — still untouched, separate from the above.
 - [ ] **NAS backup strategy incomplete** — SHR redundancy (2nd drive) is done, but Btrfs
       snapshots and an actual off-pool backup (Hyper Backup to USB, offsite B2/Wasabi) were
       never confirmed as set up. Redundancy alone doesn't cover accidental deletion or pool

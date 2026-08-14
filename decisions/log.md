@@ -1331,4 +1331,33 @@ item's stale second `MediaSource` (library count 2519 → 2518, matching the one
 and confirmed Radarr's entry (still pointing at the surviving file) was unaffected —
 `hasFile:true`/`monitored:true` unchanged.
 
+## 2026-08-14 (yet another) — Diagnosed the "9 Radarr couldn't find" from the 2026-08-12 backfill
+
+**Context**: The 9 titles left `monitored:false` after the original 2210-title backfill were
+assumed to be a folder-name-casing mismatch (per that day's note, "e.g. 'The boat that rocked'
+vs the folder's actual 'The Boat That Rocked'"). Re-checked all 9 individually via Radarr's
+`manualimport` endpoint (which surfaces the actual rejection reason, unlike the plain
+`RescanMovie` command) plus an independent cross-check via Jellyfin's own `PlaybackInfo` stream
+probe (the same method that caught *The Man from Earth*'s missing audio in an earlier session).
+**Finding — 8 of the 9 have no audio track at all**, confirmed independently by both Radarr's
+media analysis and Jellyfin's stream probe: *The Boat That Rocked*, *Fresno*, *Hotel Monterey*,
+*La chambre*, *Nightwatching*, *Popstar: Never Stop Never Stopping*, *Snowtown*, *Stranger Than
+Fiction*. Not a path/casing problem at all — the casing theory from 2026-08-12 doesn't hold up;
+every path Radarr has on file matches Jellyfin's actual path exactly. These are genuinely silent
+files needing a fresh download, same as *The Man from Earth* — left `monitored:false` as-is,
+same treatment.
+**Finding — the 9th, *The Mother and the Whore (1973)*, is fine but structurally unsupported.**
+Ships as two files (`...CD1.avi` / `...CD2.avi`, a VHS-era 2-disc split of one ~3h20min film).
+Confirmed it has real French audio (`mp3` codec) and plays correctly in Jellyfin as one
+continuous stacked item (`PartCount: 2`). Radarr's manual-import explicitly rejects it —
+`"File is suspected multi-part file, Radarr doesn't support this"` — even though the movie
+lookup itself succeeds (already correctly matched to movieId 1268). Same underlying limitation
+as *La Flor*'s 8-file cluster: Radarr's one-file-per-movie model can't represent this. Left
+unlinked rather than force-importing just CD1, which would only get Bazarr searching subtitles
+for half the runtime — same reasoning and same outcome as the La Flor decision.
+**Decision**: No changes made — this was purely diagnostic. All 9 remain `monitored:false`,
+correctly reflecting their real state (8 broken files, 1 Radarr-incompatible multi-part film)
+rather than a fixable metadata problem. Documented per-title so a future redownload pass
+(the 8 broken ones) doesn't need to re-derive which titles or why.
+
 <!-- Add new decisions above this line, newest first -->
