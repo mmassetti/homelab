@@ -1244,4 +1244,32 @@ Radarr with the same verified pattern as the rest of the week (`monitored:false`
 identification was already correct in all three cases, the files were just living in the wrong
 directory.
 
+## 2026-08-14 (yet later) — Fixed the 4 wrong-TMDB-tag cases from the nested-folder triage
+
+**Context**: Group 3 of the 58-folder triage — 4 files that already had *a* TMDB id (so the
+2026-08-13 "no TMDB id" audit never caught them) but the wrong one.
+**Decision — the real fix (Los Muertos)**: `Los.muertos.2004.1080p.WEB-DL...mkv` — the actual
+main film file of Lisandro Alonso's *Los Muertos (2004)* — was mistagged as "Cómo se hizo 'Los
+muertos'" (a making-of documentary, tmdb:306840). Looked it up via Radarr's term search ("Los
+Muertos 2004"), which returned both the wrong making-of entry and the correct film
+(tmdb:36241, originalTitle "Los Muertos") side by side, confirming which was which. Applied the
+correct id to the Jellyfin item; as with the Happiness fix, `RemoteSearch/Apply` updated
+ProviderIds/Overview/artwork but left `Name` on the old wrong title, needing the same direct
+item-DTO edit to fix. Added the now-correctly-tagged film to Radarr (it had never been linked —
+excluded from every prior backfill because of this folder's shared-folder status), verified
+`hasFile:true` and zero grab/queue activity, flipped `monitored:true`. Radarr total: 2417 → 2418.
+**Decision — the other 3 (bonus content, not real films)**: `dead set 2`/`dead set 3` (both
+wrongly tagged as an unrelated documentary, "Civil War Life: Left for Dead") and *La Libertad*'s
+deleted scene (wrongly tagged as an unrelated 2010 film) aren't standalone movies — same
+category as the already-documented "not real movies" bucket. Rather than hunting for a "correct"
+TMDB id for content that was never meant to be its own catalogued film, cleared `ProviderIds`
+entirely via a direct item-DTO edit (also cleared Overview/ratings/premiere date, which had all
+been inherited from the wrong match) and reset `Name` to a plain filename-derived label, matching
+how `dead set 1`/`4`/`5` already look. No Radarr entry created for these three — same treatment
+as the earlier hygiene bucket.
+**Rationale**: Distinguishing "this is a real movie with the wrong id" from "this was never a
+real standalone movie" determined whether the fix was a re-tag (Los Muertos) or a tag-clear
+(the other three) — conflating them would have either left a real film mistagged or invented a
+fake catalog entry for bonus content.
+
 <!-- Add new decisions above this line, newest first -->

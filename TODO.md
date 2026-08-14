@@ -71,13 +71,13 @@ as they come up.
         folder; *Pirates of the Caribbean: Dead Man's Chest (2006)* out of "Curse of the Black
         Pearl (2003)"'s folder. Re-scanned in Jellyfin (kept the same correct TMDB ids) and
         linked all 3 into Radarr, `monitored:true`/`hasFile:true`. See decision log.
-      - **4 more wrong-TMDB-tag cases** (real content, but tagged as an unrelated movie — not
-        caught by the earlier "no TMDB id" audit since these already had *a* tmdb id, just the
-        wrong one): `dead set 2`/`dead set 3` (both tagged as an unrelated documentary, "Civil
-        War Life: Left for Dead"); *La Libertad*'s deleted scene (tagged as an unrelated 2010
-        film); and — most importantly — **the actual main film file of *Los Muertos (2004)*
-        is mistagged as "Cómo se hizo 'Los muertos'"**, meaning Los Muertos has no correctly-
-        identified file in the library at all right now.
+      - ✅ **Fixed 2026-08-14: 4 wrong-TMDB-tag cases.** *Los Muertos (2004)*'s actual main film
+        file was mistagged as "Cómo se hizo 'Los muertos'" (a making-of) — retagged to the real
+        film (tmdb:36241) and linked into Radarr for the first time
+        (`monitored:true`/`hasFile:true`). The other 3 (`dead set 2`, `dead set 3`, *La
+        Libertad*'s deleted scene) aren't real standalone films, so instead of hunting for a
+        "correct" id, cleared their wrong TMDB tags entirely to match how `dead set 1`/`4`/`5`
+        already look — no Radarr entry for these three. See decision log.
       - **1 ambiguous** — a Kurosawa documentary about "High and Low" sitting inside the
         "Tengoku to jigoku" (High and Low) folder; might be legitimate bonus content, might be
         misfiled. Worth a quick look, not urgent.
