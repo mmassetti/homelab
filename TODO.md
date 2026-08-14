@@ -81,12 +81,12 @@ as they come up.
       - **1 ambiguous** — a Kurosawa documentary about "High and Low" sitting inside the
         "Tengoku to jigoku" (High and Low) folder; might be legitimate bonus content, might be
         misfiled. Worth a quick look, not urgent.
-      - **La Flor (2018) cluster, 8 files** — Mariano Llinás's ~14h film, released/ripped in
-        parts (`1.1`, `1.2`, `2.1`...`3.3`). Jellyfin's scraper matched each fragment
-        individually to a wildly unrelated title (an Atlético Madrid documentary, anime films,
-        "The House of Hate" (1918) four times, etc). Real TMDB id is **423778**. Clean fix is
-        probably Jellyfin's "Merge Versions" feature so the 8 files show as one item with 8
-        selectable versions, rather than 8 fake standalone movies.
+      - ✅ **Fixed 2026-08-14: La Flor (2018) 8-file cluster.** Retagged all 8 fragments to the
+        real film (tmdb:423778) then merged them via Jellyfin's `MergeVersions` API into one
+        item with 8 selectable versions instead of 8 fake standalone movies. Deliberately *not*
+        linked to Radarr — its one-file-per-movie model doesn't fit 8 different segments of one
+        long film, and subtitle need is low anyway (Argentine film, already in Spanish). See
+        decision log.
       - **6 harmless duplicate copies** of already-correctly-tagged movies, no action needed
         unless disk space matters: *El gran dictador* (2 audio tracks, already resolved — only
         the Spanish-audio copy is in Radarr), *Seven Samurai* (2 quality rips, one now in

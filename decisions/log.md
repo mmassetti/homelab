@@ -1272,4 +1272,31 @@ real standalone movie" determined whether the fix was a re-tag (Los Muertos) or 
 (the other three) — conflating them would have either left a real film mistagged or invented a
 fake catalog entry for bonus content.
 
+## 2026-08-14 (final today) — Fixed the La Flor (2018) 8-file misidentification cluster
+
+**Context**: Group 5 of the 58-folder triage — Mariano Llinás's ~14h film *La Flor*, ripped as 8
+numbered parts (`1.1`, `1.2`, `2.1`...`3.3`), each individually mismatched by Jellyfin's
+scraper to a wildly unrelated title (an Atlético Madrid documentary, two anime films, "The
+House of Hate" (1918) four times, a kids' film). Real tmdb id **423778** was found earlier via
+manual search (confirmed by its overview: "six independent, successive stories... four
+actresses", matching the film exactly).
+**Decision**: Retagged all 8 Jellyfin items to tmdb:423778 individually via `RemoteSearch/Apply`
+(`ReplaceAllImages=true`, since each had inherited a wrong poster) + the same direct item-DTO
+`Name`/`OriginalTitle` fix needed all week for this endpoint. Verified all 8 showed "La Flor"
+with correct ProviderIds before merging. Then used Jellyfin's native multi-version support —
+`POST /Videos/MergeVersions?Ids=<all 8 item ids>` — to combine them into one primary item with
+8 selectable `MediaSources`, instead of 8 separate library tiles. Verified: the primary item now
+lists all 8 files as versions; the raw `/Items` count stayed at 2519 (merge doesn't delete the
+secondary records, just links them as alternate versions, non-destructively — reversible via
+Jellyfin's "Split" if ever needed).
+**Decision — not linked to Radarr**: unlike every other fix this week, deliberately did *not*
+add this to Radarr. Radarr's model expects one file per movie folder; La Flor's 8 files aren't
+interchangeable qualities of the same cut; they're 8 *different* segments of one long film, so
+picking any single file for Radarr would only get Bazarr subtitle coverage for that one segment,
+not the whole thing. Also lower priority than usual since the film is Argentine and already in
+Spanish — the household's primary language — so subtitle need is minimal here anyway.
+**Rationale**: Merge Versions is the Jellyfin-native answer to "one logical movie, several
+physical files" — cleaner than either leaving 8 fake standalone movies or arbitrarily picking
+one file as "the" movie and hiding the rest.
+
 <!-- Add new decisions above this line, newest first -->
