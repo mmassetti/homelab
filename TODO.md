@@ -56,15 +56,14 @@ as they come up.
         audio track at all** (confirmed independently via Jellyfin's own stream probe) — added
         to Radarr but left `monitored:false` since relinking won't fix a broken file; needs a
         fresh download to actually get audio.
-      - 🐛 **Real bug found: "Happy Together" / "Happiness" are cross-tagged.** The file at
-        `Happiness (1997)/Happiness.1997.Criterion...mkv` (Todd Solondz's film) is wrongly
-        tagged in Jellyfin with tmdb:18329, which is actually *Happy Together* (Wong Kar-wai,
-        original title 春光乍洩) — Radarr inherited this during the 2026-08-12 backfill, so its
-        "Happy Together" entry (id 432) points at the *Happiness* file. The real, correctly-
-        tagged *Happy Together* file sits untouched in its own folder
-        (`Happy Together (1997)/...`), never linked to Radarr. Fix needed: look up the real
-        *Happiness* (1998, Todd Solondz) tmdb id, retag the Jellyfin item, fix/recreate the
-        Radarr entry, then add the real Happy Together file fresh.
+      - ✅ **Fixed 2026-08-14: "Happy Together" / "Happiness" cross-tagging bug.** Jellyfin's
+        `Happiness (1997)/...` file was wrongly tagged tmdb:18329 (actually *Happy Together*'s
+        id), which Radarr had inherited from the 2026-08-12 backfill. Retagged the Jellyfin
+        item to *Happiness*'s real id (tmdb:10683, cross-checked against the IMDb id already on
+        file), deleted the wrong Radarr entry (`deleteFiles:false`, file confirmed untouched),
+        and added fresh correct entries for both *Happiness* and the real *Happy Together*
+        (which had been sitting correctly tagged in Jellyfin all along but never linked). Both
+        `monitored:true`/`hasFile:true`, zero duplicate tmdbIds in Radarr. See decision log.
       - **3 real misplaced-file bugs** (need an actual `mv` on the NAS, not a metadata fix):
         *A Cure For Wellness (2016)* sitting inside "25th Hour (2002)"'s folder (25th Hour
         itself isn't even in the library — the folder is just mislabeled); *Jeff, Who Lives at

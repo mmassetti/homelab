@@ -1188,4 +1188,34 @@ an existing/live entry without flagging it) is what surfaced both bugs — a bli
 Jellyfin's tmdb id" batch would have either silently duplicated or silently perpetuated the
 Happy Together/Happiness swap.
 
+## 2026-08-14 (later) — Fixed the Happy Together / Happiness cross-tagging bug
+
+**Context**: Follow-up to the same day's nested-folder triage, which found the Jellyfin item at
+`Happiness (1997)/Happiness.1997.Criterion...mkv` (Todd Solondz's *Happiness*) was tagged with
+tmdb:18329, actually *Happy Together* (Wong Kar-wai)'s id — and Radarr's "Happy Together" entry
+(id 432) had inherited the error, pointing at the wrong file.
+**Decision**: Looked up *Happiness*'s real tmdb id two independent ways — Radarr's term lookup
+("Happiness 1998") and cross-checking against the IMDb id the Jellyfin item already had stored
+(`tt0147612`, correct for *Happiness*, untouched by whatever process broke the Tmdb field) —
+both converged on **tmdb:10683**. Fixed Jellyfin via `RemoteSearch/Apply` with
+`ReplaceAllImages=true` (the poster/backdrop were also wrong, inherited from Happy Together);
+Jellyfin's background refresh picked up the correct Overview/CriticRating/OfficialRating
+automatically but left `Name`/`OriginalTitle` stuck on the old "春光乍洩" — a plain
+`RemoteSearch/Apply` doesn't touch those fields, they needed a direct item-DTO edit (`GET
+/Users/{userId}/Items/{id}` → edit `Name`/`OriginalTitle` → `POST /Items/{id}`) to actually
+update.
+On the Radarr side, confirmed `PUT /api/v3/movie/{id}` cannot change an existing movie's
+`tmdbId` — it silently no-ops and keeps serving the old linked metadata (verified: response
+still showed "Happy Together"/春光乍洩 after the attempt). Deleted movie 432 with
+`deleteFiles:false` (verified the actual file survived on the NAS afterward), then added two
+fresh entries: *Happiness* (tmdb:10683) at `/movies/Happiness (1997)` — the file that was
+already there — and the real *Happy Together* (tmdb:18329) at `/movies/Happy Together (1997)`,
+which had been sitting correctly tagged in Jellyfin all along but never linked to Radarr
+(excluded from the same day's earlier batch specifically because of this conflict). Both
+resolved `hasFile:true` on the first poll, zero queue/grab activity confirmed, both flipped to
+`monitored:true`. Final check: 2414 total movies, zero duplicate `tmdbId`s.
+**Rationale**: Same principle as the rest of the week — verify from an independent source
+(IMDb id already on file, not just a fresh title search) before overwriting an existing tag,
+and confirm the delete didn't touch the underlying file before moving on.
+
 <!-- Add new decisions above this line, newest first -->
