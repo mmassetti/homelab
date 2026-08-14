@@ -1403,4 +1403,21 @@ scan once a real file exists). Redownload wishlist (title/year/size/folder) reco
 tracking) makes a future redownload close to a no-op — drop the file in, rescan, done — instead
 of redoing identification work from scratch.
 
+## 2026-08-14 (absolute last) — Reviewed and partly resolved the 6 "harmless duplicates"
+
+**Context**: Closing out the last item from the 58-folder triage's group 6.
+**Finding**: only 1 of the 3 pairs was an actual redundant duplicate. *El gran dictador*'s two
+files are legitimately different versions (dubbed Spanish audio `.avi` vs. a subtitled `.rmvb`)
+— kept both, no action. *Trenque Lauquen*'s two files are Part 1 + Part 2 of one film (25GB
+combined), not duplicates at all — kept both, no action. *Seven Samurai* was the real one: two
+separate rips of the same film, only one of which (the nested, Radarr/Bazarr-tracked copy) is
+actually in use — confirmed via `movieFile.path` before touching anything.
+**Decision**: Deleted the unused top-level copy (`Seven.Samurai.1954.1080p.BluRay.x264-
+[YTS.AM].mp4`, 3.3GB, no subtitles, not tracked by Radarr). Ran a full Jellyfin scan afterward;
+confirmed the remaining item still resolves correctly (`tmdb:346`) and Radarr's entry is
+unaffected (`hasFile:true`/`monitored:true`, still pointing at the surviving nested file).
+**Closing note**: This resolves the last open item from the entire 2026-08-12 backfill's
+follow-up work (58-folder triage + 9 unresolved + 2 loose files + 6 duplicates), spread across
+several sessions this week.
+
 <!-- Add new decisions above this line, newest first -->

@@ -91,11 +91,12 @@ as they come up.
         linked to Radarr — its one-file-per-movie model doesn't fit 8 different segments of one
         long film, and subtitle need is low anyway (Argentine film, already in Spanish). See
         decision log.
-      - **6 harmless duplicate copies** of already-correctly-tagged movies, no action needed
-        unless disk space matters: *El gran dictador* (2 audio tracks, already resolved — only
-        the Spanish-audio copy is in Radarr), *Seven Samurai* (2 quality rips, one now in
-        Radarr), *Trenque Lauquen* (2 parts sharing one tmdb id — Radarr can't track both under
-        the same id, so at most one part can ever get a Radarr entry).
+      - ✅ **Reviewed 2026-08-14: the 6 "duplicates".** Only 1 of 3 pairs was actually redundant.
+        *El gran dictador* (dubbed vs. subtitled — different versions, kept both) and *Trenque
+        Lauquen* (Part 1 + Part 2 — not duplicates, kept both) needed no action. *Seven Samurai*
+        was a real duplicate — deleted the unused 3.3GB top-level rip, kept the Radarr/Bazarr-
+        tracked nested copy. This was the last open item from the entire 2026-08-12 backfill
+        follow-up. See decision log.
       - **10 already resolved** in the 2026-08-13 TMDB-id session (the `cast1.part1`/`dead set
         1,4,5`/interview/making-of/restoration items already flagged as "not real movies").
 - [ ] **9 movies Radarr couldn't find, diagnosed 2026-08-14** — turned out not to be a casing
