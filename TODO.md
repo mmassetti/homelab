@@ -6,12 +6,11 @@ as they come up.
 
 ## Open
 
-- [ ] **Remove the old `media-tracker-api.service` systemd unit** — `sudo systemctl stop/
-      disable media-tracker-api.service && sudo rm /etc/systemd/system/media-tracker-api.service
-      && sudo daemon-reload`. Superseded 2026-08-15 by the Docker container
-      `media-tracker-app`; the old unit crash-loops (harmless, just log noise) since it points
-      at the wrong path. Needs an interactive sudo password, couldn't be done from this
-      session.
+- [x] **Old `media-tracker-api.service` systemd unit removed** (2026-08-15, Matias ran it
+      manually — needed an interactive sudo password). Verified: `systemctl status` now
+      returns "could not be found", unit file gone from `/etc/systemd/system/`, not in
+      `systemctl list-units --all` either. Fully superseded by the `media-tracker-app` Docker
+      container.
 - [x] **DNS CNAME for `coleccion.matiasmassetti.com`** — added via API 2026-08-15 once the
       token's DNS scope got fixed (see below). Verified end-to-end: `https://coleccion.matiasmassetti.com/`
       resolves and returns a 302 to the Cloudflare Access login, confirming DNS + Tunnel +
