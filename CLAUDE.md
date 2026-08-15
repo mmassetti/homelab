@@ -147,24 +147,17 @@ ingress + Access app ("Coleccion 4K", same email-OTP policy as the rest) added v
 DNS CNAME had to be added manually in the dashboard (this token still can't touch DNS — see
 Cloudflare Tunnel URLs section). Old systemd unit needs manual removal (needs an interactive
 sudo password, couldn't be done non-interactively) — see `TODO.md`.
-**Data quality, found but not yet fixed**: compared the DB (82 `media_items`) against a
-just-updated Google Sheet inventory (85 rows). Real gaps: 16 titles physically owned but
-missing from the DB entirely (American Gangster, Band of Brothers/The Pacific, Better Man,
-Boogie Nights, Dazed and Confused, F1, Kill Bill Vol. 1 & 2, No Country for Old Men, One Battle
-After Another, Pulp Fiction, Sinners, The Blues Brothers, The Dark Knight, The Office, The
-Shawshank Redemption); 12 titles are duplicated in the DB (Akira, Color Out of Space, Dirty
-Harry, Hell or High Water, King Kong, Nightcrawler, Schindler's List, Talk to Me, The Big
-Lebowski, The Departed, The Exorcist, The Secret Life of Walter Mitty — each appears twice);
-Godzilla Minus One is in the DB but not the Sheet (unconfirmed which is right); John Wick:
-Chapter 4's format disagrees (Sheet says Blu-ray, DB says 4K UHD). None of this blocked
-getting the app itself working again, but the data isn't trustworthy until cleaned up. See
-`TODO.md`.
-**Ongoing workflow (requested, not yet built)**: Matias wants to just tell Claude when he adds
-a physical movie, and have both the Google Sheet
-(`docs.google.com/spreadsheets/d/10AGgdbOv-AQQCxiyVfQ4Opgy0fUgkflR1wBLMOgmVVw`) and the DB
-update automatically. Not implemented yet — needs Google Sheets API write access (there's
-already a `gcal_oauth.json` in the secrets folder for Calendar; check whether that OAuth
-client/scope can be extended to Sheets, or needs its own).
+**Data quality — fixed same day**: compared the DB (82 `media_items`) against a just-updated
+Google Sheet inventory (85 rows) and resolved everything found: 12 duplicated titles removed
+(kept the more complete/watched copy where the pair actually differed — Akira's purchase
+price, The Exorcist's watched flag), John Wick: Chapter 4 corrected to Blu-ray, 16 owned titles
+backfilled with full TMDB enrichment. Godzilla Minus One confirmed correctly owned (the Sheet,
+not the DB, was wrong). DB now at 86 items. Full detail in `decisions/log.md`.
+**"Add a movie" workflow — resolved, no Sheets sync needed**: dropped the two-way Sheet↔DB
+sync idea. The app already had a working `/add` page (verified via a live API smoke test);
+added `GET /api/media/export.csv` (button in Settings) so the Sheet is now a disposable,
+always-current export instead of something to keep manually in sync. Three ways to add a
+movie: the web form, telling Claude here, or bulk JSON import.
 
 ## Documentation — LeafWiki tried and dropped (2026-08-15, same day)
 Trialed as a wiki layer over `~/homelab`'s docs; dropped because its Markdown import is

@@ -1690,4 +1690,33 @@ partial to clean up, just re-ran after quoting it.
 (`/api/media/stats`), not just the DB directly, to confirm the self-hosted app actually
 reflects it.
 
+## 2026-08-15 (same day) — Dropped the Sheet-sync idea for a CSV export button instead
+
+**Context**: right after building the DB-cleanup follow-up, Matias reconsidered the earlier
+"tell Claude, it updates the Sheet and the DB" plan — pointed out it'd be simpler to just add
+an export button to the app itself, and asked separately whether adding movies could happen
+either from the web or by telling Claude.
+**Investigation before building anything**: checked what already existed rather than assuming
+a blank slate. The frontend already had full `/add`, `/item/:id/edit`, and even `/scan`
+(barcode scanner) pages wired to the real `/api/media` CRUD routes — "add via web" was already
+built, just never verified against a live backend. Proved it works with a real create+delete
+smoke test through the API (first attempt used snake_case `is_wishlist` and got a not-null
+violation — that was a bad test payload, not an app bug; retried with the correct camelCase
+`isWishlist` field the frontend actually sends, and it worked cleanly).
+**Built**: `GET /api/media/export.csv` — one row per physical item (standalone `media_items`
+plus `collections`/box sets unioned together, matching the Sheet's one-row-per-product
+granularity), UTF-8 BOM so accents render correctly in Excel/Sheets, same Título/Formato/
+Colección/Notas columns as the manual Sheet. Button added in Settings next to the existing
+JSON backup export.
+**Decision**: this replaces the two-way sync entirely — no Google Sheets API OAuth needed.
+The Sheet becomes optional and disposable (export fresh whenever wanted) instead of a second
+source of truth to keep faithful to the DB. "Add a movie" now has three paths: the web form,
+asking Claude (who does the TMDB lookup + insert, as already demonstrated for the 16
+backfilled titles), or bulk JSON import.
+**Rationale**: worth generalizing — when a request implies building new sync/integration
+infrastructure (here: Sheets API write access), check whether the actual need can be served by
+making the existing app the single source of truth and exporting on demand instead. Sync
+between two independently-editable stores is inherently fragile (which one wins on conflict?);
+a one-directional, regenerate-anytime export sidesteps that class of problem entirely.
+
 <!-- Add new decisions above this line, newest first -->

@@ -24,11 +24,18 @@ as they come up.
       Godzilla Minus One confirmed correct as-is (Matias does own it — the *Sheet* was the one
       missing it, not the DB; still needs adding to the Sheet, see the sync-workflow item
       below). DB now at 86 items (was 82, -12 dupes +16 new).
-- [ ] **Build the Sheet+DB sync workflow for the 4K tracker** — Matias wants to just tell
-      Claude when he adds a physical movie and have it update both the Google Sheet and the
-      DB. Needs Google Sheets API write access — check if the existing `gcal_oauth.json`
-      OAuth client (used for Calendar) can be extended with the Sheets scope, or needs a
-      separate credential.
+- [x] **4K tracker "add a movie" workflow — resolved, no Sheets API needed** (2026-08-15).
+      Dropped the two-way Sheet↔DB sync idea (Google Sheets API write access, extending
+      `gcal_oauth.json` or a new credential) in favor of something simpler: the app already
+      had working `/add` and `/item/:id/edit` pages (`AddItem.tsx`/`EditItem.tsx`, verified via
+      a live create+delete smoke test through `/api/media` — works) — so adding a movie from
+      the web was already solved, just untested until now. Added
+      `GET /api/media/export.csv` (button in Settings, next to the existing JSON backup
+      export) so the Sheet becomes a disposable, always-fresh export instead of a second thing
+      to keep in sync — no more manual Sheet maintenance at all. Three ways to add a movie
+      going forward: the web form, telling Claude here (who does a TMDB lookup + `INSERT`,
+      as done for the 16 backfilled titles), or bulk JSON import. Godzilla Minus One (the one
+      item missing from the old Sheet) will show up correctly next time the CSV is exported.
 - [ ] **Verify The Handmaiden (2016) Radarr re-grab loop stayed stopped** — RSS Sync kept
       re-grabbing the same REPACK release every 30 min, deleting the good file each time on
       import failure, and re-triggering the "Manual Interaction" Telegram alert. Blocklisted the
