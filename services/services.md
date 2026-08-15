@@ -258,13 +258,18 @@ Router should point DNS to 192.168.1.239 for whole-network ad blocking.
 
 **Nextcloud decommissioned** — `nextcloud` and `nextcloud-db` containers, and their entries in `/opt/docker/docker-compose.yml`, no longer exist. The `nextcloud-db`/`nextcloud-app` named volumes below may be orphaned leftovers; check with `docker volume ls` / `docker system df -v` before assuming they're safe to prune, in case anything was never migrated off them.
 
-## Documentation — LeafWiki (trial, added 2026-08-15)
+## Documentation — LeafWiki — TRIED AND DROPPED (2026-08-15)
 
-| Service | Container | Port | Network | Notes |
-|---------|-----------|------|---------|-------|
-| LeafWiki | leafwiki | 8091 | leafwiki_default (own compose, not the main stack) | Lightweight self-hosted wiki — single Go binary + SQLite, Markdown stored on disk. Evaluating as a possible successor to (or complement of) plain `~/homelab` markdown+git for docs that need search/backlinks. |
+Trialed as a possible complement to plain `~/homelab` markdown+git (search/backlinks over the
+docs). **Verdict: dropped the same day.** Its Markdown import is web-UI-only (drag/drop a ZIP,
+no API), and its API keys are read-only — there's no way to push updates into it
+programmatically. That means every doc change would need a manually-regenerated ZIP and a
+manual browser upload to stay current, which is more friction than plain markdown+git already
+has, not less. Full story in `decisions/log.md`.
 
-**Status**: trial, not yet a committed decision. Own compose file at `/opt/docker/configs/leafwiki/docker-compose.yml` (deliberately kept separate from `/opt/docker/docker-compose.yml` so it can be torn down cleanly if it doesn't stick). `LEAFWIKI_JWT_SECRET` and `LEAFWIKI_ADMIN_PASSWORD` are set directly in that compose file's `environment:` block (not committed to this repo — `/opt/docker/configs/` isn't part of the `~/homelab` git tree). **Tailscale/LAN only** — not added to the Cloudflare Tunnel; matches the same reasoning as Jellystat (internal tool, no reason to expose it publicly). Access: `http://homelab:8091` over Tailscale, login `admin` / password in the compose file on disk.
+`docker compose down` run in `/opt/docker/configs/leafwiki/`; container and its network are
+gone. The `./data/` folder (~1MB) is still on disk there in case anything's worth a last look —
+safe to delete whenever, nothing depends on it.
 
 ## OpenClaw (AI Agent) — RETIRED (2026-08-12)
 

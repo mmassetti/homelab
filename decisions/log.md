@@ -1550,4 +1550,28 @@ Ollama/rclone findings earlier today.
 **Status**: not a committed decision yet — this is an evaluation. Revisit once Matias has
 used it for real notes for a bit.
 
+## 2026-08-15 (same day) — Dropped LeafWiki: no way to keep it in sync automatically
+
+**Context**: after the trial above, built a ZIP mirror of the real docs (CLAUDE.md, TODO.md,
+README.md, file-structure.md, services/services.md, hardware/*.md, network/network.md +
+network-topology.svg, decisions/log.md — 12 files) and imported it via LeafWiki's web UI.
+Import worked (verified server-side: `data/root/{services,hardware,network,decisions}/`
+mirrored the folder structure correctly, the SVG landed under `data/assets/`). Two `.txt`
+reference guides in `openclaw/` were silently skipped by the importer — it's Markdown-only.
+**Why dropped**: Matias pointed out the real problem — the import is web-UI-only (drag/drop a
+ZIP, no documented REST endpoint for it), and the only API LeafWiki exposes is read-only
+(admin-managed API keys, marked experimental as of v0.12). There is no way for a script or an
+agent to push updates into it. Keeping it current would mean: every time the real docs change,
+regenerate a ZIP and have Matias manually re-upload it through the browser — strictly more
+friction than just editing markdown in the git repo directly, which defeats the entire point of
+adding a second tool. Also untested: what a re-import over existing content even does (overwrite
+vs. duplicate) — never got far enough to find out.
+**Action**: `docker compose down` in `/opt/docker/configs/leafwiki/` — container and network
+removed. Left the compose file and the ~1MB `data/` dir on disk (harmless, not referenced by
+anything) in case it's worth a last look before deleting outright.
+**Rationale**: worth remembering for the next documentation-tool candidate — a wiki/notes tool
+is only worth adding on top of `~/homelab`'s markdown+git if it has a genuine *write* path
+(API, filesystem watch, or a CLI) that keeps it fresh without a human doing manual exports.
+Search/backlinks alone don't justify the sync tax if refreshing it is manual.
+
 <!-- Add new decisions above this line, newest first -->
