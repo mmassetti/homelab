@@ -12,6 +12,19 @@
 - **Power**: ~20W idle, ~30W load
 - **Location**: Office (next to mini PC)
 
+## DSM API Access (added 2026-08-15)
+
+Dedicated account `claude-agent` in the `administrators` group (DSM has no scoped/read-only
+admin role — Control Panel access requires full admin group membership either way).
+Shared-folder permissions on Documents/homes/Media are read-only or no-access — irrelevant to
+what this account is for, since Control Panel/API access comes from group membership, not
+share ACLs. Credentials at `~/.config/secrets/synology_admin.env` on the mini PC (chmod 600,
+not in this repo). API reachable at `https://192.168.1.119:5001/webapi/` (also plain HTTP on
+`:5000`) — auth via `SYNO.API.Auth` (`auth.cgi`) for a session id, then `entry.cgi` for
+everything else. Use `SYNO.API.Info` with `query=all` to discover real API names — many DSM
+settings live under names that don't match their Control Panel section (e.g. recycle bin
+policy is `SYNO.Core.RecycleBin` + `SYNO.Core.TaskScheduler`, not under `SYNO.Core.Share`).
+
 ## Drives
 
 | Bay | Drive | Size | Type | Status |

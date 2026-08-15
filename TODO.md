@@ -154,10 +154,15 @@ as they come up.
       files, DVD-structure folders, etc. — see the 2026-08-14 entries above), since DSM's
       recycle bin has no default size cap or auto-expiry. Emptied it (`find ... -delete`,
       then a follow-up pass for orphaned empty dirs left by a CIFS rmdir race) — freed space
-      climbed 225GB → 425GB as Btrfs finished reclaiming blocks async. **Still worth doing**:
-      log into DSM (`https://192.168.1.119:5000`, via Tailscale) and check Control Panel →
-      Task Scheduler for a scheduled "empty recycle bin" job — none was found from the mini
-      PC side, so this will very likely recur after the next big cleanup pass.
+      climbed 225GB → 425GB as Btrfs finished reclaiming blocks async.
+      **Correction (same day, via DSM API)**: there already is a scheduled "Empty Bin" task
+      (`SYNO.Core.TaskScheduler` id 4) — runs daily at 00:00, applies to all shares
+      (`clean_all: true`), purges anything older than 7 days (`policy: "time", time: 7`), no
+      exceptions. It hadn't misfired; the 420GB was just this week's Radarr cleanup (2026-08-11
+      to 08-14), still under 7 days old when we found it — DSM would've purged it itself between
+      08-18 and 08-21. Nothing to configure here; the policy is already sane. (The earlier note
+      that no such task existed was only true from the mini PC's vantage point — no DSM access
+      at the time.)
 - [ ] **3rd NAS drive lands ~Feb 2027 (US trip)** — until then, keep an eye on growth rate
       given the tight margin above. See [[nas_storage_status]] memory.
 - [ ] **Complete the `Google Drive Sync/` rclone mirror once the 3rd drive lands (Feb 2027)** —

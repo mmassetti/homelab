@@ -1574,4 +1574,31 @@ is only worth adding on top of `~/homelab`'s markdown+git if it has a genuine *w
 (API, filesystem watch, or a CLI) that keeps it fresh without a human doing manual exports.
 Search/backlinks alone don't justify the sync tax if refreshing it is manual.
 
+## 2026-08-15 (same day) — Granted DSM API access; corrected the recycle-bin-policy claim
+
+**Context**: earlier the same day, diagnosed the NAS space collapse as the SMB recycle bin
+(420GB, no auto-expiry as far as could be told) but couldn't check DSM's Task Scheduler
+directly — no NAS credentials, only the SMB/CIFS file mount. Matias created a dedicated DSM
+account (`claude-agent`, `administrators` group, read-only/no-access on the Documents/homes/
+Media shared-folder permissions — that share-level ACL is irrelevant to Control Panel access,
+which comes from group membership) specifically so this could be checked properly going
+forward. Credentials stored at `~/.config/secrets/synology_admin.env` (chmod 600, not in this
+repo), same pattern as the Cloudflare API token. DSM's API answers on both `:5000` (HTTP) and
+`:5001` (HTTPS) — used HTTPS. Auth via `SYNO.API.Auth` (`webapi/auth.cgi`) to get a session id,
+then `webapi/entry.cgi` for everything else. `SYNO.API.Info` (`query=all`) is the way to
+discover real API names when the docs don't cover something — `SYNO.Core.Share`'s `additional`
+params didn't surface recycle-bin config as expected; the actual API is a separate one,
+`SYNO.Core.RecycleBin`, found by grepping the full API list for "recycle".
+**Correction**: `SYNO.Core.TaskScheduler` (id 4, "Empty Bin") shows a **daily** task at 00:00,
+scope `clean_all: true` (every share), policy `{"policy": "time", "time": 7}` — purges recycle
+bin entries older than 7 days, no size/extension exceptions. This directly contradicts the
+`TODO.md` note written earlier today claiming no such task existed — that note was only true
+from the mini PC's side (no visibility into DSM at the time), not actually true. The 420GB
+wasn't a misconfigured or missing policy; it was one very heavy cleanup week (2026-08-11 to
+08-14) that simply hadn't crossed the 7-day mark yet. DSM would have purged it itself within a
+few more days. **No NAS-side change needed** — the existing policy is already sane.
+**Rationale**: don't assert "no policy exists" from a vantage point that can't actually see the
+setting — say what's actually knowable from where you're looking, and flag the rest as
+unverified rather than implying absence. Worth generalizing past this specific incident.
+
 <!-- Add new decisions above this line, newest first -->
