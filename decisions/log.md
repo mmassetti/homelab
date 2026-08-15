@@ -1624,4 +1624,40 @@ either has origin copies elsewhere (Drive content) or is replaceable (ARR-manage
 copies anywhere" from "what merely isn't backed up from *this* location." Only the former is
 actually urgent.
 
+## 2026-08-15 (same day) — Self-hosted the 4K Collection Tracker, off Vercel entirely
+
+**Context**: Matias's physical media Vercel site (`4k-tracking.vercel.app`) was broken
+("Failed to fetch collections"), suspected Supabase. Investigation found the opposite —
+`~/Code/media-tracker-api` (repo `github.com/mmassetti/4k-tracking`) already had a proper
+self-hosted design (React/Vite frontend + Express backend talking to the existing
+`media_tracker_db` Postgres at `192.168.1.239:5432`), no Supabase anywhere. Real cause: a
+`media-tracker-api.service` systemd unit pointed at a nonexistent path
+(`/home/matias/media-tracker-api` instead of `~/Code/media-tracker-api/backend`), crash-looping
+since install; and even fixed, port 3002 was never added to the Cloudflare Tunnel, so the
+public Vercel frontend could never have reached it.
+**Decision**: given tonight's running theme (avoid depending on outside platforms — Immich
+over Google Photos, restic/Hyper-Backup-not-Synology-apps, etc.), Matias chose to drop Vercel
+entirely rather than patch the tunnel route and keep it split across two platforms.
+**Action**: added `express.static` + SPA fallback to `backend/src/server.ts` so one container
+serves both frontend and API (same origin, no CORS). Multi-stage `Dockerfile` +
+`docker-compose.yml` (joins the existing `media-tracker-db_media_tracker_network` externally,
+so it resolves Postgres by container name, not the host LAN IP). Host port 3004 (3002 was
+already Jellystat's — first attempt collided and silently curled Jellystat's UI instead of the
+new app, worth remembering that a "successful" curl against a port doesn't confirm *which*
+app answered). Built, tested (`/health`, `/api/media` returned real data, frontend HTML title
+confirmed correct), then wired up: Cloudflare Tunnel ingress rule + a new Access app
+("Coleccion 4K", same email-OTP-to-matiasmassetti@gmail.com policy as everything else) both via
+API — DNS CNAME still needs to be added manually (the token's known DNS blocker, see
+`TODO.md`).
+**Bonus finding, unplanned**: while verifying data freshness, diffed the DB (82 items) against
+a Google Sheet inventory Matias had just updated. DB turned out to be meaningfully stale/dirty
+— 16 owned titles never entered, 12 exact-duplicate rows, one likely mismatch each on a title
+(Godzilla Minus One) and a format (John Wick 4). Not fixed yet — see `TODO.md`. Matias also
+wants an ongoing "tell Claude, it updates the Sheet and the DB" workflow — needs Sheets API
+write access, not yet set up.
+**Rationale**: worth remembering — when something with two ends (a public frontend + a private
+backend) is broken, check both ends' actual reachability before assuming the deployed
+frontend's error message points at the right culprit. The Supabase guess was reasonable but
+wrong; the real bug was two unrelated deployment gaps, neither visible from the browser error.
+
 <!-- Add new decisions above this line, newest first -->

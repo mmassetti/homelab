@@ -98,11 +98,12 @@ Account ID: `7dfee4d2de02fa195e6b9674de205fa6` · Tunnel ID: `7ddc3a66-cfbf-46b9
 | assets.matiasmassetti.com | 192.168.1.239:4010 (image-server) |
 | cen-api.matiasmassetti.com | 192.168.1.239:3003 (cen-dashboard) |
 | ricota-api.matiasmassetti.com | `ricota-caddy:80` (container hostname — cloudflared and ricota-caddy share `docker_homelab`) |
+| coleccion.matiasmassetti.com | 192.168.1.239:3004 (media-tracker-app, added 2026-08-15) |
 | *(catch-all)* | `http_status:404` |
 
 **Removed 2026-08-11**: `nas.matiasmassetti.com` → `192.168.1.119:5000` used to point straight at the Synology DSM login page, publicly exposed with no Cloudflare Access policy in front of it as far as this token can see. Matias didn't know it was there; both the tunnel ingress rule and the DNS CNAME record were deleted via API (the token was granted `Zone:DNS:Edit` for this) — the hostname no longer resolves to anything at all. Remote NAS access still works via Tailscale.
 
-**Cloudflare Access (added 2026-08-12)**: 15 of the 17 hostnames now require Cloudflare Access (email OTP, `matiasmassetti@gmail.com`, 168h session) before even reaching the app — everything except `media.matiasmassetti.com` and `pedidos.matiasmassetti.com`, left open since family/friends use Jellyfin/Jellyseerr directly. Live testing before this change confirmed every ARR app already enforced its own login too (401/403 without auth) — Access is a second layer, not a fix for a hole. One real fix that came out of the same audit: Sonarr had `authenticationRequired: disabledForLocalAddresses` (inconsistent with Radarr/Prowlarr/Lidarr's `enabled`) — corrected via its API, verified 401 now even from localhost. Full list + rationale: `decisions/log.md`.
+**Cloudflare Access (added 2026-08-12, extended 2026-08-15)**: 16 of the 18 hostnames now require Cloudflare Access (email OTP, `matiasmassetti@gmail.com`, 168h session) before even reaching the app — everything except `media.matiasmassetti.com` and `pedidos.matiasmassetti.com`, left open since family/friends use Jellyfin/Jellyseerr directly. `coleccion.matiasmassetti.com` (Access app "Coleccion 4K") got the same policy on creation. Live testing before this change confirmed every ARR app already enforced its own login too (401/403 without auth) — Access is a second layer, not a fix for a hole. One real fix that came out of the same audit: Sonarr had `authenticationRequired: disabledForLocalAddresses` (inconsistent with Radarr/Prowlarr/Lidarr's `enabled`) — corrected via its API, verified 401 now even from localhost. Full list + rationale: `decisions/log.md`.
 
 **API access**: a Cloudflare API token (`Account:Cloudflare Tunnel:Edit`, name "cloudflare tunnel minipc access") is stored at `~/.config/secrets/cloudflare_api_token` (0600) for managing tunnel ingress programmatically going forward, instead of the dashboard.
 
@@ -120,10 +121,50 @@ Host crontab (`0 19 * * 5` UTC = 4:00 PM ART, Fridays) runs `~/homelab/scripts/w
 |---------|------|---------|----------------------|
 | cen-dashboard | 3003 | ~/Code/cen-dashboard/docker-compose.yml | ✅ |
 | media_tracker_db | 5432 | ~/Code/media-tracker-db/docker-compose.yml | ✅ (postgres only; its `pgadmin` service is defined but not up) |
+| media-tracker-app | 3004→3002 | ~/Code/media-tracker-api/docker-compose.yml | ✅ added 2026-08-15 — self-hosted frontend+API for `coleccion.matiasmassetti.com`, replaces the old Vercel deploy. See § 4K Collection Tracker below |
 | ricota-db | 80 (via ricota-caddy) | ~/homelab/ricota-db/docker-compose.yml | ✅ Postgres 17 + PostgREST + Caddy, `git status` shows this dir is **untracked** — new, not yet committed |
 | usa-2026 | 3000 | ~/Code/usa-2026/docker-compose.yml | ❌ not running (would conflict with `homepage` on :3000 if started) |
 | scraper-autoentrada | — | ~/Code/scraper-autoentrada/docker-compose.yml | ❌ not running |
 | reporteminoritario | — | ~/Code/reporteminoritario-transcript-fetcher/docker-compose.yml | ❌ not running |
+
+## 4K Collection Tracker — self-hosted (2026-08-15)
+`coleccion.matiasmassetti.com` — tracks Matias's physical 4K/Blu-ray/DVD collection
+(`media_tracker` DB, table `media_items`; box sets go in `collections`/`collection_movies`).
+Previously deployed frontend-only to Vercel (`4k-tracking.vercel.app`, repo
+`github.com/mmassetti/4k-tracking` = `~/Code/media-tracker-api`), broken ("Failed to fetch
+collections") — turned out to have **no Supabase dependency at all** (a red herring guess);
+the real cause was a `media-tracker-api.service` systemd unit installed with the wrong path
+(`/home/matias/media-tracker-api` instead of the actual `~/Code/media-tracker-api/backend`),
+crash-looping (`226/NAMESPACE`) since whenever it was set up, plus the backend port was never
+added to the Cloudflare Tunnel anyway.
+**Rebuilt self-hosted**: `express.static` + SPA fallback added to `backend/src/server.ts` so
+one container serves both the built frontend and the `/api/*` routes (same-origin, no CORS
+needed). Multi-stage `Dockerfile` at repo root. `docker-compose.yml` joins the *existing*
+`media-tracker-db_media_tracker_network` (external) so it reaches Postgres by container name
+(`DB_HOST=media_tracker_db`) instead of the host LAN IP. Host port **3004** (3002 was already
+Jellystat's). `VITE_TMDB_API_KEY` build arg reuses the same key as `cinemateca`. Tunnel
+ingress + Access app ("Coleccion 4K", same email-OTP policy as the rest) added via API; the
+DNS CNAME had to be added manually in the dashboard (this token still can't touch DNS — see
+Cloudflare Tunnel URLs section). Old systemd unit needs manual removal (needs an interactive
+sudo password, couldn't be done non-interactively) — see `TODO.md`.
+**Data quality, found but not yet fixed**: compared the DB (82 `media_items`) against a
+just-updated Google Sheet inventory (85 rows). Real gaps: 16 titles physically owned but
+missing from the DB entirely (American Gangster, Band of Brothers/The Pacific, Better Man,
+Boogie Nights, Dazed and Confused, F1, Kill Bill Vol. 1 & 2, No Country for Old Men, One Battle
+After Another, Pulp Fiction, Sinners, The Blues Brothers, The Dark Knight, The Office, The
+Shawshank Redemption); 12 titles are duplicated in the DB (Akira, Color Out of Space, Dirty
+Harry, Hell or High Water, King Kong, Nightcrawler, Schindler's List, Talk to Me, The Big
+Lebowski, The Departed, The Exorcist, The Secret Life of Walter Mitty — each appears twice);
+Godzilla Minus One is in the DB but not the Sheet (unconfirmed which is right); John Wick:
+Chapter 4's format disagrees (Sheet says Blu-ray, DB says 4K UHD). None of this blocked
+getting the app itself working again, but the data isn't trustworthy until cleaned up. See
+`TODO.md`.
+**Ongoing workflow (requested, not yet built)**: Matias wants to just tell Claude when he adds
+a physical movie, and have both the Google Sheet
+(`docs.google.com/spreadsheets/d/10AGgdbOv-AQQCxiyVfQ4Opgy0fUgkflR1wBLMOgmVVw`) and the DB
+update automatically. Not implemented yet — needs Google Sheets API write access (there's
+already a `gcal_oauth.json` in the secrets folder for Calendar; check whether that OAuth
+client/scope can be extended to Sheets, or needs its own).
 
 ## Documentation — LeafWiki tried and dropped (2026-08-15, same day)
 Trialed as a wiki layer over `~/homelab`'s docs; dropped because its Markdown import is

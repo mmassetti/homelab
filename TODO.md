@@ -6,6 +6,26 @@ as they come up.
 
 ## Open
 
+- [ ] **Remove the old `media-tracker-api.service` systemd unit** — `sudo systemctl stop/
+      disable media-tracker-api.service && sudo rm /etc/systemd/system/media-tracker-api.service
+      && sudo daemon-reload`. Superseded 2026-08-15 by the Docker container
+      `media-tracker-app`; the old unit crash-loops (harmless, just log noise) since it points
+      at the wrong path. Needs an interactive sudo password, couldn't be done from this
+      session.
+- [ ] **Add the DNS CNAME for `coleccion.matiasmassetti.com`** manually in the Cloudflare
+      dashboard — `CNAME coleccion -> 7ddc3a66-cfbf-46b9-8124-2bfef8a27456.cfargotunnel.com`,
+      proxied. The API token still can't touch DNS (same known issue below). Tunnel ingress +
+      Access policy are already live via API; only the DNS record is missing.
+- [ ] **4K Collection Tracker data cleanup** (found 2026-08-15, comparing the DB against a
+      fresh Google Sheet inventory — see `CLAUDE.md` § 4K Collection Tracker for full detail):
+      16 owned titles missing from the DB entirely, 12 titles duplicated, 1 title
+      (Godzilla Minus One) in the DB but not the Sheet — confirm which is right, 1 format
+      mismatch (John Wick: Chapter 4 — Sheet says Blu-ray, DB says 4K UHD).
+- [ ] **Build the Sheet+DB sync workflow for the 4K tracker** — Matias wants to just tell
+      Claude when he adds a physical movie and have it update both the Google Sheet and the
+      DB. Needs Google Sheets API write access — check if the existing `gcal_oauth.json`
+      OAuth client (used for Calendar) can be extended with the Sheets scope, or needs a
+      separate credential.
 - [ ] **Verify The Handmaiden (2016) Radarr re-grab loop stayed stopped** — RSS Sync kept
       re-grabbing the same REPACK release every 30 min, deleting the good file each time on
       import failure, and re-triggering the "Manual Interaction" Telegram alert. Blocklisted the
