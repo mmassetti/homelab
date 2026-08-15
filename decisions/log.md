@@ -1452,4 +1452,26 @@ worth remembering that a recurring identical alert, even after a queue looks cle
 check the *history* and live logs for a repeating pattern rather than assuming the same
 one-shot fix applies twice.
 
+## 2026-08-15 — Corrected stale docs claiming Ollama uses the iGPU; found it's actually idle
+
+**Context**: While scoping a possible Immich/Ollama project, checked Ollama's live state on the
+mini PC instead of trusting `hardware/mini-pcs.md`, which claimed the Radeon 780M iGPU was
+"used for ... light AI (Ollama)".
+**Findings**: `systemctl status ollama` shows the service active since 2026-07-29, bound to
+`127.0.0.1:11434` only. Its own startup log says `no compatible amdgpu devices detected` —
+gfx1103 (780M) isn't in Ollama's supported ROCm gfx list, so it silently runs CPU-only despite
+the doc's claim. `ollama list` shows a single model, `llama3:latest`, pulled ~13 months ago.
+`journalctl -u ollama --since "60 days ago"` shows zero `POST` (API) calls, and nothing in
+`/opt/docker/docker-compose.yml` or `~/homelab/scripts/` references port 11434 — nothing
+integrates with it. It's running unused.
+**Action**: Fixed `hardware/mini-pcs.md` to state the real GPU/Ollama situation. No
+infrastructure change made yet — decision on reviving it (Open WebUI + fresh model + try the
+`HSA_OVERRIDE_GFX_VERSION=11.0.0` ROCm override for gfx1103) vs. just removing the idle service
+is still open; Immich (self-hosting the 278GB pending Google Drive photo backup) was the other
+candidate project discussed, prioritized first.
+**Rationale**: A repo doc had been asserting GPU usage that was never actually true — worth
+remembering that hardware/capability claims in these docs should get spot-checked against the
+live service logs before being relied on, not just carried forward from whoever wrote them
+originally.
+
 <!-- Add new decisions above this line, newest first -->
