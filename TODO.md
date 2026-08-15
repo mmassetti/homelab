@@ -16,11 +16,14 @@ as they come up.
       dashboard — `CNAME coleccion -> 7ddc3a66-cfbf-46b9-8124-2bfef8a27456.cfargotunnel.com`,
       proxied. The API token still can't touch DNS (same known issue below). Tunnel ingress +
       Access policy are already live via API; only the DNS record is missing.
-- [ ] **4K Collection Tracker data cleanup** (found 2026-08-15, comparing the DB against a
-      fresh Google Sheet inventory — see `CLAUDE.md` § 4K Collection Tracker for full detail):
-      16 owned titles missing from the DB entirely, 12 titles duplicated, 1 title
-      (Godzilla Minus One) in the DB but not the Sheet — confirm which is right, 1 format
-      mismatch (John Wick: Chapter 4 — Sheet says Blu-ray, DB says 4K UHD).
+- [x] **4K Collection Tracker data cleanup** (2026-08-15) — 12 duplicate rows removed (kept
+      the more complete/watched copy of each — see decision log for the two cases with real
+      differences: Akira's purchase price, The Exorcist's watched flag); John Wick: Chapter 4
+      format corrected to Blu-ray; 16 missing titles inserted with full TMDB enrichment
+      (director, cast, genres, poster, etc. — same quality as the rest of the collection).
+      Godzilla Minus One confirmed correct as-is (Matias does own it — the *Sheet* was the one
+      missing it, not the DB; still needs adding to the Sheet, see the sync-workflow item
+      below). DB now at 86 items (was 82, -12 dupes +16 new).
 - [ ] **Build the Sheet+DB sync workflow for the 4K tracker** — Matias wants to just tell
       Claude when he adds a physical movie and have it update both the Google Sheet and the
       DB. Needs Google Sheets API write access — check if the existing `gcal_oauth.json`

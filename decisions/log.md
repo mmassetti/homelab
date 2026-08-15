@@ -1660,4 +1660,34 @@ backend) is broken, check both ends' actual reachability before assuming the dep
 frontend's error message points at the right culprit. The Supabase guess was reasonable but
 wrong; the real bug was two unrelated deployment gaps, neither visible from the browser error.
 
+## 2026-08-15 (same day) — Cleaned up the 4K Collection Tracker data
+
+**Context**: immediately after self-hosting the tracker, acted on the diff found against
+Matias's Google Sheet inventory (see the entry above). Confirmed with him first: Godzilla
+Minus One is correctly owned (the Sheet was the one missing it, not a DB error — needs adding
+to the Sheet once the sync workflow exists); John Wick: Chapter 4 is genuinely Blu-ray, not 4K
+UHD as the DB had it.
+**Duplicates (12 titles, 12 rows removed)**: inspected each pair first rather than assuming —
+all had identical `tmdb_id`/format, confirming accidental double-entry rather than two real
+different copies. Two pairs had a real difference worth preserving: Akira (one row had the
+purchase price, the other didn't — kept the one with the price) and The Exorcist (one was
+marked watched, the other wasn't — kept the watched one). Used
+`ROW_NUMBER() OVER (PARTITION BY title ORDER BY watched DESC, purchase_price IS NOT NULL DESC, date_added ASC)`
+and deleted everything past rank 1, rather than a blanket "keep the oldest" rule, so those two
+differences wouldn't get silently discarded.
+**John Wick: Chapter 4**: `UPDATE ... SET format='Blu-ray'`.
+**16 missing titles**: looked each up via the TMDB API (same key `cinemateca` already uses)
+individually — search, then a details call with `append_to_response=credits` for director/cast
+— and inserted with the same fields the other 82 items have (poster, backdrop, genres,
+overview, cast, runtime, etc.), not bare title/format rows. Two are TV, not movies (`Band of
+Brothers` — the Sheet's "Band of Brothers / The Pacific" is one physical box for two separate
+miniseries, so used Band of Brothers' TMDB entry and noted the Pacific in `notes` rather than
+inventing a combined non-existent TMDB id; `The Office` — TMDB's TV search, not movie search).
+Hit one syntax error the first pass — `cast` is a reserved SQL keyword and needs quoting
+(`"cast"`) as a column name; all 16 inserts had failed identically before the fix, so nothing
+partial to clean up, just re-ran after quoting it.
+**Result**: 82 → 86 items (-12 dupes, +16 new). Verified via the live API
+(`/api/media/stats`), not just the DB directly, to confirm the self-hosted app actually
+reflects it.
+
 <!-- Add new decisions above this line, newest first -->
