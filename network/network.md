@@ -1,5 +1,7 @@
 # Network
 
+![Network & service topology](network-topology.svg)
+
 ## Topology
 
 ```
