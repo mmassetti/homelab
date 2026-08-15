@@ -1474,4 +1474,58 @@ remembering that hardware/capability claims in these docs should get spot-checke
 live service logs before being relied on, not just carried forward from whoever wrote them
 originally.
 
+## 2026-08-15 — NAS free space collapse traced to an unmanaged SMB recycle bin; separately found an undocumented, half-abandoned rclone Google Drive mirror
+
+**Context**: `TODO.md` said the NAS had 419GB free as of 2026-08-13. Two days later `df` showed
+225GB — a 194GB drop attributed at first to normal downloading, but Matias asked to check the
+recycle bin and incomplete-downloads first before assuming that.
+
+**Recycle bin**: `/mnt/nas/#recycle` (Synology's SMB-share trash) held **420GB** — almost
+entirely `Peliculas/` and `downloads/` entries from this week's Radarr/Jellyfin cleanup work
+(duplicates, silent/broken files, the `La cara oculta` DVD-structure folder, etc. — see the
+2026-08-14 entries above). DSM's recycle bin has no default size cap or expiry, so all of that
+"deleted" data was actually still sitting on disk. Sanity-checked the contents first (only
+`Peliculas/`+`downloads/`, nothing unexpected) then emptied it via `find -delete`. Freed space
+climbed 225→310→376→425GB over a few minutes as Btrfs asynchronously reclaimed blocks (`df`
+lags actual deletion on this NAS — don't read a `df` value taken immediately after a large
+delete as final). A CIFS timing race left several empty directory shells behind (rmdir racing
+ahead of the file deletes inside); cleaned those up in a follow-up pass. **Open item**: no
+scheduled "empty recycle bin" task was found from the mini PC side — check DSM's Task
+Scheduler directly (needs a NAS login, not reachable from here) and set one up, or this recurs
+after the next big cleanup.
+
+**Google Drive Sync**: while scoping Immich, noticed `/mnt/nas/Google Drive Sync/` (242GB,
+undocumented anywhere in this repo) alongside the already-known `Google Drive 4-10-2024/`
+backup (278GB, mostly Photos/phone exports). Traced it to `rclone.service`, a systemd unit
+running `rclone rcd` continuously since **2026-02-26** with a configured `gdrive` remote — but
+`rcd` is just a control-plane daemon; nothing (no cron, no timer) was found calling it, and
+file mtimes show the 242GB was a **one-time manual snapshot from Feb 2026**, never refreshed.
+Live Drive usage is 666.76GB of a 2TB plan — the local mirror was missing **425GB** of current
+content, including 2026-dated folders (a Perú trip, expense docs) with zero local backup at
+all. Investigated where that gap actually was: three folders — `CaliforniaSecreta` (406GB),
+`ReporteMinoritario` (145GB, name coincidentally matches the
+`~/Code/reporteminoritario-transcript-fetcher` project but the Drive folder is actually an
+unrelated `Libros/`/`Peliculas/`/`Series/` media stash), and `Otros` (111GB, a TV show, ROMs,
+phone clips, one leftover incomplete-torrent `.dat` file) — account for 662GB of the 666GB
+total. None of it is documents.
+
+**Action taken**: ran a selective `rclone sync gdrive: → NAS`, excluding those three folders
+(`--exclude "CaliforniaSecreta/**" --exclude "ReporteMinoritario/**" --exclude "Otros/**"`),
+which brought the real document folders (Trabajo, Finanzas, Estudio, Documentacion, CEN forms,
+Perú 2026, Homelab, HM-shock-index, etc. — under 5GB combined) fully up to date without
+touching the NAS's tight free-space margin. Confirmed the excluded folders' local copies (144GB
+of the 406GB CaliforniaSecreta, 54GB of the 145GB ReporteMinoritario — see `TODO.md` for the
+exact missing-file breakdown) are strict, untouched subsets of Drive; nothing local-only, so no
+reconciliation needed in the other direction. **Decision**: finishing those two is deferred to
+~Feb 2027 when the 3rd NAS drive lands — see `TODO.md`. `Otros/` isn't planned to be mirrored
+at all; it's mostly junk better cleaned up directly in Drive.
+
+**Rationale**: two separate lessons worth keeping. (1) A `df` drop doesn't mean "more data was
+added" — check the recycle bin and incomplete-downloads before assuming organic growth, and
+remember Btrfs frees space asynchronously so re-check `df` a few minutes after a big delete
+before reporting a number. (2) A systemd service being `active (running)` says nothing about
+whether it's actually doing anything — same pattern as the Ollama finding earlier today: check
+logs/timers for real activity, not just unit status, especially before trusting a directory
+name like "Sync" to mean what it says.
+
 <!-- Add new decisions above this line, newest first -->

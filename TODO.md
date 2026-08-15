@@ -148,10 +148,40 @@ as they come up.
       snapshots and an actual off-pool backup (Hyper Backup to USB, offsite B2/Wasabi) were
       never confirmed as set up. Redundancy alone doesn't cover accidental deletion or pool
       corruption. See `hardware/nas.md` § Backup Strategy.
-- [ ] **NAS at 97% full (419GB free)** — 3rd drive not landing until Feb 2027 (US trip). Worth
-      keeping an eye on growth rate between now and then; may need to free up space earlier
-      (e.g. more aggressive quality profile downgrades, pruning the 99%-full legacy Seagate
-      instead of NAS where possible).
+- [x] **NAS was actually 99% full (225GB free), not 419GB** — root cause found and fixed
+      2026-08-15: the SMB share's Synology recycle bin (`/mnt/nas/#recycle`) had silently
+      accumulated **420GB** from this week's Radarr cleanup work (duplicates, silent/broken
+      files, DVD-structure folders, etc. — see the 2026-08-14 entries above), since DSM's
+      recycle bin has no default size cap or auto-expiry. Emptied it (`find ... -delete`,
+      then a follow-up pass for orphaned empty dirs left by a CIFS rmdir race) — freed space
+      climbed 225GB → 425GB as Btrfs finished reclaiming blocks async. **Still worth doing**:
+      log into DSM (`https://192.168.1.119:5000`, via Tailscale) and check Control Panel →
+      Task Scheduler for a scheduled "empty recycle bin" job — none was found from the mini
+      PC side, so this will very likely recur after the next big cleanup pass.
+- [ ] **3rd NAS drive lands ~Feb 2027 (US trip)** — until then, keep an eye on growth rate
+      given the tight margin above. See [[nas_storage_status]] memory.
+- [ ] **Complete the `Google Drive Sync/` rclone mirror once the 3rd drive lands (Feb 2027)** —
+      full investigation 2026-08-15, see decision log for the whole story. Short version: an
+      idle `rclone.service` (running since 2026-02-26, never documented) had done one manual
+      snapshot back in Feb 2026 and never synced again; live Drive usage is 666.76GB vs the
+      242GB mirror. Ran a selective sync today for the real document folders (~5GB, safe) but
+      deliberately excluded the three folders that account for 662GB of the 666GB total — they
+      turned out to be media stashes, not documents:
+      - `CaliforniaSecreta/` (406GB total, 144GB already on the NAS) — missing 213/408 files:
+        **all of Temporada 2 (2025)** (81 files, the biggest single gap) plus most of Capítulos
+        5-9 of Temporada 1. Capítulos 1/2/4/10/11/12 are already ~complete (1-3 stray files
+        each); Capítulo 3 is fully present.
+      - `ReporteMinoritario/` (145GB total, 54GB already on the NAS) — despite the name
+        matching the `~/Code/reporteminoritario-transcript-fetcher` project, this Drive folder
+        is actually a `Libros/`/`Peliculas/`/`Series/` media stash, unrelated to the code repo.
+        Missing 520/750 files, mostly `Libros/` (432 missing — most of the book collection).
+        `ProyectoPorrini/` is essentially complete (1 file missing).
+      - `Otros/` (111GB) — also media/junk (a full TV show, ROMs, phone video clips, and at
+        least one leftover incomplete-torrent `.dat` file) — not planned for backup at all,
+        candidate for just deleting the junk directly from Drive rather than mirroring it.
+      Completing `CaliforniaSecreta` + `ReporteMinoritario` needs ~353GB (262GB + 91GB), which
+      doesn't fit in current free space alongside normal media library growth — do it after the
+      3rd drive lands.
 
 ## Done (kept for context, remove once stale)
 
