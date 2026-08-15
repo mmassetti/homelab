@@ -258,6 +258,14 @@ Router should point DNS to 192.168.1.239 for whole-network ad blocking.
 
 **Nextcloud decommissioned** — `nextcloud` and `nextcloud-db` containers, and their entries in `/opt/docker/docker-compose.yml`, no longer exist. The `nextcloud-db`/`nextcloud-app` named volumes below may be orphaned leftovers; check with `docker volume ls` / `docker system df -v` before assuming they're safe to prune, in case anything was never migrated off them.
 
+## Documentation — LeafWiki (trial, added 2026-08-15)
+
+| Service | Container | Port | Network | Notes |
+|---------|-----------|------|---------|-------|
+| LeafWiki | leafwiki | 8091 | leafwiki_default (own compose, not the main stack) | Lightweight self-hosted wiki — single Go binary + SQLite, Markdown stored on disk. Evaluating as a possible successor to (or complement of) plain `~/homelab` markdown+git for docs that need search/backlinks. |
+
+**Status**: trial, not yet a committed decision. Own compose file at `/opt/docker/configs/leafwiki/docker-compose.yml` (deliberately kept separate from `/opt/docker/docker-compose.yml` so it can be torn down cleanly if it doesn't stick). `LEAFWIKI_JWT_SECRET` and `LEAFWIKI_ADMIN_PASSWORD` are set directly in that compose file's `environment:` block (not committed to this repo — `/opt/docker/configs/` isn't part of the `~/homelab` git tree). **Tailscale/LAN only** — not added to the Cloudflare Tunnel; matches the same reasoning as Jellystat (internal tool, no reason to expose it publicly). Access: `http://homelab:8091` over Tailscale, login `admin` / password in the compose file on disk.
+
 ## OpenClaw (AI Agent) — RETIRED (2026-08-12)
 
 Formally retired, not just dormant. Was already fully torn down (zero `openclaw-*` containers,

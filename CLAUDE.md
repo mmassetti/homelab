@@ -125,6 +125,15 @@ Host crontab (`0 19 * * 5` UTC = 4:00 PM ART, Fridays) runs `~/homelab/scripts/w
 | scraper-autoentrada | — | ~/Code/scraper-autoentrada/docker-compose.yml | ❌ not running |
 | reporteminoritario | — | ~/Code/reporteminoritario-transcript-fetcher/docker-compose.yml | ❌ not running |
 
+## Documentation — LeafWiki (trial, added 2026-08-15)
+Self-hosted wiki (single Go binary + SQLite, Markdown on disk), evaluating as a possible
+complement/successor to plain markdown+git for docs needing full-text search/backlinks. Own
+compose at `/opt/docker/configs/leafwiki/docker-compose.yml` (separate from the main stack on
+purpose, easy to tear down). Port 8091, **Tailscale/LAN only** (not on the Cloudflare Tunnel —
+same reasoning as Jellystat). `LEAFWIKI_JWT_SECRET`/`LEAFWIKI_ADMIN_PASSWORD` live in that
+compose file's `environment:` block, not in this repo. Not yet a committed decision — full
+detail in `services/services.md` § Documentation and `decisions/log.md`.
+
 ## System Services (non-Docker)
 - CasaOS (6 services: main, gateway, app-mgmt, local-storage, message-bus, user-service)
 - Tailscale (tailscaled)
