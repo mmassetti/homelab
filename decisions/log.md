@@ -1719,4 +1719,28 @@ making the existing app the single source of truth and exporting on demand inste
 between two independently-editable stores is inherently fragile (which one wins on conflict?);
 a one-directional, regenerate-anytime export sidesteps that class of problem entirely.
 
+## 2026-08-15 (same day) — Fixed the Cloudflare token's DNS scope; full API DNS management restored
+
+**Context**: the API token had been unable to read/write DNS records ("Authentication error")
+since some point after 2026-08-11, despite reportedly having `Zone:DNS:Edit` — a known,
+previously-unsolved TODO item. Matias wanted the `coleccion.matiasmassetti.com` CNAME done via
+API rather than the dashboard, which forced actually fixing this instead of working around it
+again.
+**Action**: Matias re-applied/re-saved the token's permissions in the Cloudflare dashboard
+(same token, no new value issued). Verified immediately after: a DNS read
+(`GET .../dns_records?name=cen-api.matiasmassetti.com`) succeeded, then created the
+`coleccion.matiasmassetti.com` CNAME (→ `7ddc3a66-cfbf-46b9-8124-2bfef8a27456.cfargotunnel.com`,
+proxied) via `POST`, and confirmed the whole chain end-to-end with a real HTTPS request
+(`https://coleccion.matiasmassetti.com/` → 302 to Cloudflare Access login, exactly as
+expected for an Access-protected app).
+**Root cause of the original failure**: still not fully known — the permission was presumably
+correct at creation (it worked once, for the `nas.matiasmassetti.com` cleanup on 2026-08-11)
+and stopped working afterward without anyone touching it deliberately. Re-saving the same
+permissions in the dashboard fixed it, which suggests either a stale/corrupted grant on
+Cloudflare's side or a scope that silently didn't fully apply the first time — not a config
+mistake on this end as far as can be told.
+**Impact**: DNS management is now fully programmatic going forward — new subdomains no longer
+need a manual dashboard step, closing a gap that's shown up twice tonight (`coleccion` and,
+earlier, the general "can't verify DNS-related things" limitation noted for Jellystat).
+
 <!-- Add new decisions above this line, newest first -->

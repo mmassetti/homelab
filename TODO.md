@@ -12,10 +12,10 @@ as they come up.
       `media-tracker-app`; the old unit crash-loops (harmless, just log noise) since it points
       at the wrong path. Needs an interactive sudo password, couldn't be done from this
       session.
-- [ ] **Add the DNS CNAME for `coleccion.matiasmassetti.com`** manually in the Cloudflare
-      dashboard — `CNAME coleccion -> 7ddc3a66-cfbf-46b9-8124-2bfef8a27456.cfargotunnel.com`,
-      proxied. The API token still can't touch DNS (same known issue below). Tunnel ingress +
-      Access policy are already live via API; only the DNS record is missing.
+- [x] **DNS CNAME for `coleccion.matiasmassetti.com`** — added via API 2026-08-15 once the
+      token's DNS scope got fixed (see below). Verified end-to-end: `https://coleccion.matiasmassetti.com/`
+      resolves and returns a 302 to the Cloudflare Access login, confirming DNS + Tunnel +
+      Access are all wired correctly.
 - [x] **4K Collection Tracker data cleanup** (2026-08-15) — 12 duplicate rows removed (kept
       the more complete/watched copy of each — see decision log for the two cases with real
       differences: Akira's purchase price, The Exorcist's watched flag); John Wick: Chapter 4
@@ -42,9 +42,14 @@ as they come up.
       release (`POST /api/v3/history/failed/{id}`) 2026-08-14 ~12:27 to stop it; needs a check
       after a couple more RSS Sync cycles to confirm it didn't just find a *different* release
       of the same movie to loop on. See decision log for the full diagnosis.
-- [ ] **Cloudflare API token DNS scope** — gets "Authentication error" reading DNS records for
-      the zone despite having Zone:DNS:Edit; blocked exposing Jellystat publicly. Not urgent
-      (Jellystat is Tailscale/LAN-only for now).
+- [x] **Cloudflare API token DNS scope — fixed 2026-08-15** — re-applied the token's Zone
+      permissions in the dashboard (same token, "cloudflare tunnel minipc access"; the DNS:Edit
+      grant had stopped working at some point after 2026-08-11, cause unclear). Verified with a
+      real read (`GET .../dns_records`, `cen-api.matiasmassetti.com` came back correctly) and a
+      real write (created the `coleccion.matiasmassetti.com` CNAME below via API). Fully
+      programmatic DNS management is back — no more manual dashboard steps needed for future
+      subdomains. Jellystat could now be exposed publicly if ever wanted (still deliberately
+      Tailscale/LAN-only for now, that part hasn't changed).
 - [ ] **89 movies still with no TMDB id in Jellyfin** (was 105/120 — 31 identified, applied to
       Jellyfin, and linked into Radarr 2026-08-13: 25 high-confidence auto-matches + 6 found
       via manual title cleanup, all `monitored:true`/`hasFile:true`, Bazarr will pick up
