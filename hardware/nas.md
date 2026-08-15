@@ -89,14 +89,25 @@ docker compose -f /opt/docker/docker-compose.yml start opencloud
 
 ## Backup Strategy
 
-### Current
-- **Level 2 done**: SHR 1-disk redundancy (2nd drive added 2026-07)
-- Seagate 4TB USB on mini PC as legacy copy of older media
+### Current (confirmed via DSM API, 2026-08-15 — see § DSM API Access)
+- **Level 2 done**: SHR 1-disk redundancy (2nd drive added 2026-07) — protects against a single
+  disk failure only; the mirror replicates deletions/corruption too, so it's not a substitute
+  for the levels below.
+- **The mini PC's Postgres DBs** (`ricota-db`, `media_tracker_db`, `jellystat-db` — the only
+  genuinely irreplaceable, single-point-of-failure data in the homelab) are dumped daily to
+  `/mnt/nas/Backups/postgres/` via `scripts/backup-postgres.sh` (host cron). See `TODO.md`.
+- Seagate 4TB USB on mini PC as legacy copy of older media (itself unbacked-up, single disk,
+  99% full — not currently usable as a Hyper Backup target without cleanup first)
 
-### Still Pending (not yet confirmed set up — no decision log entry either way)
-- **Level 1**: Btrfs snapshots (hourly keep 24, daily keep 7, weekly keep 4)
-- **Level 3**: External USB drive via Hyper Backup (weekly, Sunday 3 AM)
-- **Future**: Offsite cloud backup (B2/Wasabi) for 3-2-1 rule
+### Still Pending
+- **Level 1 — Btrfs snapshots**: confirmed **not configured** (`SYNO.Core.Share.Snapshot` on
+  `Media` returns 0 snapshots) even though the `SnapshotReplication` package is installed.
+  Planned policy: hourly keep 24, daily keep 7, weekly keep 4.
+- **Level 3 — true offsite**: **Hyper Backup isn't installed at all** (confirmed via DSM
+  package list). Would ship the (currently ~2MB) `/mnt/nas/Backups/postgres/` dumps to
+  B2/Wasabi. Deliberately deprioritized — the one real single-point-of-failure risk (the
+  Postgres DBs) is already covered by the item above, and this is a "do it properly
+  eventually" layer on top, not urgent.
 
 Redundancy (mirroring) protects against a single drive failing — it does **not** protect
 against accidental deletion, ransomware, or Btrfs pool corruption. Snapshots + an actual

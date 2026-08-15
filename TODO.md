@@ -144,10 +144,25 @@ as they come up.
         redundant DVD folder, reclaiming 4.4GB, and linked the now-correctly-indexed mp4 to
         Radarr. Both `monitored:true`/`hasFile:true`. This closes every item from the
         2026-08-12 backfill's original error list. See decision log.
-- [ ] **NAS backup strategy incomplete** — SHR redundancy (2nd drive) is done, but Btrfs
-      snapshots and an actual off-pool backup (Hyper Backup to USB, offsite B2/Wasabi) were
-      never confirmed as set up. Redundancy alone doesn't cover accidental deletion or pool
-      corruption. See `hardware/nas.md` § Backup Strategy.
+- [x] **Postgres DBs backed up to the NAS** (2026-08-15) — `scripts/backup-postgres.sh`,
+      daily via host crontab (`0 8 * * *` UTC = 5:00 AM ART), `pg_dumpall` (all DBs + roles,
+      not just the default one — `media_tracker_db` actually holds two: `cinemateca` and
+      `media_tracker`) for `ricota-db-db-1`, `media_tracker_db`, `jellystat-db` → gzip →
+      `/mnt/nas/Backups/postgres/`, 14-day retention pruned each run. This was the one
+      genuinely irreplaceable, single-point-of-failure data (only ever existed in Docker
+      volumes on the mini PC's one SSD); everything else under consideration (Drive-synced
+      docs, photos) already has an origin copy elsewhere. Confirmed `SnapshotReplication` is
+      installed on DSM but the NAS's own Btrfs snapshots were never configured on any share
+      (0 snapshots on `Media` as of 2026-08-15) — separate from this, still open below.
+- [ ] **NAS backup strategy still missing two layers** — (1) Btrfs snapshots on `Media` (and
+      other shares) — protects against accidental deletion/corruption, decoupled from the SHR
+      mirror which replicates both good and bad writes instantly. `SnapshotReplication` package
+      is already installed, just needs a schedule configured. (2) True offsite copy — Hyper
+      Backup isn't installed at all (confirmed via DSM package list 2026-08-15); would ship
+      `/mnt/nas/Backups/postgres/` (currently ~2MB) to B2/Wasabi. Both are optional/"do it
+      properly eventually" rather than urgent — the one thing that was a real single point of
+      failure (the Postgres DBs) is already handled by the item above. See `hardware/nas.md`
+      § Backup Strategy and § DSM API Access.
 - [x] **NAS was actually 99% full (225GB free), not 419GB** — root cause found and fixed
       2026-08-15: the SMB share's Synology recycle bin (`/mnt/nas/#recycle`) had silently
       accumulated **420GB** from this week's Radarr cleanup work (duplicates, silent/broken

@@ -1601,4 +1601,27 @@ few more days. **No NAS-side change needed** — the existing policy is already 
 setting — say what's actually knowable from where you're looking, and flag the rest as
 unverified rather than implying absence. Worth generalizing past this specific incident.
 
+## 2026-08-15 (same day) — Backed up the Postgres DBs to the NAS; deferred Hyper Backup/offsite
+
+**Context**: following up on the backup-strategy gap confirmed via DSM API earlier today (no
+Btrfs snapshots, no Hyper Backup installed). Scoped down to what's actually irreplaceable:
+Matias correctly pointed out that the Google Drive-synced docs/photos already have an origin
+copy in Google's cloud, so re-backing those up via Hyper Backup would be a third copy of
+something already safe. The only genuine single-point-of-failure data is the three Postgres
+DBs living in Docker volumes on the mini PC's one SSD (`ricota-db`, `media_tracker_db` — which
+turned out to actually hold two databases, `cinemateca` and `media_tracker`, not one —
+`jellystat-db`), combined only ~124MB.
+**Action**: `scripts/backup-postgres.sh` — `pg_dumpall` (all DBs + roles) per container, gzip,
+written to `/mnt/nas/Backups/postgres/`, 14-day retention. Host cron `0 8 * * *` UTC (5 AM
+ART). Tested manually first (all 3 containers, verified the small `ricota-db` dump wasn't
+empty/broken — genuine SQL content, just a small database) before relying on the schedule.
+**Deferred, not forgotten**: Btrfs snapshots on `Media` and Hyper Backup + B2/Wasabi (true
+offsite) are still not configured — see `TODO.md`. Explicitly deprioritized rather than done
+half-heartedly: the one real risk (DBs on a single SSD with zero copies elsewhere) is now
+handled; the remaining layers are "do it properly eventually," not urgent, given what's left
+either has origin copies elsewhere (Drive content) or is replaceable (ARR-managed media).
+**Rationale**: worth generalizing — when scoping a backup effort, separate "what has zero
+copies anywhere" from "what merely isn't backed up from *this* location." Only the former is
+actually urgent.
+
 <!-- Add new decisions above this line, newest first -->
