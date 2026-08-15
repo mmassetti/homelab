@@ -158,6 +158,15 @@ sync idea. The app already had a working `/add` page (verified via a live API sm
 added `GET /api/media/export.csv` (button in Settings) so the Sheet is now a disposable,
 always-current export instead of something to keep manually in sync. Three ways to add a
 movie: the web form, telling Claude here, or bulk JSON import.
+**Post-launch fixes/features (2026-08-15, same day)**: CSP from `helmet()` was blocking
+`image.tmdb.org` posters and the frontend's direct `api.themoviedb.org` calls — allowlisted
+both. `pg` was returning NUMERIC columns (`voteAverage`, `purchasePrice`) as strings, crashing
+`ItemDetail` on `.toFixed()` — fixed globally via a `pg` type parser instead of patching each
+call site. Added a `seenBefore` column/feature distinguishing "watched this physical copy"
+from "had seen the movie before, in general" (independent booleans, both toggleable from the
+Add/Edit form and the item detail page) — scoped to standalone items, not box sets/collections.
+Full history in the repo's own commits (`~/Code/media-tracker-api`, pushed via SSH — the HTTPS
+remote has no stored credential from this session).
 
 ## Documentation — LeafWiki tried and dropped (2026-08-15, same day)
 Trialed as a wiki layer over `~/homelab`'s docs; dropped because its Markdown import is
