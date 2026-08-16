@@ -2029,3 +2029,61 @@ scan (`POST /Library/Refresh`) triggered afterward with zero active sessions con
 11 fresh Radarr searches now running — check back for which actually found a release (several
 are obscure/older titles where Radarr may come up empty, same caveat as the rest of the
 foreign-film backlog).
+
+## 2026-08-16 (later still) — Emptied the NAS recycle bin (372GB) and stood up Lidarr for the first time
+
+**Recycle bin**: Matias asked if there was anything to clean out of the NAS trash. Found
+`/mnt/nas/#recycle` at 372GB (`Peliculas/` ~125GB, `downloads/` 247GB), all less than 48h old
+(nothing old enough for DSM's daily 7-day auto-purge to touch yet) — this is the same
+mechanism documented in the 2026-08-15 entry above: the SMB share has Synology's Recycle Bin
+enabled, so every `rm` over the CIFS mount lands here instead of actually freeing space
+(confirmed today's own `rm`s from the "21 unscanned folders" cleanup above didn't free
+anything until this pass). Before emptying, verified it was safe: checked Radarr's history for
+a sample of the large titles sitting in the bin (Falling Down, both Pirates of the Caribbean
+entries, Back to the Future, The Irishman, I Saw the Devil — all `reason: Upgrade`) and cross-
+checked every single folder name against the live `Peliculas/` tree — every title with a
+`movieFileDeleted` history event had an intact live copy on disk with a real video file, so the
+bin only held superseded/duplicate versions, not the only copy of anything. Also surfaced (but
+didn't need to act on) that 196 of 202 `movieFileDeleted` history records were noise from the
+already-fixed 2026-08-14 "The Handmaiden" re-grab loop bug. Emptied via the same method as
+2026-08-15 (`find "/mnt/nas/#recycle" -type f -delete` directly over the CIFS mount, which
+bypasses the recycle bin since you're deleting *from* it, plus an empty-dir cleanup pass for
+the CIFS `rmdir` race) — freed the NAS from 157GB to 321GB free. A second small pass caught
+~12GB of SABnzbd temp/article files that landed mid-run from the two Radarr searches
+(Eternity and a Day, The Fifth Estate) that started actively downloading during this session.
+
+**Lidarr**: Matias flagged that the misfiled Rolling Stones - Shine a Light (2008) FLAC album
+(moved out of Películas earlier this session) would be the first thing ever put into Lidarr —
+he's never used it. Found it completely unconfigured: zero artists, **no root folder at all**.
+Asked how far monitoring should reach; Matias chose narrowest option (just this one album, no
+auto-download of the rest of the discography or future releases). Setup:
+- Added root folder `/music` (container path, maps to `/mnt/nas/Music`), quality profile 2
+  ("Lossless" — correct for FLAC), metadata profile 1 ("Standard").
+- Added artist via MusicBrainz lookup (`b071f9fa-...`, the real band, not the two name-
+  collision entries or tribute acts also in the search results), `monitorNewItems: none` so
+  nothing auto-monitors going forward.
+- **Gotcha**: the "Standard" metadata profile excludes the `Live` secondary type by default —
+  Shine a Light never showed up in the artist's 28 auto-synced albums until that was toggled on
+  and the artist re-refreshed (99 albums after). This will now also let future Live releases
+  from any artist show up — a reasonable default, not narrowed back down.
+  monitored the specific album (`PUT /album/monitor`), not the whole discography.
+- The auto-matched release was a 25-track Japanese SHM-CD edition, which doesn't match the
+  physical 24-track 2xCD rip on disk — manual import kept rejecting on "has missing tracks"
+  because of this mismatch. Fixed by explicitly building the `ManualImport` API payload with
+  `albumReleaseId` pinned to a real 24-track `2xCD` release (id 1084) and each file's correct
+  `trackIds` in order — also caught and fixed one bad auto-match (track 11 "Tumbling Dice" had
+  been paired with the wrong track). Result: 24/24 tracks imported clean, `percentOfTracks: 100`.
+- Default `renameTracks: false` meant the import first dropped all 24 files flat into
+  `/music/The Rolling Stones/` with their original filenames, no album/disc subfolder — fine
+  for one album, would collide/mix for a second. Enabled `renameTracks` (kept Lidarr's own
+  sane default naming scheme, which already had a proper `{Album}/{Medium} {disc}/...` pattern
+  for multi-disc releases) and ran `RenameArtist` to reorganize retroactively into
+  `The Rolling Stones/Shine a Light (2008)/CD 01|CD 02/...`.
+- Cleaned up the now-empty original folder's leftover `.cue`/`.log`/`.m3u`/`Thumbs.db` (no
+  value once Lidarr owns the audio files) and moved the real content — the `Artwork/` folder
+  (16 scanned CD/booklet/slipcase images) and the front cover — into the new Lidarr-managed
+  album folder instead of deleting it.
+**Result**: Lidarr now has a working root folder + one correctly-tagged, correctly-organized
+album, and future adds will get proper `Artist/Album/Disc` folders automatically. Nothing else
+is monitored, so no risk of Lidarr starting to search/download beyond what was explicitly asked
+for.
