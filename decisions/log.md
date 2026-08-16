@@ -1880,4 +1880,23 @@ plausible response is not proof an action actually took effect; when persistence
 verify against the actual stored state (or a follow-up functional check), not just the HTTP
 response of the call that was supposed to cause it.
 
+## 2026-08-16 (later still) — Created an Uptime Kuma status page, closing out the dashboard widgets
+
+**Context**: last of the three widgets deferred earlier tonight. Discovered Uptime Kuma
+already had **20 monitors configured** (Jellyfin, the whole ARR stack, Pi-hole, OpenCloud,
+Homepage, Cinemateca, Netdata, Image Server, Glances, CEN Dashboard, Media Tracker DB,
+SABnzbd, etc.) — never documented anywhere, found by reading its SQLite DB directly.
+**Why direct DB writes**: Uptime Kuma has no REST API for mutations, only Socket.IO (used by
+its own web UI) — no login credentials on hand for that path either. Read-only `sqlite3`
+queries first to understand the schema (`status_page`, `` `group` ``, `monitor_group`) before
+writing anything.
+**Action**: inserted one `status_page` row (slug `homelab`, unpublished from search engines,
+no password — it's for the LAN dashboard widget, not public promotion), one `` `group` ``
+row linked to it, and 20 `monitor_group` rows linking every existing monitor to that group.
+Restarted the container (Uptime Kuma caches some of this at startup) and verified
+`/status/homelab` actually serves before wiring up the widget — same "verify the real state,
+not just that the write didn't error" discipline as the Pi-hole fix above.
+**Result**: all three widgets deferred earlier tonight (qBittorrent, Pi-hole, Uptime Kuma) are
+done — 11 live widgets total on `home.matiasmassetti.com` now.
+
 <!-- Add new decisions above this line, newest first -->
