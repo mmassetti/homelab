@@ -1984,4 +1984,48 @@ browser flow (Access OTP → OpenCloud login). `IDM_ADMIN_PASSWORD` in the compo
 stale for the actual `admin` account too (reset separately) — worth updating the compose file
 itself next time it's touched, so it doesn't mislead future recovery attempts.
 
-<!-- Add new decisions above this line, newest first -->
+## 2026-08-16 (later still) — Found and resolved 21 NAS folders Jellyfin never scanned
+
+**Context**: Matias asked to finish syncing NAS movies with Jellyfin, suspecting some were
+still pending. The known "80 movies with no TMDB id" backlog (9 weak candidates, 56 no-match,
+14 confirmed-not-real-movies) turned out to be exactly unchanged from the 2026-08-13/14/16
+triage already in `TODO.md` — nothing new there. But diffing the 2528 folders under
+`/mnt/nas/Peliculas` against Jellyfin's indexed movie paths (2497 distinct folders) surfaced
+**21 folders Jellyfin had never scanned at all**, because none contained a valid video file.
+None of the 21 were in Radarr either, so they weren't silently downloading in the background —
+genuinely stalled/abandoned. Went through Matias one by one (`AskUserQuestion`) rather than
+bulk-deciding, since some were expensive to get wrong (an 80GB partial, obscure Argentine
+titles where a Radarr search might never resolve).
+**Resolved, by category**:
+- **Stale partial downloads, deleted** (freed ~83GB): The Running Man (2025) — 80GB
+  `.mkv.part`, dead since 2026-03-03; Nightmare Alley (1947) and ¡Ue... paisano! (1953) —
+  `.mp4.tmp` dead since Oct 2025; Bajo el signo de la patria (1971), El diablo blanco (2019),
+  Kosice hidroespacial (2016), Ufa con el sexo (1968) — `.part` files dead since March 2026
+  (filenames like `37pmg5_b.part` suggest a direct-HTTP downloader, not qBittorrent/SABnzbd —
+  worth keeping an eye out for whatever produced these, not identified this session).
+- **Buenas Intenciones (2023)**: was sitting as an uncompressed `.rar` wrapping one clean
+  `.avi` (verified via `7z l` before extracting) — extracted, deleted the `.rar`, left for the
+  library scan to pick up.
+- **11 added to Radarr** (monitored, `searchForMovie:true`, quality profile 17 "2160p
+  Efficient" matching the existing backfill convention, `path` set to the existing NAS folder
+  so any leftover `.srt` gets reused): The Wrong Man (1956) — also had a dead 57MB
+  `.filepart`, deleted first; Ghost World (2001); Drunken Angel/El ángel borracho (1948); The
+  Boss of It All/El jefe de todo esto (2006); The Fifth Estate/El quinto poder (2013); The
+  Counterfeiters/Los falsificadores (2007); Mifune (1999); The Wind Rises (2013); All About My
+  Mother/Todo sobre mi madre (1999); Eternity and a Day (1998); Idiots and Angels (2011). All
+  of these were folders holding only a leftover `.srt`/`.nfo`/readme — the movie itself had
+  never actually been downloaded, likely subs fetched speculatively ahead of a Radarr add that
+  never happened.
+- **Death sentence (2005) folder — deleted entirely**: turned out to be an orphaned,
+  mislabeled folder containing only a stray subtitle for *Synecdoche, New York* one level
+  deep. The real Synecdoche, New York file already lives correctly in its own top-level folder
+  (confirmed via Radarr: `monitored:true`/`hasFile:true`) — this was pure leftover debris, not
+  a second copy of anything real.
+- **The Rolling Stones - Shine A Light (2008) — moved to `/mnt/nas/Music/`**: turned out to be
+  the FLAC concert album (14+10 tracks, `.cue`/`.log` files), not the concert film — misfiled
+  under Películas, not a sync gap at all.
+**Result**: NAS freed ~85GB combined (partial-download cleanup + the .rar). Jellyfin library
+scan (`POST /Library/Refresh`) triggered afterward with zero active sessions confirmed first.
+11 fresh Radarr searches now running — check back for which actually found a release (several
+are obscure/older titles where Radarr may come up empty, same caveat as the rest of the
+foreign-film backlog).

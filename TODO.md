@@ -6,6 +6,14 @@ as they come up.
 
 ## Open
 
+- [ ] **11 movies added to Radarr 2026-08-16, check search results** — Wrong Man (1956), Ghost
+      World (2001), Drunken Angel (1948), Boss of It All (2006), Fifth Estate (2013),
+      Counterfeiters (2007), Mifune (1999), Wind Rises (2013), All About My Mother (1999),
+      Eternity and a Day (1998), Idiots and Angels (2011) — these were empty NAS folders
+      (only a leftover subtitle/nfo) that Jellyfin had never scanned. Some are obscure/older
+      enough a release may never show up automatically — check `Activity > Queue` / wanted
+      list in a few days. See decision log 2026-08-16 for the full "21 unscanned NAS folders"
+      investigation.
 - [x] **Cinemateca frontend fixed — self-hosted, dropped Vercel** (2026-08-16). Was
       `pelis.matiasmassetti.com` (Vercel) → CORS error hitting the Access-protected
       `cinemateca.matiasmassetti.com` API. Now built + served from the same container
