@@ -38,6 +38,8 @@ Config base: `/opt/docker/configs/<service>/`
 | radarr | 7878 | /mnt/nas/{downloads,Peliculas} |
 | sonarr | 8989 | /mnt/nas/{downloads,Series} |
 | lidarr | 8686 | /mnt/nas/{downloads,Music} |
+| slskd | 5030 (web), 50300 (P2P) | /mnt/nas/downloads/soulseek/{complete,incomplete} (added 2026-08-16, Soulseek client, not a hotio image) |
+| soularr | 8265 | /mnt/nas/downloads/soulseek/complete (added 2026-08-16, bridges Lidarr↔slskd, polls every 300s) |
 | bazarr | 6767 | /mnt/nas/{Peliculas,Series} |
 | qbittorrent | 8080/6881 | /mnt/nas/downloads |
 | sabnzbd | 8085 | /mnt/nas/downloads (Usenet client, alt. to qBittorrent — added since last audit) |

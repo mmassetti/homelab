@@ -2087,3 +2087,58 @@ auto-download of the rest of the discography or future releases). Setup:
 album, and future adds will get proper `Artist/Album/Disc` folders automatically. Nothing else
 is monitored, so no risk of Lidarr starting to search/download beyond what was explicitly asked
 for.
+
+**Jellyfin Music library**: Matias asked how to actually listen to the album — turned out
+Jellyfin was already mounting `/mnt/nas/Music` (`/data/music` in-container, per the original
+compose) but had no library pointing at it, only Películas/Series/Collections. Added a `music`
+collection-type virtual folder via `POST /Library/VirtualFolders`. Playback confirmed working
+end to end (Matias started listening from the web player within minutes). Separately caught a
+real tagging bug from the original rip: `album` differed per disc (`"...Shine A Light
+(CD1)"` vs `"...(CD2)"`, no `discnumber` tag), which made Jellyfin treat the two discs as two
+separate albums, and `albumartist` was `Rolling Stones` (missing "The", mismatched from
+Lidarr/MusicBrainz's canonical name). Installed `mutagen` (`pip install --break-system-packages
+mutagen`, no `ffprobe`/`metaflac` available on the host) and rewrote `album`/`albumartist`/
+`artist`/`discnumber`/`disctotal` across all 24 FLAC files directly. Jellyfin's `/Library/
+Refresh` + a targeted `FullRefresh` on the item didn't pick up the change immediately — turned
+out a real (if slow, ~2min) "Scan Media Library" task was actually queued and running the whole
+time; once it finished, the album correctly collapsed into one 24-track item.
+
+## 2026-08-16 (later still) — Stood up slskd + Soularr for a live test (Lidarr's download path)
+
+Matias wanted to try the standard self-hosted "download music" pairing now that Lidarr exists,
+even though he won't seriously use it until there's more music to chase — this session was
+explicitly a functional test, not a real deployment. Couldn't read the Reddit thread he linked
+(`r/selfhosted` is blocked for this session's `WebFetch` outright, tried `www.` and `old.`
+variants and the `.json` API path, all refused) — used `WebSearch` instead, which converged on
+the same answer independently: **Lidarr + slskd + Soularr** is the community-standard stack,
+mirroring the Radarr/Sonarr + qBittorrent/SABnzbd pattern already running here.
+**Setup**:
+- Generated fresh credentials (Soulseek network account, slskd web UI login, a static API key
+  for Soularr) with `openssl rand`, stored in `~/.config/secrets/slskd.env` (0600, not
+  committed — same convention as the Cloudflare token and other secrets in that directory).
+- `slskd`: not a hotio image, so it doesn't fit the `x-arr-common` anchor — added standalone,
+  joined to `arr_network` manually so it can reach `lidarr` by container name. Config written
+  directly as `/opt/docker/configs/slskd/slskd.yml` (env vars don't cover everything, e.g.
+  named API keys with a `role`/`cidr`, so yml was more reliable than guessing env var names).
+  Downloads land on the NAS (`/mnt/nas/downloads/soulseek/{complete,incomplete}`), not the
+  local SSD. **Deliberately not sharing anything back** (`shares.directories: []`) — this is a
+  download-only setup for now, not seeding/contributing to the Soulseek network.
+- `soularr`: reads Lidarr's wanted list, searches/grabs via slskd, tells Lidarr to import.
+  Config at `/opt/docker/configs/soularr/config.ini` — the tricky part is that Lidarr and
+  Soularr each need the *download folder* at whatever path *they* see it at: Lidarr already had
+  `/mnt/nas/downloads:/downloads` mounted, so `[Lidarr] download_dir` is
+  `/downloads/soulseek/complete`; Soularr's own container mounts the same host folder straight
+  at `/downloads`, so `[Slskd] download_dir` is just `/downloads`. Set `SCRIPT_INTERVAL=300`.
+**Verified working end to end**: slskd logged into the Soulseek server successfully
+(`matias_homelab_90c6`, auto-registered on first connect — no separate signup needed). Soularr
+correctly talked to both Lidarr and slskd and logged "no releases wanted" — correct, since
+Shine a Light is the only monitored album and it's already 100% complete. Did a live manual
+search via slskd's REST API (`Rolling Stones Sticky Fingers flac`) to prove the P2P side works
+without actually grabbing anything unplanned: 251 peers responded with 4806 matching files in
+under 15 seconds. Didn't download it — Sticky Fingers isn't monitored in Lidarr, so nothing
+would have auto-imported anyway; the search alone confirms the pipeline is live.
+**Deliberately not done**: no Cloudflare Tunnel/DNS entry for slskd or soularr (LAN/Tailscale-
+only for now, matching how new admin-only services default), no Soulseek P2P port-forward on
+the router (50300 — optional, improves connection speed/reputation on the network but not
+required for downloads to work, left as a possible future tweak, not touched without asking
+first since it's a router-level change outside Docker's blast radius).

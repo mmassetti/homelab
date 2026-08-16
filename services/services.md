@@ -14,6 +14,8 @@ All ARR services use Hotio images, share `arr_network`, and use common env (PUID
 | Radarr | radarr | 7878 | ghcr.io/hotio/radarr | /opt/docker/configs/radarr | /mnt/nas/downloads, /mnt/nas/Peliculas |
 | Sonarr | sonarr | 8989 | ghcr.io/hotio/sonarr | /opt/docker/configs/sonarr | /mnt/nas/downloads, /mnt/nas/Series |
 | Lidarr | lidarr | 8686 | ghcr.io/hotio/lidarr | /opt/docker/configs/lidarr | /mnt/nas/downloads, /mnt/nas/Music |
+| slskd | slskd | 5030 (web), 50300 (P2P listen) | slskd/slskd | /opt/docker/configs/slskd | /mnt/nas/downloads/soulseek/{complete,incomplete} — Soulseek P2P client, added 2026-08-16. Not a hotio image (own env/config conventions), joined to `arr_network` manually. `shares.directories` deliberately empty — download-only, doesn't share the local library back to the network. Credentials (Soulseek account + web UI + API key) in `~/.config/secrets/slskd.env`, not committed. |
+| Soularr | soularr | 8265 (web UI) | mrusse08/soularr | /opt/docker/configs/soularr | /mnt/nas/downloads/soulseek/complete — bridges Lidarr's wanted list to slskd (searches, grabs, tells Lidarr to import), added 2026-08-16. Polls every 300s. Config (incl. both API keys) in `/opt/docker/configs/soularr/config.ini`. |
 | Bazarr | bazarr | 6767 | ghcr.io/hotio/bazarr | /opt/docker/configs/bazarr | /mnt/nas/Series, /mnt/nas/Peliculas |
 | Subgen | subgen | 9000 | mccloud/subgen:cpu | /opt/docker/configs/subgen/models | — (Whisper ASR provider for Bazarr, CPU-only) |
 | Jellystat | jellystat + jellystat-db | 3002 | cyfershepard/jellystat + postgres:18.1 | /opt/docker/configs/jellystat/{postgres-data,backup-data} | — (Jellyfin stats dashboard) |
