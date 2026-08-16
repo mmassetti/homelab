@@ -1788,4 +1788,27 @@ category: any future "quick Vercel frontend talking to a homelab API" idea shoul
 will hit this exact wall once that API gets an Access policy, and self-hosting both together
 from the start avoids the rework.
 
+## 2026-08-16 — Resolved 12 of the 13 "medium-confidence" no-TMDB-id movies
+
+**Context**: came up while debugging Cinemateca's enrichment/Jellyfin numbers — Matias recalled
+this was already a tracked, partially-worked item (`TODO.md`'s "89 movies with no TMDB id in
+Jellyfin", the medium-confidence sub-group identified but not yet applied back on 2026-08-13).
+**Action**: same two-step method as the original 31-title backfill. Step 1 — found each
+Jellyfin item by title search (all 13 matched exactly one result, confirmed `ProviderIds.Tmdb`
+was null on all), then `POST /Items/RemoteSearch/Apply/{itemId}` per title, canaried on "3030"
+first and bulk-verified via `GET /Items?Ids=...` before batching the rest — no timeouts this
+time, all 204s. Step 2 — Radarr: `GET /movie/lookup/tmdb` → `POST /movie`
+(`qualityProfileId:17`, `monitored:false`, path translated from Jellyfin's `/data/movies/...`
+to Radarr's `/movies/...` root), canaried again, `RescanMovie`, confirmed `hasFile:true` +
+zero queue/history activity, then flipped `monitored:true` — batched the canary individually,
+the remaining 11 together (one `RescanMovie` call with all 11 movieIds).
+**Workshop (1971) → tmdb:650842 deliberately skipped**: the original identification flagged
+this one as high-risk (generic title, ~50-year gap). Checked directly against TMDB before
+touching anything — tmdb:650842 is titled "Workshop" but released **2020**, not 1971,
+confirming the flag was correct. Left untouched; still needs an actual manual search to find
+the real match (if one exists on TMDB at all).
+**Result**: 12 of 13 applied. Remaining backlog: 9 weak candidates, 11 non-movie
+extras/episodes, 56 no-match, plus this 1 now-confirmed-wrong candidate — 77 total, down from
+89. See `TODO.md`.
+
 <!-- Add new decisions above this line, newest first -->

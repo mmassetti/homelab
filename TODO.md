@@ -60,23 +60,20 @@ as they come up.
       programmatic DNS management is back — no more manual dashboard steps needed for future
       subdomains. Jellystat could now be exposed publicly if ever wanted (still deliberately
       Tailscale/LAN-only for now, that part hasn't changed).
-- [ ] **89 movies still with no TMDB id in Jellyfin** (was 105/120 — 31 identified, applied to
-      Jellyfin, and linked into Radarr 2026-08-13: 25 high-confidence auto-matches + 6 found
-      via manual title cleanup, all `monitored:true`/`hasFile:true`, Bazarr will pick up
-      subtitles on its next Radarr sync). Matching report: `tmdb_match_results.json` was only
-      in the session scratchpad, not saved to the repo — if it's gone, regenerate by re-running
-      the same Jellyfin-RemoteSearch-based matching approach (see decision log 2026-08-13 entry
-      for the method). Three sub-groups still open, Matias plans to do these by hand later:
-      - **13 medium-confidence** (title matches, year is off by more than 1 — usually shooting
-        vs. release year, but check before applying): 3030 (2001) → *El 30-30* tmdb:807680;
-        Diarios patagónicos 1 (1973) → tmdb:399671; El ausente (1987) → *El diente ausente*
-        tmdb:1737730; El profes1on4l (2019) → *The Professional* tmdb:653348; Esteros (2012) →
-        tmdb:418718; Héroe corriente (2017) → tmdb:684021; Kill Bill - The Whole Bloody Affair
-        (2004) → tmdb:414419; La nueva cigarra (1975) → tmdb:773918; Last And First Men (2017)
-        → tmdb:566038; Lectura según Justino (2019) → tmdb:662609; Los decentes (2019) →
-        *Nosotros, los decentes* tmdb:322440; Negro Buenos Aires (2009) → *Black Buenos Aires*
-        tmdb:109817; **Workshop (1971) → tmdb:650842 — flagged high-risk, generic title + ~50
-        year gap, likely the wrong film, double-check carefully before applying.**
+- [ ] **77 movies still with no TMDB id in Jellyfin** (was 89, then 105/120 — see decision log
+      for the full history). Matching report: `tmdb_match_results.json` was only in the session
+      scratchpad, not saved to the repo — if it's gone, regenerate by re-running the same
+      Jellyfin-RemoteSearch-based matching approach (see decision log 2026-08-13 entry for the
+      method). Three sub-groups still open, Matias plans to do these by hand later:
+      - [x] **13 medium-confidence — resolved 2026-08-16**, 12 of 13 applied (Jellyfin TMDB id
+        + linked into Radarr, `monitored:true`/`hasFile:true`): El 30-30 tmdb:807680, Diarios
+        Patagónicos 1 tmdb:399671, El diente ausente tmdb:1737730, The Professional
+        tmdb:653348, Esteros tmdb:418718, Héroe Corriente tmdb:684021, Kill Bill: The Whole
+        Bloody Affair tmdb:414419, La nueva cigarra tmdb:773918, Last and First Men
+        tmdb:566038, Lectura según Justino tmdb:662609, Nosotros los decentes tmdb:322440,
+        Black Buenos Aires tmdb:109817. **Workshop (1971) deliberately skipped** — checked
+        tmdb:650842 directly and it's a 2020 film, confirming the flagged ~50-year mismatch was
+        real; still needs a proper manual TMDB search, not this candidate.
       - **9 weak candidates** (no confident algorithmic match, need a manual themoviedb.org
         search): Al centro de la tierra (2018), Anida y el circo flotante (2016), Antes del
         estreno (2010), Cuando dejes de quererme (2019), El hombre del futuro (2020), La mala
