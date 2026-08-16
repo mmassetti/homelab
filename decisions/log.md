@@ -1833,4 +1833,25 @@ entries use generic `mdi-*` icons instead of the dashboard-icons pack's brand ic
 left for later — validated the new YAML parses correctly and restarted the container to
 confirm no errors before calling it done.
 
+## 2026-08-16 (later) — Added real icons and live widgets to the same dashboard
+
+**Icons**: swapped generic `mdi-*` fallbacks for real brand icons where they exist in the
+`dashboard-icons` pack (verified each via a HEAD request to the CDN before using it, rather
+than guessing filenames): `jellystat.png`, `profilarr.png`, `casaos.png`, `open-cloud.png`
+(note the hyphen — `opencloud.png` 404s). Custom personal apps with no brand icon (Cinemateca,
+Colección 4K, CEN Dashboard, Image Server, Ricota API) keep sensible `mdi-*` icons — nothing
+to swap those for.
+**Widgets** (live stats pulled from each service's own API): Jellyfin, Jellyseerr, Radarr,
+Sonarr, Lidarr, Bazarr, Prowlarr, SABnzbd — 8 total. API keys pulled from each app's own config
+on disk (`config.xml`/`config.yaml` for the *arr apps, `sabnzbd.ini`, and the existing
+`JELLYFIN_API_KEY`/`JELLYSEERR_API_KEY` already in `~/.config/secrets/homelab_bots.env`).
+Verified every key directly against its service's own API (all 200) before trusting the
+dashboard would render correctly, then checked the rendered homepage HTML for known error
+strings (none found).
+**Deliberately skipped, need a manual step first**: qBittorrent (WebUI password is stored as a
+PBKDF2 hash, not recoverable — didn't want to reset a live login without asking), Pi-hole (DSM
+v6 needs a freshly-generated app password, the current one is hashed the same way), Uptime
+Kuma (no public status page configured, which is what its widget needs). Left short
+`description:` notes on each in `services.yaml` explaining why, so it's not a silent gap.
+
 <!-- Add new decisions above this line, newest first -->
