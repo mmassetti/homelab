@@ -1854,4 +1854,30 @@ v6 needs a freshly-generated app password, the current one is hashed the same wa
 Kuma (no public status page configured, which is what its widget needs). Left short
 `description:` notes on each in `services.yaml` explaining why, so it's not a silent gap.
 
+## 2026-08-16 (later) — Fixed qBittorrent and Pi-hole dashboard widgets
+
+**qBittorrent**: Matias gave the WebUI password (same as another local admin credential he
+reuses); verified it via a real login call before trusting it, then added the widget.
+**Pi-hole app password — took three tries to get right, worth documenting the real method**:
+1. `pihole api auth/app` (CLI, no login) returned a plausible-looking password+hash but never
+   persisted anything — turned out the CLI's implicit session uses `webserver.api.cli_pw`
+   (a temporary, auto-regenerated-on-restart credential that's explicitly barred from
+   modifying config, by design, per the setting's own doc comment in `pihole.toml`).
+2. Logging in properly with the real admin password and calling `GET /api/auth/app` with that
+   session *also* silently failed to persist — turns out this call only **generates** a
+   candidate password/hash pair, it does not save it. Found this documented in Pi-hole's own
+   OpenAPI spec (`/api/docs/specs/auth.yaml`, the `add_app` operation description) after two
+   failed attempts: the returned `hash` has to be written separately via
+   `PATCH /api/config/webserver/api/app_pwhash`. It also explicitly invalidates the current
+   session, so a fresh login is needed for the PATCH.
+3. Real working sequence: login → `GET /api/auth/app` (session now dead) → login again →
+   `PATCH /api/config/webserver/api/app_pwhash` with the hash, using the *new* session →
+   verified both in `pihole.toml` (`app_pwhash` no longer empty) and functionally (`POST
+   /api/auth` with the plaintext app password returns `"message": "app-password correct"`).
+Widget added to `services.yaml` with the resulting app password.
+**Rationale**: worth remembering generally — an API endpoint returning a well-formed,
+plausible response is not proof an action actually took effect; when persistence matters,
+verify against the actual stored state (or a follow-up functional check), not just the HTTP
+response of the call that was supposed to cause it.
+
 <!-- Add new decisions above this line, newest first -->
