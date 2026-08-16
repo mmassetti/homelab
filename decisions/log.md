@@ -1811,4 +1811,26 @@ the real match (if one exists on TMDB at all).
 extras/episodes, 56 no-match, plus this 1 now-confirmed-wrong candidate — 77 total, down from
 89. See `TODO.md`.
 
+## 2026-08-16 — Updated home.matiasmassetti.com (homepage dashboard), hadn't been touched in a while
+
+**Context**: Matias hadn't reviewed the `homepage` dashboard in a while; asked to fix whatever
+was missing/wrong. Compared `services.yaml` (18 entries) against what's actually running
+today.
+**Added 5 real services that existed but weren't on the dashboard**: Jellystat (:3002),
+Colección 4K (:3004, today's self-hosted `media-tracker-app`), SABnzbd (:8085), Glances
+(confirmed the actual port — `network_mode: host` + `-w` flag serves on :61208, not
+documented anywhere before), Ricota API (no LAN port at all — only reachable via
+`ricota-caddy:80` internally, so linked the public `ricota-api.matiasmassetti.com` Tunnel URL
+instead, the one exception to the LAN-IP convention everything else uses).
+**Left as-is, still valid**: Synology DSM link, CasaOS, Uptime Kuma, Netdata, Pi-hole,
+OpenCloud, the ARR stack, CEN Dashboard, Image Server — all checked, all still correct.
+**Not done, flagged as optional**: `docker.yaml` (Docker-label auto-discovery) and
+`bookmarks.yaml` are both empty despite the Docker socket being mounted read-only — homepage
+supports auto-discovering containers instead of hand-listing them, and could show live
+`widget:` stats (Jellyfin now-playing, Radarr queue, etc.); neither is configured. Several
+entries use generic `mdi-*` icons instead of the dashboard-icons pack's brand icons
+(Cinemateca, Profilarr, CasaOS, OpenCloud, CEN Dashboard, Image Server, Ricota API). Cosmetic,
+left for later — validated the new YAML parses correctly and restarted the container to
+confirm no errors before calling it done.
+
 <!-- Add new decisions above this line, newest first -->
