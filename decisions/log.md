@@ -1899,4 +1899,89 @@ not just that the write didn't error" discipline as the Pi-hole fix above.
 **Result**: all three widgets deferred earlier tonight (qBittorrent, Pi-hole, Uptime Kuma) are
 done — 11 live widgets total on `home.matiasmassetti.com` now.
 
+## 2026-08-16 — The Right Stuff (1983): stalled Jellyseerr download fixed
+
+**Context**: Matias checked a Jellyseerr request for *The Right Stuff* (1983) — stuck.
+**Finding**: the grabbed torrent was dead (no progress in Radarr's queue).
+**Decision**: removed + blocklisted the stalled release
+(`DELETE /api/v3/queue/681414149?removeFromClient=true&blocklist=true`), then triggered
+`MoviesSearch` (movieId 2439). Radarr grabbed a fresh Usenet release
+(`The.Right.Stuff.1983.BluRay.1080p.DD.5.1.x264-BHDStudio`, via SABnzbd, 12.53GB) and it
+completed normally (confirmed `hasFile:true`, 11.55GB on disk). Same pattern as the earlier
+Handmaiden fix: blocklist the dead release rather than just clearing the queue entry, so
+Radarr doesn't immediately re-grab the same dead source.
+
+## 2026-08-16 — Host reboot: OpenCloud didn't come back up (mount race), then full login saga
+
+**Context**: Matias rebooted the host (mini PC) at Matias's own initiative after some earlier
+config work. Asked to verify everything came back healthy.
+**Finding #1 — real bug, will recur on every future reboot**: every container came back up
+cleanly except `opencloud`, which exited (code 0) after repeated
+`Filestore [KV_eventhistory] loadBlock error: ... input/output error` on its NATS jetstream
+store. Root cause: `opencloud`'s data lives on `/mnt/opencloud`, a loop-mounted ext4 image
+sitting on top of the NFS mount `/mnt/nas-nfs` (see `hardware/nas.md`) — both `_netdev`
+mounts, systemd units `mnt-nas\x2dnfs.mount` and `mnt-opencloud.mount`. `docker.service` has
+no explicit systemd dependency on `mnt-opencloud.mount`, so on boot the container can start
+(and immediately fail reading its data) before the mount is actually ready — a genuine race,
+not one-off corruption. Fixed for now by starting the container manually once the mount was
+confirmed live (`docker start opencloud`) — came up clean, no data loss, 247GB present as
+expected. **Not yet fixed at the systemd level** — see `TODO.md`.
+**Finding #2 — "Missing or invalid config" via `http://192.168.1.239:9200/` direct-IP
+access**: not a bug. `OC_URL: https://cloud.matiasmassetti.com` is baked into the container's
+config (`docker-compose.yml`), and `config.json` correctly advertises that as `server` — the
+web frontend deliberately refuses to run under a different origin. OpenCloud was never meant
+to be reachable by the LAN IP directly; always use the Cloudflare Tunnel hostname.
+**Finding #3 — real bug, needed a fix**: via the correct hostname, Cloudflare Access (added
+2026-08-12, email-OTP protecting `cloud.matiasmassetti.com` like 15 other admin hostnames) let
+the browser through fine, but OpenCloud's own login then looped with "Not logged in". Cause:
+OpenCloud's `proxy` service does **server-to-server** calls back out to its own public
+hostname to verify tokens — `/.well-known/openid-configuration`, `/konnect/v1/jwks.json`, and
+`/konnect/v1/userinfo` — and those requests carry no Access session cookie (they're not
+browser requests), so Access intercepted them and returned its own HTML login page instead of
+JSON. The proxy's Go OIDC client then failed with `expected Content-Type = application/json,
+got "text/html"` (discovery/JWKS) and `invalid character '<' looking for beginning of value`
+(userinfo).
+**Decision**: created 3 narrow Cloudflare Access **bypass** applications (via API, account
+`7dfee4d2de02fa195e6b9674de205fa6`), each scoped to one exact path so nothing else on the
+hostname is affected:
+- `cloud.matiasmassetti.com/.well-known/openid-configuration` (id `adf6389c-...`)
+- `cloud.matiasmassetti.com/konnect/v1/jwks.json` (id `f0d96d4d-...`)
+- `cloud.matiasmassetti.com/konnect/v1/userinfo` (id `dd4fef6a-...`)
+**Rationale for why this is safe**: discovery + JWKS are public-by-design OIDC metadata (no
+secrets, no user data). `userinfo` does return user data, but it's still gated by its own
+bearer-token check inside OpenCloud itself — bypassing *Cloudflare's* layer here doesn't
+remove authentication, it just stops Access from eating a request that was never a browser
+request to begin with. Verified: `/` on the hostname still 302s to Access as before; the three
+bypassed paths return real JSON/JWKS directly.
+**Finding #4 — separate issue, not related to Access**: once the OIDC plumbing was fixed, the
+login form itself rejected the credentials Matias tried. Turned out the compose file's
+`IDM_ADMIN_PASSWORD: mmti1374` no longer matches what's actually in the idm store (stale —
+likely changed via the UI at some point after initial setup and never updated in the compose
+file); a reset of the `admin` account did succeed (`opencloud idm resetpassword -u admin`,
+verified: works via direct Basic Auth to `/ocs/v1.php/cloud/capabilities`) but that's a
+service/bootstrap account, not the one Matias actually logs in as day to day — Radarr logs
+showed the real failing bind attempts were for `uid=matias`, which the reset never touched.
+Reset `matias`'s password too (same tool, same method), verified via Basic Auth — that's the
+one that actually fixed the login.
+**How-to for next time** (the `idm resetpassword` tool needs a real interactive TTY —
+`docker exec -i` alone fails with "inappropriate ioctl for device" since Go's password-prompt
+reader checks for a terminal — and needs exclusive access to `idm.boltdb`, so the running
+container has to be stopped first):
+```bash
+docker stop opencloud
+{ echo "$NEWPASS"; echo "$NEWPASS"; } | script -qec \
+  "docker compose -f /opt/docker/docker-compose.yml run --rm -i --entrypoint opencloud opencloud idm resetpassword -u <username>" \
+  /dev/null
+docker compose -f /opt/docker/docker-compose.yml up -d opencloud
+```
+`admin`'s reset printed a confusing `Failed to update user password: entry does not exist`
+immediately before `Password ... updated` — harmless in that case (exit 0, later verified
+working), but don't treat mixed output like that as success without a real functional check
+(same lesson as the Pi-hole app-password entry above: verify actual state, not the response of
+the call that was supposed to change it).
+**Result**: `matias` / `Homelab-Cloud-2026!` confirmed working end to end through the real
+browser flow (Access OTP → OpenCloud login). `IDM_ADMIN_PASSWORD` in the compose file is now
+stale for the actual `admin` account too (reset separately) — worth updating the compose file
+itself next time it's touched, so it doesn't mislead future recovery attempts.
+
 <!-- Add new decisions above this line, newest first -->

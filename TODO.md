@@ -46,12 +46,24 @@ as they come up.
       going forward: the web form, telling Claude here (who does a TMDB lookup + `INSERT`,
       as done for the 16 backfilled titles), or bulk JSON import. Godzilla Minus One (the one
       item missing from the old Sheet) will show up correctly next time the CSV is exported.
-- [ ] **Verify The Handmaiden (2016) Radarr re-grab loop stayed stopped** — RSS Sync kept
-      re-grabbing the same REPACK release every 30 min, deleting the good file each time on
-      import failure, and re-triggering the "Manual Interaction" Telegram alert. Blocklisted the
-      release (`POST /api/v3/history/failed/{id}`) 2026-08-14 ~12:27 to stop it; needs a check
-      after a couple more RSS Sync cycles to confirm it didn't just find a *different* release
-      of the same movie to loop on. See decision log for the full diagnosis.
+- [x] **The Handmaiden (2016) Radarr re-grab loop — confirmed stopped** (verified 2026-08-16,
+      ~2 days / many RSS Sync cycles after the 2026-08-14 blocklist fix): no queue entry, file
+      still present, no repeat "Manual Interaction" alerts. Closed.
+- [ ] **`docker.service` has no dependency on `mnt-opencloud.mount`** — real bug found
+      2026-08-16 during a host reboot: every container came back except `opencloud`, which
+      started before its loop-mounted data dir (`/mnt/opencloud`, ext4-on-NFS) was ready and
+      crashed on I/O errors. Worked around by starting it manually once the mount was live;
+      will recur on every future reboot until fixed. Fix: a systemd override
+      (`/etc/systemd/system/docker.service.d/override.conf` or similar) adding
+      `After=mnt-opencloud.mount` + `Requires=mnt-opencloud.mount` — or narrower, just delay/
+      retry the `opencloud` container specifically (e.g. Docker restart policy already handles
+      this if given enough retries — check `on-failure` with a max retry count instead of
+      `unless-stopped`, or add an explicit `depends_on` health-checked NAS-mount sentinel
+      container). See decision log 2026-08-16 for the full diagnosis.
+- [ ] **`IDM_ADMIN_PASSWORD` in `docker-compose.yml` is stale** — doesn't match OpenCloud's
+      actual `admin` account password anymore (reset 2026-08-16, see decision log). Not urgent
+      (day-to-day login is the `matias` account, not `admin`), but worth updating next time the
+      compose file is touched so it doesn't mislead a future recovery attempt.
 - [x] **Cloudflare API token DNS scope — fixed 2026-08-15** — re-applied the token's Zone
       permissions in the dashboard (same token, "cloudflare tunnel minipc access"; the DNS:Edit
       grant had stopped working at some point after 2026-08-11, cause unclear). Verified with a
