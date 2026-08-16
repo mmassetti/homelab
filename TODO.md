@@ -6,6 +6,17 @@ as they come up.
 
 ## Open
 
+- [x] **Cinemateca frontend fixed — self-hosted, dropped Vercel** (2026-08-16). Was
+      `pelis.matiasmassetti.com` (Vercel) → CORS error hitting the Access-protected
+      `cinemateca.matiasmassetti.com` API. Now built + served from the same container
+      (`~/Code/tracker-nas/webapp`). See `decisions/log.md` for the full root cause.
+- [ ] **Retire the `pelis.matiasmassetti.com` Vercel project** — needs Matias's Vercel
+      account, not doable from here. Now fully superseded by `cinemateca.matiasmassetti.com`
+      serving the same frontend itself.
+- [ ] **`tracker-nas`/Cinemateca known bugs, deliberately deferred 2026-08-16** — see the
+      repo's own `PENDIENTES.md` for the full list: watchlist cache doesn't invalidate on
+      `/api/sync`, "IMDB Top 250" is actually TMDB's `top_rated` list mislabeled, missing
+      mobile back button on `FamousDirectors`, dead code in `sheets.py`/`top250.json`.
 - [x] **Old `media-tracker-api.service` systemd unit removed** (2026-08-15, Matias ran it
       manually — needed an interactive sudo password). Verified: `systemctl status` now
       returns "could not be found", unit file gone from `/etc/systemd/system/`, not in

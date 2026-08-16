@@ -247,7 +247,7 @@ Router should point DNS to 192.168.1.239 for whole-network ad blocking.
 | Uptime Kuma | uptime-kuma | 3001 | homelab | Service monitoring |
 | Glances | glances | — | host network | System monitoring (web: `-w` flag) |
 | Netdata | netdata | 19999 | homelab | Advanced monitoring |
-| Cinemateca | cinemateca | 8001 | homelab | Custom build (`/opt/docker/configs/cinemateca`), personal movie catalog/enricher — Letterboxd (`matimassetti`) + Jellyfin + TMDB director data, reads `/mnt/nas/Peliculas:ro`, writes to `cinemateca` DB inside the `media_tracker_db` Postgres instance |
+| Cinemateca | cinemateca | 8001 | homelab | Personal movie catalog/enricher — Letterboxd (`matimassetti`) + Jellyfin + TMDB director data, reads `/mnt/nas/Peliculas:ro`, writes to `cinemateca` DB inside the `media_tracker_db` Postgres instance. Built from `~/Code/tracker-nas/webapp` (private GitHub repo `mmassetti/tracker-nas`) — a multi-stage Dockerfile builds the React frontend and FastAPI serves it via `StaticFiles` at `/`, same origin as the `/api/*` routes. `env_file` still points at `/opt/docker/configs/cinemateca/.env` (secrets weren't moved). Old build path (`/opt/docker/configs/cinemateca` as the Docker build context) is superseded but the directory/`.env` are still there. |
 
 ## Cloud & Storage
 

@@ -1743,4 +1743,49 @@ mistake on this end as far as can be told.
 need a manual dashboard step, closing a gap that's shown up twice tonight (`coleccion` and,
 earlier, the general "can't verify DNS-related things" limitation noted for Jellystat).
 
+## 2026-08-16 — Fixed Cinemateca's frontend by dropping Vercel, same as the 4K tracker
+
+**Context**: Matias remembered Cinemateca had a real frontend after all (`Mi Cinemateca`,
+Vercel-deployed at `pelis.matiasmassetti.com`, source in the private GitHub repo
+`mmassetti/tracker-nas`) — undiscoverable from the mini PC alone since neither the repo nor
+any mention of it lived here. Found it via `gh repo list mmassetti` (already authenticated
+from earlier tonight). Loading it threw a CORS error fetching
+`cinemateca.matiasmassetti.com/api/jellyfin/status`.
+**Root cause**: not a code bug — `main.py` already had `allow_origins=["*"]`. The backend
+hostname sits behind Cloudflare Access (added 2026-08-12), and a background `fetch()` from a
+different origin (`pelis.*`) hitting an Access-protected hostname gets redirected to Access's
+login page instead of the API; that redirect response doesn't carry valid CORS for the
+frontend's actual origin, so the browser blocks it before Access is ever satisfied. Confirmed
+by reading `PLAN_WEBAPP.md` in the repo: this was never designed for split hosting at all — it
+started as a local-only Mac app (`localhost:8000`, NAS mounted directly via SMB), and
+`api.js` still had a leftover comment about pointing production at the raw LAN IP
+(`192.168.1.239:8001`), which was never reachable from the public internet either.
+**Decision**: same fix as tonight's identical situation with the 4K Collection Tracker — drop
+Vercel, serve the built frontend from the same process as the API. Matias confirmed explicitly
+(via a plan-mode question) rather than assuming the precedent applied automatically.
+**Action**: cloned `tracker-nas` to `~/Code/tracker-nas`. Added `fastapi.staticfiles.StaticFiles`
+mounted at `/` in `main.py` (after all `/api/*` routes — verified via grep that every route is
+`/api`-prefixed, so no collision). Added `aiofiles` to `requirements.txt` (required by
+`StaticFiles`, wasn't there). New multi-stage `Dockerfile` in `webapp/`: a `node:20-alpine`
+stage builds the Vite frontend, the Python runtime stage copies its `dist/` in as `static/`.
+Deliberately did **not** set `VITE_API_URL` as a build arg — `api.js` already falls back to
+`''` (relative/same-origin paths) when it's unset, so zero frontend code changes were needed
+for the actual fix. Changed the existing `cinemateca:` service's `build:` path in
+`/opt/docker/docker-compose.yml` from `/opt/docker/configs/cinemateca` to
+`~/Code/tracker-nas/webapp` — everything else (port, `env_file`, volumes, network) untouched,
+so no secrets needed moving. Verified: local curl checks (HTML title, JS/CSS assets, `/api/status`
+all 200), then the real end-to-end case — `https://cinemateca.matiasmassetti.com/` correctly
+302s to Access when unauthenticated (expected now, since UI and API share one origin), and
+Matias confirmed in-browser that data actually loads (Directors/Countries/Letterboxd views
+populated), not just that the page renders.
+**Explicitly out of scope**: the repo's own `PENDIENTES.md` lists real bugs (watchlist cache
+not invalidating on `/api/sync`, "IMDB Top 250" actually being TMDB's `top_rated` list, a
+missing mobile back button, dead `sheets.py` code) — Matias scoped this session to just
+unblocking access, not fixing those. See `TODO.md`.
+**Rationale**: the same architecture-mismatch pattern (Vercel frontend + Access-protected
+homelab backend) has now broken two separate apps in one night. Worth remembering as a
+category: any future "quick Vercel frontend talking to a homelab API" idea should assume it
+will hit this exact wall once that API gets an Access policy, and self-hosting both together
+from the start avoids the rework.
+
 <!-- Add new decisions above this line, newest first -->

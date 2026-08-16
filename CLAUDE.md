@@ -64,7 +64,7 @@ Config base: `/opt/docker/configs/<service>/`
 | uptime-kuma | 3001 | Monitoring |
 | glances | host | System stats |
 | netdata | 19999 | Advanced monitoring |
-| cinemateca | 8001 | Custom-built (`/opt/docker/configs/cinemateca`) personal movie catalog/enricher — pulls Letterboxd (`matimassetti`) + Jellyfin + TMDB director data, reads `/mnt/nas/Peliculas` read-only, writes to the `cinemateca` DB on `media_tracker_db` (192.168.1.239:5432) |
+| cinemateca | 8001 | Personal movie catalog/enricher — pulls Letterboxd (`matimassetti`) + Jellyfin + TMDB director data, reads `/mnt/nas/Peliculas` read-only, writes to the `cinemateca` DB on `media_tracker_db` (192.168.1.239:5432). **Now serves its own frontend too** (2026-08-16) — built from `~/Code/tracker-nas/webapp` (private repo `mmassetti/tracker-nas`, backend+frontend in one image, FastAPI `StaticFiles` mounted at `/`), replacing the old split Vercel (`pelis.matiasmassetti.com`) + homelab-backend setup. See `decisions/log.md`. |
 
 ### Cloud & Storage (docker_homelab network)
 | Service | Port | Notes |
