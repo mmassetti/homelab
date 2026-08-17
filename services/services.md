@@ -53,6 +53,67 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent/SAB
   release's `guid`+`indexerId` force-grabs a specific rejected release if there's a good reason
   to override the filter (e.g., a healthy YIFY release when nothing else has real seeders).
 
+### Lidarr Notes (quality profiles + indexers set up 2026-08-17)
+
+- **Quality profiles** — 4 exist (`Any`, `Lossless`, `Standard`, `Lossless Priority`). Root
+  folder default and every monitored artist (Jungle, Parcels, Rolling Stones, Gustavo Cerati)
+  now use **`Lossless Priority`**: prioritizes FLAC/ALAC/APE/WavPack (16 or 24bit), falls back
+  to lossy only if 192kbps+, blocks anything below that. `upgradeAllowed: true` on both this
+  profile and plain `Lossless`, so Lidarr keeps searching after grabbing something and replaces
+  it if a better (or fully lossless) release shows up later. Chosen deliberately over strict
+  `Lossless`-only after confirming preference: strict mode leaves albums permanently "wanted"
+  if no lossless release exists anywhere (happened with Parcels' *Live Vol. 2*), which isn't
+  worth it for the marginal quality gain.
+- **Indexers (via Prowlarr)**: `NZBgeek` (usenet), `1337x`/`Nyaa.si` (torrent, shared with
+  Radarr/Sonarr), plus **`RuTracker.org`** (added 2026-08-17) — semi-private tracker, by far the
+  best source found for verified/tagged lossless rips (often `FLAC (image+.cue)`, i.e. a full
+  CD image + cue sheet + EAC verification log — the gold-standard preservation format). Needs
+  the `flaresolverr-proxy` tag in Prowlarr or every request 403s (same proxy already used for
+  `1337x`/`EZTV`/`LimeTorrents`/`YTS`). Account: `mmassetti` — **reuses the same password as
+  Pi-hole/OpenCloud admin (`mmti1374`)**, flagged as a real risk (public tracker = frequent
+  breach target) but not changed, Matias's call. RuTracker enforces a **minimum 0.3 upload
+  ratio and requires seeding until 3-4 more users grab the same torrent** (rule 3.5) or risks
+  account suspension — set `seedRatio: 1.0` / `seedTime: 4320` (min, i.e. 3 days) /
+  `packSeedTime: 4320` on the indexer's torrent settings to stay safely inside that. Fourth,
+  fully independent path is **Soulseek** via `slskd`/`soularr` (see ARR Stack table above).
+- **Security incident (2026-08-17)**: a `1337x` torrent (`Parcels Live Vol. 2 [Flac 24-44]`,
+  claimed 15 seeders, FLAC 24bit) turned out to be a poisoned torrent — the metadata/title were
+  fake, actual payload was a single 837MB `.exe`. Caught by checking the **download client
+  queue's actual filename** (`GET /api/v1/queue`) rather than trusting the indexer search
+  result — Lidarr had already tagged it "FLAC 24bit, 12 tracks" in its own history based on the
+  torrent's *name*, not its contents. Removed from queue + qBittorrent + blocklisted
+  (`DELETE /api/v1/queue/{id}?removeFromClient=true&blocklist=true`), confirmed no leftover
+  files on disk. **Lesson**: always sanity-check what's actually sitting in the download
+  client's queue for anything grabbed from an open/public torrent indexer, not just what
+  Prowlarr's search result claimed — high seeder count is not a trust signal by itself.
+- **FLAC+CUE import gotcha**: RuTracker's `image+.cue` releases (one monolithic FLAC + a `.cue`
+  sheet) fail Lidarr import outright ("Has missing tracks" — Lidarr expects one file per track).
+  Fix: split with `cuebreakpoints`/`shnsplit` (`cuetools`+`shntool`) — neither installed on the
+  host and no `sudo` password available, so pulled a throwaway `debian:bookworm-slim` container
+  with the NAS downloads folder mounted, installed the tools inside it, ran the split there.
+  Two extra gotchas layered on top: (1) old EAC-era `.cue` files are often **ISO-8859-1**, not
+  UTF-8 — must `iconv` before parsing or accented titles (Tabú, Engaña, Río Babel...) come out
+  mangled; (2) `cuetag`'s tag-embedding step itself mangled the accents under the container's
+  default `C` locale even after fixing the `.cue` encoding — worked around by skipping `cuetag`
+  entirely and writing FLAC Vorbis comments directly in Python (`mutagen`), parsed straight from
+  the UTF-8-fixed cue file.
+- **Release-edition mismatches**: a recurring MusicBrainz/Lidarr gotcha, not specific to any one
+  source — Lidarr can end up monitoring a different **release edition** than what's actually
+  available (e.g. vinyl `A1`/`B1` track numbering or a digital release with extra bonus tracks,
+  vs. the standard CD you actually have). Shows as "Has missing tracks" or "Album match is not
+  close enough" on import even with a perfectly valid file. Fix pattern: `GET /api/v1/album/
+  {id}` → find the `releases[]` entry whose `trackCount`/`format` matches what's on disk → `PUT`
+  the album back with only that release's `monitored: true` → `POST /api/v1/command
+  {"name":"RefreshArtist"}` and wait for completion → `GET /api/v1/manualimport?folder=...` and
+  force-map each file's `albumReleaseId` + `trackIds` explicitly in the `ManualImport` command
+  payload (auto-matching trusts the file's *embedded* MusicBrainz release-ID tag over whatever
+  release Lidarr has monitored, so a plain re-scan alone doesn't fix it). Hit this on Parcels'
+  *Day/Night* (2xCD vs. 3x-digital-with-bonus-tracks) and twice within the Cerati batch
+  (*Fuerza Natural*, *Siempre es Hoy* — vinyl vs. CD numbering).
+- **Artists**: Jungle, Parcels, Rolling Stones (pre-existing) + **Gustavo Cerati** (added
+  2026-08-17) — 8 of 9 albums complete after the fixes above; only the 2019 *Fuerza Natural
+  Tour, en vivo en Monterrey* live album is still ungrabbed (not yet found by any indexer).
+
 ### Hardware Transcoding (fixed 2026-08-12)
 
 - Host has an AMD Radeon 780M iGPU (Phoenix3, VCN video engine) exposing `/dev/dri/card1` +

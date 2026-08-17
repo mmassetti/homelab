@@ -2176,3 +2176,63 @@ pure backend helper for Prowlarr, no useful UI, matches why it was never on the 
 begin with) and all the `-db`/backend containers (`jellystat-db`, `media_tracker_db`,
 `ricota-db-*`, `unbound`) — same reasoning. `docker restart homepage` to pick up the config
 change immediately rather than waiting on its file-watcher.
+
+## 2026-08-17 — Lidarr quality profile decision, RuTracker onboarded, malware torrent caught, Cerati batch
+
+Started from Matias comparing FLAC quality/size across Parcels vs. Jungle downloads (all
+genuinely lossless, one exception: Parcels *Live Vol. 2* had come down as MP3-256 while every
+other album was true FLAC — traced to the root folder's default quality profile already being
+`Lossless`, but that one album likely got grabbed manually via interactive search before the
+profile was in place, which bypasses the filter).
+
+**Quality profile philosophy**: set `upgradeAllowed: true` on the `Lossless` profile (was
+`false` — it would stop searching the instant it grabbed *any* lossless quality, never chasing
+a later 24bit release). Matias then explicitly chose **"prefiero tener algo antes que nada"**
+over strict lossless-only, so switched the root folder default and every existing artist
+(Jungle, Parcels, Rolling Stones) to **`Lossless Priority`** instead — same upgrade behavior,
+but falls back to 192kbps+ lossy rather than leaving an album "wanted" forever if no lossless
+release exists anywhere. Full reasoning and mechanics in `services/services.md` → Lidarr Notes.
+
+**RuTracker.org onboarded as a 4th indexer** (prompted by a Reddit thread Matias shared with
+music-source suggestions — most of it was Telegram bots pulling from leaked/shared premium
+streaming credentials, judged too flaky/unverifiable and not automatable through Lidarr;
+RuTracker was the one actually worth adding since Prowlarr has a native indexer definition for
+it). Needed the same `flaresolverr-proxy` tag already used for `1337x`/`EZTV`/`LimeTorrents`/
+`YTS` — direct requests 403'd without it. Read RuTracker's registration rules (Matias pasted
+the full page) before connecting the account: flagged the mandatory 0.3 minimum upload ratio +
+"keep seeding until 3-4 more users grab it" rule (3.5) as the one that actually matters for
+automation, and set `seedRatio: 1.0` / `seedTime: 4320` (3 days) on the indexer's torrent
+settings so qBittorrent doesn't stop seeding early and risk the account. Also flagged — but did
+not change, Matias's call — that the RuTracker account password (`mmti1374`) is reused from the
+Pi-hole and OpenCloud admin panels; a breach on a public tracker is a real credential-stuffing
+risk against homelab admin surfaces.
+
+**Malware caught mid-download**: after finding the correct FLAC 24bit torrent for Parcels
+*Live Vol. 2* via interactive search, the grabbed `1337x` release (15 seeders, looked
+legitimate, Lidarr's own history had already tagged it "FLAC 24bit, 12 tracks" from the
+torrent's metadata) turned out to be a poisoned torrent once actually checked — the download
+client queue showed the real payload was a single 837MB `.exe`, nothing resembling audio.
+Removed from queue + qBittorrent + blocklisted immediately, verified no leftover files on disk.
+Re-grabbed the same album from the Usenet NZB (NZBgeek, 16bit FLAC, `ENRiCH` release group)
+instead — safer source for anything that already looked slightly too good. Worth remembering:
+a high seeder count on an open public torrent index is not a trust signal, and Lidarr's grab
+history reflects the torrent's *claimed* metadata, not its actual contents — always check what
+the download client itself is actually pulling down before assuming a grab is legitimate.
+
+**Gustavo Cerati added** as a new Lidarr artist (mainstream Argentine rock, good test case for
+RuTracker given how well-covered his catalog is there) — 4 of 9 albums imported clean, but 3
+(*Bocanada*, *Siempre es Hoy*, *Fuerza Natural*) came down from RuTracker as single-file
+`FLAC+CUE` CD images (technically the best preservation format — full EAC log included — but
+unimportable by Lidarr as-is) and needed manual splitting; *Fuerza Natural* additionally turned
+out to have Lidarr monitoring the vinyl release edition instead of the CD one actually
+downloaded. Full troubleshooting mechanics (cue splitting via a throwaway Docker container,
+the ISO-8859-1 encoding gotcha, the release-edition-switch fix pattern) written up in
+`services/services.md` → Lidarr Notes rather than duplicated here, since it's reusable
+knowledge for the next artist that hits the same wall. 8 of 9 albums complete; the 2019
+Monterrey live album hasn't been found by any indexer yet, left monitored.
+
+**Not done**: Matias separately asked about a Cloudflare Zero Trust bypass policy for
+`assets.matiasmassetti.com/movies` (unrelated side task, for a different project reading cover
+art). Walked through the plan and ran a baseline `curl` (confirmed still gated, 302 to Access
+login) but he never came back to confirm the dashboard change was made, so nothing was verified
+or should be assumed done — no doc update for it.

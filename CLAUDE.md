@@ -1,7 +1,7 @@
 # Matias's Homelab — Claude Code Context
 
 > Auto-loaded when working in `~/homelab/`. Dense summary of entire setup.
-> Last updated: 2026-08-11. See individual files for full details.
+> Last updated: 2026-08-17. See individual files for full details.
 
 ## Hardware
 
@@ -37,7 +37,7 @@ Config base: `/opt/docker/configs/<service>/`
 | jellyfin | 8096 | /mnt/nas/{Peliculas,Series,Music} |
 | radarr | 7878 | /mnt/nas/{downloads,Peliculas} |
 | sonarr | 8989 | /mnt/nas/{downloads,Series} |
-| lidarr | 8686 | /mnt/nas/{downloads,Music} |
+| lidarr | 8686 | /mnt/nas/{downloads,Music} — quality profile `Lossless Priority` (default since 2026-08-17: prioritizes FLAC/ALAC, falls back to 192kbps+ lossy rather than never grabbing). Indexers via Prowlarr: NZBgeek, 1337x, Nyaa.si, + `RuTracker.org` (added 2026-08-17, needs FlareSolverr proxy tag). Artists: Jungle, Parcels, Rolling Stones, Gustavo Cerati. See `services/services.md` → Lidarr Notes for gotchas (FLAC+CUE splitting, release-edition mismatches, a caught malware torrent). |
 | slskd | 5030 (web), 50300 (P2P) | /mnt/nas/downloads/soulseek/{complete,incomplete} (added 2026-08-16, Soulseek client, not a hotio image) |
 | soularr | 8265 | /mnt/nas/downloads/soulseek/complete (added 2026-08-16, bridges Lidarr↔slskd, polls every 300s) |
 | bazarr | 6767 | /mnt/nas/{Peliculas,Series} |
