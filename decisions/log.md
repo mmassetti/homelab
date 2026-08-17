@@ -2236,3 +2236,68 @@ Monterrey live album hasn't been found by any indexer yet, left monitored.
 art). Walked through the plan and ran a baseline `curl` (confirmed still gated, 302 to Access
 login) but he never came back to confirm the dashboard change was made, so nothing was verified
 or should be assumed done — no doc update for it.
+
+## 2026-08-17 (later) — Navidrome + Feishin as the Jellyfin-music-module replacement
+
+Matias felt Jellyfin's music module was too limited for the FLAC library built up all session
+(Jungle, Parcels, Cerati, Charly García, Redonditos — ~500 tracks by this point) and wanted
+something closer to Spotify: real metadata, lyrics, proper browsing. Went through Plan Mode for
+this one given it touched compose, Cloudflare, and docs together — full plan at
+`~/.claude/plans/si-planeamos-agregar-todo-modular-corbato.md`. Two decisions confirmed with
+Matias up front rather than assumed: **Feishin self-hosted as a container** (not just pointing
+him at the desktop app — he wanted it reachable from any browser/device) and **both exposed
+remotely via the existing Cloudflare Tunnel pattern**, same as everything else in this stack.
+
+**Stack**: `deluan/navidrome` (Subsonic-API server) + `ghcr.io/jeffvli/feishin` (Spotify-like
+web client), both standalone (no `*arr-common` anchor, matching the slskd/soularr precedent),
+added to `docker-compose.yml` right after `lidarr`. Navidrome mounts `/mnt/nas/Music:/music:ro`
+— deliberately read-only, it's a player not a library manager, Lidarr stays the only writer.
+Confirmed live before writing the compose (not assumed) that ports 4533/9180 were free and that
+homepage/Cloudflare both address services by LAN IP (`192.168.1.239:<port>`), not `localhost`
+or container name — checked the actual running ingress config via the Cloudflare API rather
+than guessing from the slskd/soularr entry's prose description.
+
+**Feishin's config mechanism** was the one real unknown going in — a web search against its
+actual GitHub README (not guessed) confirmed the real env vars: `SERVER_NAME`, `SERVER_TYPE`,
+`SERVER_URL`, `SERVER_LOCK`. Verified after deploy that they actually took effect by curling
+the container's envsubst'd `/settings.js` directly rather than trusting the README blindly.
+Also verified — live, via a curl with a spoofed `Origin` header — that Navidrome's Subsonic API
+already sends `Access-Control-Allow-Origin: *` by default, so Feishin's browser-side calls
+needed zero extra CORS config.
+
+**Admin account hiccup**: created the Navidrome admin via `/auth/createAdmin` with a throwaway
+password, then tried to set the real one with `PUT /api/user/{id}` sending only `{"password":
+...}`. That endpoint replaces the whole user record rather than merging fields — it silently
+wiped `userName` and `isAdmin` back to defaults, locking the account out entirely (and
+`/auth/createAdmin` refuses to run a second time once *any* user record exists, corrupted or
+not). Also hit a `UID` bash gotcha along the way (`UID` is a bash-readonly variable name,
+silently discarding an intended password assignment and creating a bogus empty user via an
+unintended empty-ID API call — cleaned that up too). Fix: since this was a same-day fresh
+install with nothing to lose, stopped the container, deleted `navidrome.db`, restarted, and
+recreated the admin in one `/auth/createAdmin` call with the real final password instead of a
+throwaway-then-PUT sequence. Re-scanned in ~60s, no data loss (source of truth is the read-only
+NAS mount, not the DB). Lesson for next time: Navidrome's user PUT is a full replace, not a
+patch — always send the complete object back.
+
+**Lyrics**: nothing in the library had lyrics in any form (checked — no embedded tags, no
+`.lrc` files, on every format sampled). Wrote `~/homelab/scripts/backfill_lyrics.py` — walks
+the library, reads artist/title/album/duration via `mutagen`, queries the free
+[LRCLIB](https://lrclib.net) API (no key required), writes a `.lrc` sidecar next to each track
+(synced lyrics preferred, plain text as fallback). Idempotent by design (skips tracks that
+already have a `.lrc`) but deliberately kept as a standalone script rather than a Lidarr/Soularr
+post-import hook — re-run it by hand after future artist adds. `--dry-run` first on a subset
+(Jungle, 64 tracks) showed an 86% hit rate before committing to the full ~502-track run.
+
+**Cloudflare**: exact same fetch-full-config → insert-before-catch-all → full `PUT` →
+DNS CNAME → Access-app-copied-from-`lidarr` sequence as the 2026-08-16 slskd/soularr entry.
+21 ingress rules → 23. Verified live end-to-end after propagation (not just 200 on the API
+calls) — both `music.` and `feishin.matiasmassetti.com` correctly 302 to the Access login.
+
+**Dashboard**: added Navidrome (with a live widget, using a dedicated low-privilege `homepage`
+Navidrome user — not Matias's own admin login) and Feishin (plain tile, no meaningful status
+API to widget) under the `Media` group in `homepage/services.yaml`, `docker restart homepage`
+to pick it up immediately.
+
+**Deliberately not done**: Last.fm/ListenBrainz integration (artist images, "similar artists")
+— needs a free API key Matias would register himself in Navidrome's own Settings UI, not
+something to bake into compose env vars on his behalf.

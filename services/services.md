@@ -14,6 +14,8 @@ All ARR services use Hotio images, share `arr_network`, and use common env (PUID
 | Radarr | radarr | 7878 | ghcr.io/hotio/radarr | /opt/docker/configs/radarr | /mnt/nas/downloads, /mnt/nas/Peliculas |
 | Sonarr | sonarr | 8989 | ghcr.io/hotio/sonarr | /opt/docker/configs/sonarr | /mnt/nas/downloads, /mnt/nas/Series |
 | Lidarr | lidarr | 8686 | ghcr.io/hotio/lidarr | /opt/docker/configs/lidarr | /mnt/nas/downloads, /mnt/nas/Music |
+| Navidrome | navidrome | 4533 | deluan/navidrome | /opt/docker/configs/navidrome | /mnt/nas/Music (read-only) — Subsonic-API music server, added 2026-08-17 to replace Jellyfin's music module (richer metadata, lyrics, proper playback UX). Not a hotio image. `music.matiasmassetti.com` via Cloudflare Tunnel + Access. |
+| Feishin | feishin | 9180 | ghcr.io/jeffvli/feishin | /opt/docker/configs/feishin | — (Spotify-like web client for Navidrome, self-hosted per Matias's choice over the desktop app, added 2026-08-17. Config via `SERVER_URL`/`SERVER_TYPE`/`SERVER_LOCK` env vars pointing at Navidrome — no separate volume needed for data.) `feishin.matiasmassetti.com` via Cloudflare Tunnel + Access. |
 | slskd | slskd | 5030 (web), 50300 (P2P listen) | slskd/slskd | /opt/docker/configs/slskd | /mnt/nas/downloads/soulseek/{complete,incomplete} — Soulseek P2P client, added 2026-08-16. Not a hotio image (own env/config conventions), joined to `arr_network` manually. `shares.directories` deliberately empty — download-only, doesn't share the local library back to the network. Credentials (Soulseek account + web UI + API key) in `~/.config/secrets/slskd.env`, not committed. |
 | Soularr | soularr | 8265 (web UI) | mrusse08/soularr | /opt/docker/configs/soularr | /mnt/nas/downloads/soulseek/complete — bridges Lidarr's wanted list to slskd (searches, grabs, tells Lidarr to import), added 2026-08-16. Polls every 300s. Config (incl. both API keys) in `/opt/docker/configs/soularr/config.ini`. |
 | Bazarr | bazarr | 6767 | ghcr.io/hotio/bazarr | /opt/docker/configs/bazarr | /mnt/nas/Series, /mnt/nas/Peliculas |
@@ -113,6 +115,37 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent/SAB
 - **Artists**: Jungle, Parcels, Rolling Stones (pre-existing) + **Gustavo Cerati** (added
   2026-08-17) — 8 of 9 albums complete after the fixes above; only the 2019 *Fuerza Natural
   Tour, en vivo en Monterrey* live album is still ungrabbed (not yet found by any indexer).
+
+### Navidrome Notes (added 2026-08-17)
+
+- **Read-only by design**: `/mnt/nas/Music` is mounted `:ro` into Navidrome — it's a player, not
+  a library manager. Lidarr remains the sole writer to that path; Navidrome only indexes
+  (small SQLite DB + optional artwork/transcoding cache under `/opt/docker/configs/navidrome`,
+  tens of MB, not a concern given how tight NAS space is).
+- **Lyrics backfill**: no track in the library had embedded or sidecar lyrics before this.
+  `~/homelab/scripts/backfill_lyrics.py` queries the free [LRCLIB](https://lrclib.net) API
+  (no key needed) by artist/title/album/duration and writes a `.lrc` sidecar next to each
+  track Navidrome/Feishin can then display (synced when available, else plain text). It's
+  idempotent (skips tracks that already have a `.lrc`) but **deliberately not hooked into
+  Lidarr/Soularr** — it's a standalone script to re-run manually after future imports
+  (`python3 ~/homelab/scripts/backfill_lyrics.py`, or `--dry-run` first to check hit rate).
+  First real run against the full library: ~502 tracks, roughly an 85% hit rate on LRCLIB.
+- **CORS**: verified live (not assumed) that Navidrome's Subsonic API (`/rest/...`) already
+  sends `Access-Control-Allow-Origin: *` by default — Feishin's browser-side calls to Navidrome
+  work with zero extra config, no `ND_ENABLECORS`-style setting needed.
+- **Feishin config**: `SERVER_NAME`/`SERVER_TYPE=navidrome`/`SERVER_URL` env vars pre-fill and
+  (`SERVER_LOCK=true`) lock the server connection, since there's only ever going to be one
+  backend. Confirmed via envsubst'd `/settings.js` inside the container that these actually
+  took effect, rather than assuming the image's README was accurate.
+- **Users**: `matias` (admin, created via `/auth/createAdmin`, real password set at creation
+  time — an earlier attempt to set it via a follow-up `PUT /api/user/{id}` with only a
+  `password` field wiped the username/isAdmin fields instead, since that endpoint replaces
+  the whole record rather than merging; had to wipe `navidrome.db` and recreate cleanly). A
+  separate low-privilege `homepage` user exists only for the dashboard widget credential —
+  not Matias's own login.
+- **Last.fm/ListenBrainz integration** (artist images, "similar artists") is **not**
+  configured — it needs a free API key Matias would register himself in Navidrome's own
+  Settings UI. Deliberately left as a manual follow-up, not baked into the compose env vars.
 
 ### Hardware Transcoding (fixed 2026-08-12)
 
