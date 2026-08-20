@@ -1,7 +1,7 @@
 # Matias's Homelab — Claude Code Context
 
 > Auto-loaded when working in `~/homelab/`. Dense summary of entire setup.
-> Last updated: 2026-08-17. See individual files for full details.
+> Last updated: 2026-08-20. See individual files for full details.
 
 ## Hardware
 
@@ -225,6 +225,6 @@ _(verified 2026-08-09 via `tailscale status`)_
 ## Other Devices (not on this server)
 - **Gaming PC**: AMD Ryzen 5 2600, RX 570 8GB, 16GB DDR4, Win 10, DHCP
 - **MacBook M4 Pro**: Primary dev machine, SSH to homelab
-- **NVIDIA Shield Pro TV**: Jellyfin client, living room
+- **NVIDIA Shield Pro TV**: Jellyfin client (video) + Symfonium (music, added 2026-08-20, points at Navidrome via LAN IP), living room
 - **BenQ X3000i**: 4K projector, living room
 - **Samsung S23 Ultra**: Mobile access to services

@@ -146,6 +146,18 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent/SAB
 - **Last.fm/ListenBrainz integration** (artist images, "similar artists") is **not**
   configured — it needs a free API key Matias would register himself in Navidrome's own
   Settings UI. Deliberately left as a manual follow-up, not baked into the compose env vars.
+- **Artist images (added 2026-08-20)**: with Last.fm/ListenBrainz not configured, none of the
+  7 artist folders had any local art either, so Navidrome had nothing to show for artist
+  photos. Fetched one photo per artist from Wikipedia/Wikimedia Commons and saved as
+  `artist.jpg` at the root of each artist folder (Navidrome's local-art lookup checks for an
+  `artist.*` file there before trying an external provider). One-off manual fix, not scripted
+  — new artists added later need the same treatment by hand, or the Last.fm/Spotify
+  integration above needs to actually get set up.
+- **Rolling Stones "duplicate folder" check (2026-08-20)**: Matias suspected a stray
+  `Rolling Stones` folder alongside `The Rolling Stones`. Verified there's only one, both on
+  disk and in Lidarr's artist DB, with consistent tags across all `Shine a Light` FLACs — what
+  he likely remembered was the artist/albumartist tag mismatch (missing "The") fixed on
+  2026-08-16, not an actual second folder.
 
 ### Hardware Transcoding (fixed 2026-08-12)
 

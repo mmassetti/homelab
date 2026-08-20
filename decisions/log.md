@@ -2301,3 +2301,43 @@ to pick it up immediately.
 **Deliberately not done**: Last.fm/ListenBrainz integration (artist images, "similar artists")
 — needs a free API key Matias would register himself in Navidrome's own Settings UI, not
 something to bake into compose env vars on his behalf.
+
+## 2026-08-20 — Symfonium on Shield TV Pro + music library audit (artist images, Rolling Stones dedup check)
+
+Matias installed **Symfonium** (paid, one-time) on the NVIDIA Shield TV Pro to listen to the
+Navidrome library on the living room system instead of through Jellyfin. Server type =
+(Open)Subsonic (not the "Jellyfin" option in Symfonium's setup wizard — Navidrome speaks
+Subsonic, not the Jellyfin API). Server URL = `http://192.168.1.239:4533` (LAN IP, direct to
+the mini PC) — deliberately not `music.matiasmassetti.com`, since that hostname sits behind
+Cloudflare Access (email OTP) which would likely block Symfonium's direct API calls; using it
+from outside the LAN would need a Cloudflare Access Service Token, not yet set up. Logged in
+with Matias's real Navidrome account, not the low-privilege `homepage` dashboard-widget user.
+The Shield remote has no dedicated skip-track button (D-pad/OK wheel only) — confirmed working
+control method is long-pressing the mic button and asking Google Assistant ("next song"/
+"skip"), since Symfonium's own Android TV build is still an experimental/rough release
+(per its support forum) with known D-pad navigation gaps.
+
+**Music library audit** (Matias suspected a duplicate Rolling Stones folder and missing artist
+images): checked disk (`find /mnt/nas/Music -maxdepth 2`), Lidarr's artist DB (`GET
+/api/v1/artist`), and embedded FLAC tags on a sample of Rolling Stones tracks — all three
+agreed on a single `The Rolling Stones` folder/artist with consistent tags. No duplicate found;
+likely what Matias remembered was the artist/albumartist tag mismatch fixed on 2026-08-16 (the
+`Shine a Light` FLACs were tagged `Rolling Stones` instead of `The Rolling Stones` before that
+fix), not an actual second folder.
+
+**Missing artist images**: confirmed real — zero artist-level image files existed in any of
+the 7 artist folders (Navidrome's local-art lookup checks for an `artist.*` file at the root of
+each artist folder before falling back to an external provider, and Last.fm/Spotify lookup is
+still deliberately not configured, see above). Fetched one representative photo per artist from
+Wikipedia/Wikimedia Commons (public-domain or appropriately-licensed images from each artist's
+Wikipedia page — es.wikipedia.org for Sumo, en.wikipedia.org for the rest) and saved as
+`artist.jpg` in each of the 7 artist folders. Two originals (Jungle, Parcels) came down at
+full resolution (12MB/9MB) — resized with `convert -resize "1200x1200>" -quality 85` to
+~225KB each before keeping, given how tight the NAS is on space (see `nas_storage_status`
+memory). Files written as `matias:matias` (1000:1000), matching the PUID/PGID the arr
+containers and Navidrome (`user: "1000:1000"` in compose) already expect — no permission fixup
+needed. Triggered a Navidrome rescan (`docker restart navidrome`, picks up on startup); logs
+confirmed `imageCount=1` for all 7 artist folders. This is a one-off manual fix, not a
+recurring script — if new artists get added later, their `artist.jpg` needs to be sourced by
+hand the same way (or Matias sets up the Last.fm/Spotify integration mentioned above for it to
+happen automatically going forward).
