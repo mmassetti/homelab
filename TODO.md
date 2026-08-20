@@ -6,6 +6,36 @@ as they come up.
 
 ## Open
 
+- [x] **Stop Making Sense (1984) — upgraded to 2160p** (2026-08-20). Library already had a
+      throwaway 1.33GB HDTV-1080p x264/AAC rip (tmdbId 24128, movieId 2090) — bumped its
+      quality profile to "2160p Quality" (id 12, allows Bluray-2160p) and manually grabbed the
+      specific release Matias wanted: `Stop.Making.Sense.1984.DV.HDR.2160p.UHD.BluRay.x265.
+      HEVC.TrueHD.ATMOS-SARTRE` (24GB, 1337x) rather than trusting Radarr's own pick — old file
+      auto-deleted on grab. Part of a broader "reference-quality concert films" research pass
+      (any artist, not just current library ones) — see the rest below.
+- [ ] **Reference-quality concert films wishlist** (researched 2026-08-20, not current-library
+      artists — general "demo disc" quality concerts). Sizes are largest-clean-result found via
+      Prowlarr that day; re-check before grabbing, availability shifts. NAS had ~195GB free
+      after this session's other grabs — nowhere near enough for all of these at once, pick
+      selectively:
+      - [ ] **Pink Floyd — At Pompeii MCMLXXII (1972/2025 restoration)** — 95.8GB full Blu-ray
+        (RuTracker) down to 18-27GB for UHD remux/1080p BDRip TrueHD Atmos 7.1 options.
+      - [ ] **Pink Floyd — Delicate Sound of Thunder (1988/2020 restoration)** — 37GB remux,
+        23GB 1080p BDRip DTS-HD MA 5.1, or a 2160p UHDTV HDR option at 17GB.
+      - [ ] **Queen — Rock Montreal & Live Aid** — 192.8GB full 2-disc (2160p+1080p) set down
+        to 40-58GB for UHD Remux alone (TrueHD Atmos 7.1) — the biggest title on this list.
+      - [ ] **Rolling Stones — Havana Moon (2016)** — 39.6GB BluRay 1080i down to ~10-13GB for
+        1080p BDRip/BluRay options.
+      - [ ] **Rolling Stones — Some Girls: Live in Texas '78 (2011)** — 25.8GB BluRay 1080i
+        down to 5.8GB (1080p, DTS-HD MA).
+      - [ ] **Metallica — Through the Never (2013)** — 47.7GB Blu-ray (includes 3D cut); 2D-only
+        version likely smaller if findable separately.
+      - [ ] **Peter Gabriel — New Blood: Live in London (2011)** — 47GB BD3D 1080p down to
+        8.3GB for the DVD9 (non-3D).
+      - [ ] **David Gilmour — Remember That Night (2007)** — two discs, ~46GB each (~92.5GB for
+        both) down to 14GB for a 1080p MBluRay x264 single-file option.
+      - [ ] **INXS — Live at Wembley Stadium '91** — no video release found on any indexer as
+        of 2026-08-20, only an audio FLAC rip (0.7GB). Re-check later, don't expect it soon.
 - [ ] **Rolling Stones — Let's Spend the Night Together (1981), 4K UHD Remux** — deliberately
       deferred until the 3rd NAS drive lands (~Feb 2027, see the item below). The Kino Lorber
       2026 restoration remux runs 71-84GB (`2160p.UHD.BluRay.REMUX.DTS`, confirmed available
