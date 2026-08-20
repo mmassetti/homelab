@@ -38,7 +38,7 @@ Config base: `/opt/docker/configs/<service>/`
 | radarr | 7878 | /mnt/nas/{downloads,Peliculas} |
 | sonarr | 8989 | /mnt/nas/{downloads,Series} |
 | lidarr | 8686 | /mnt/nas/{downloads,Music} — quality profile `Lossless Priority` (default since 2026-08-17: prioritizes FLAC/ALAC, falls back to 192kbps+ lossy rather than never grabbing). Indexers via Prowlarr: NZBgeek, 1337x, Nyaa.si, + `RuTracker.org` (added 2026-08-17, needs FlareSolverr proxy tag). Artists: Jungle, Parcels, Rolling Stones, Gustavo Cerati. See `services/services.md` → Lidarr Notes for gotchas (FLAC+CUE splitting, release-edition mismatches, a caught malware torrent). |
-| navidrome | 4533 | /mnt/nas/Music (read-only) — Subsonic music server, added 2026-08-17 as the Jellyfin-music-module replacement (metadata, lyrics, real playback UX). Paired with `feishin` (9180, self-hosted Spotify-like web client) — both behind Cloudflare Access. See `services/services.md` → Navidrome Notes. |
+| navidrome | 4533 | /mnt/nas/Music (read-only) — Subsonic music server, added 2026-08-17 as the Jellyfin-music-module replacement (metadata, lyrics, real playback UX). Paired with `feishin` (9180, self-hosted Spotify-like web client) — both behind Cloudflare Access. Last.fm integration added 2026-08-20 (`ND_LASTFM_APIKEY`/`ND_LASTFM_SECRET` via `env_file: ~/.config/secrets/lastfm.env`) — artist images/bio, similar artists, scrobbling. See `services/services.md` → Navidrome Notes. |
 | slskd | 5030 (web), 50300 (P2P) | /mnt/nas/downloads/soulseek/{complete,incomplete} (added 2026-08-16, Soulseek client, not a hotio image) |
 | soularr | 8265 | /mnt/nas/downloads/soulseek/complete (added 2026-08-16, bridges Lidarr↔slskd, polls every 300s) |
 | bazarr | 6767 | /mnt/nas/{Peliculas,Series} |

@@ -143,9 +143,16 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent/SAB
   the whole record rather than merging; had to wipe `navidrome.db` and recreate cleanly). A
   separate low-privilege `homepage` user exists only for the dashboard widget credential —
   not Matias's own login.
-- **Last.fm/ListenBrainz integration** (artist images, "similar artists") is **not**
-  configured — it needs a free API key Matias would register himself in Navidrome's own
-  Settings UI. Deliberately left as a manual follow-up, not baked into the compose env vars.
+- **Last.fm integration (added 2026-08-20)**: Matias registered a free API app
+  ("matias-homelab") at last.fm/api/account/create and provided the API key/secret. Stored as
+  `ND_LASTFM_APIKEY`/`ND_LASTFM_SECRET` in `~/.config/secrets/lastfm.env` (0600, not
+  committed), wired into the `navidrome` service via `env_file:` in the compose (not inline —
+  keeps the raw secret out of the compose file itself). Callback URL registered with Last.fm:
+  `https://music.matiasmassetti.com/api/lastfm/link/callback` (Navidrome's real auth-callback
+  route, confirmed via its startup log — `Mounting LastFM Auth routes path=/api/lastfm`).
+  Enables automatic artist images/bio going forward (no more manual Wikipedia fetches per
+  artist) plus "similar artists" and, once Matias links his account from Navidrome's Personal
+  Settings, scrobbling. ListenBrainz still not configured (Last.fm covers the same need).
 - **Artist images (added 2026-08-20)**: with Last.fm/ListenBrainz not configured, none of the
   7 artist folders had any local art either, so Navidrome had nothing to show for artist
   photos. Fetched one photo per artist from Wikipedia/Wikimedia Commons and saved as

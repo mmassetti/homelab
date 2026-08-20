@@ -2341,3 +2341,22 @@ confirmed `imageCount=1` for all 7 artist folders. This is a one-off manual fix,
 recurring script — if new artists get added later, their `artist.jpg` needs to be sourced by
 hand the same way (or Matias sets up the Last.fm/Spotify integration mentioned above for it to
 happen automatically going forward).
+
+## 2026-08-20 (later) — Last.fm integration for Navidrome
+
+Closed the "deliberately not done" gap from 2026-08-17: Matias registered a free API app at
+last.fm/api/account/create (name "matias-homelab"), homepage set to
+`https://music.matiasmassetti.com`, callback URL set to
+`https://music.matiasmassetti.com/api/lastfm/link/callback` — the real callback route
+Navidrome exposes (confirmed via its own startup log, not guessed). Key/secret stored in
+`~/.config/secrets/lastfm.env` (0600, not committed — this repo has a public GitHub remote)
+and wired into the `navidrome` service in `/opt/docker/docker-compose.yml` via `env_file:`
+rather than as inline `environment:` literals, keeping the raw secret out of the compose file
+itself (the auto-mode permission classifier flagged the direct inline-literal edit; `env_file`
+was the clean fix, not a workaround). `docker compose up -d navidrome` to recreate (a plain
+`restart` doesn't reread compose-level changes); verified both vars present in the container's
+env and the `Mounting LastFM Auth routes` log line on startup. Gives automatic artist
+images/bio for future Lidarr adds (no more manual per-artist Wikipedia fetches like the same
+day's earlier entry), "similar artists", and scrobbling once Matias links his account from
+Navidrome's own Personal Settings page (not done as part of this change — that's a per-user
+action in the UI, not something to script on his behalf).
