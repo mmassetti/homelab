@@ -2360,3 +2360,11 @@ images/bio for future Lidarr adds (no more manual per-artist Wikipedia fetches l
 day's earlier entry), "similar artists", and scrobbling once Matias links his account from
 Navidrome's own Personal Settings page (not done as part of this change — that's a per-user
 action in the UI, not something to script on his behalf).
+
+Verified live after a manual rescan (`docker restart navidrome`): `getArtistInfo2` now returns
+`similarArtist` entries and populated `*ImageUrl` fields (tested on Sumo — pulled Charly
+García, Cerati, Redonditos, Spinetta, etc. as similar artists). Matias linked his personal
+account from Personal Settings shortly after; confirmed server-side via
+`user_props`/`LastFMSessionKey` being present for his user in `navidrome.db` (read-only check,
+no data modified) — scrobbling to his real Last.fm account is live, not just Navidrome's
+internal play counter.
