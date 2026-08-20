@@ -6,6 +6,15 @@ as they come up.
 
 ## Open
 
+- [ ] **Rolling Stones — Let's Spend the Night Together (1981), 4K UHD Remux** — deliberately
+      deferred until the 3rd NAS drive lands (~Feb 2027, see the item below). The Kino Lorber
+      2026 restoration remux runs 71-84GB (`2160p.UHD.BluRay.REMUX.DTS`, confirmed available
+      on NZBgeek via Prowlarr 2026-08-20) — real lossless DTS-HD MA 5.1/2.0 audio, not just a
+      resolution bump. A 1080p BluRay release also exists (~6GB) but is very likely just the
+      lossy DTS core, possibly from an older (pre-restoration) transfer — not worth grabbing
+      as a stopgap. Search again once free space allows; `Rock and Roll Circus` (1080p,
+      grabbed 2026-08-20) and `Cerati — Fuerza Natural Tour` don't have this constraint, much
+      smaller.
 - [ ] **11 movies added to Radarr 2026-08-16, check search results** — Wrong Man (1956), Ghost
       World (2001), Drunken Angel (1948), Boss of It All (2006), Fifth Estate (2013),
       Counterfeiters (2007), Mifune (1999), Wind Rises (2013), All About My Mother (1999),

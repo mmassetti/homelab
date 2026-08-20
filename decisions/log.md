@@ -2368,3 +2368,37 @@ account from Personal Settings shortly after; confirmed server-side via
 `user_props`/`LastFMSessionKey` being present for his user in `navidrome.db` (read-only check,
 no data modified) — scrobbling to his real Last.fm account is live, not just Navidrome's
 internal play counter.
+
+## 2026-08-20 (later still) — Concert films for the library, first two grabbed
+
+Followed up on the Last.fm work with a look at concert films for the existing music-library
+artists (Cerati, Charly García, Redonditos, Sumo, Jungle, Parcels, The Rolling Stones) —
+checked which have real official DVD/Blu-ray/4K releases (as opposed to bootleg fan uploads)
+via web search, then checked actual availability + file sizes via Prowlarr's search API.
+
+**Findings**: Rolling Stones has the strongest options — *Let's Spend the Night Together*
+(1981, Kino Lorber 2026 4K restoration, DTS-HD MA 5.1/2.0, 71-84GB remux available on
+NZBgeek) and *Rock and Roll Circus* (1996 restoration, 1080p x265 10bit ~5.3GB on 1337x).
+Cerati has DVD-era releases (*Ahí Vamos* 2006, *11 Episodios Sinfónicos* 2001, *Fuerza
+Natural Tour* 2009) but only *Fuerza Natural* has an actual video file findable right now
+(~7.5GB on LimeTorrents/RuTracker — the other two returned no indexer results). Charly
+García's *MTV Unplugged* DVD exists but only audio-only releases were findable. Redonditos,
+Sumo, Jungle (its *Volcano* film was fanclub-exclusive), and Parcels have no real official
+video release to chase.
+
+**Grabbed**: *Rock and Roll Circus* (tmdb:18944) and *Fuerza Natural Tour* (tmdb:652817)
+added to Radarr, quality profile "1080p Quality" (allows Bluray-1080p; no true remux exists
+for either so a stricter profile would've rejected everything). Rock and Roll Circus found
+and grabbed automatically (`...1996.WS.1080p.MBluRay.x264-TREBLE`, 7.96GB via NZBgeek).
+Fuerza Natural's automatic search returned **zero results** — Radarr searches indexers using
+the exact TMDB title string (`Gustavo Cerati:  Fuerza Natural Tour`, double space included),
+which doesn't match how the actual release is named on trackers
+(`Fuerza Natural Tour En Vivo En Monterrey 2009`); confirmed via Radarr's own logs
+(`ReleaseSearchService: Searching... 5 active indexers` → `0 reports downloaded`), not a
+category/indexer-sync issue (Prowlarr's app sync to Radarr is `fullSync` for all 3 apps).
+Needs a manual grab-and-import if still wanted — Radarr's API has no free-text override for
+release search, only the auto-generated title query.
+
+**4K remux deferred**: Let's Spend the Night Together's 4K remux (71-84GB) intentionally not
+grabbed yet — logged in `TODO.md` to revisit once the 3rd NAS drive lands (~Feb 2027), given
+how tight current free space is (211GB as of this session).
