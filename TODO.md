@@ -96,17 +96,14 @@ as they come up.
 - [x] **The Handmaiden (2016) Radarr re-grab loop — confirmed stopped** (verified 2026-08-16,
       ~2 days / many RSS Sync cycles after the 2026-08-14 blocklist fix): no queue entry, file
       still present, no repeat "Manual Interaction" alerts. Closed.
-- [ ] **`docker.service` has no dependency on `mnt-opencloud.mount`** — real bug found
-      2026-08-16 during a host reboot: every container came back except `opencloud`, which
-      started before its loop-mounted data dir (`/mnt/opencloud`, ext4-on-NFS) was ready and
-      crashed on I/O errors. Worked around by starting it manually once the mount was live;
-      will recur on every future reboot until fixed. Fix: a systemd override
-      (`/etc/systemd/system/docker.service.d/override.conf` or similar) adding
-      `After=mnt-opencloud.mount` + `Requires=mnt-opencloud.mount` — or narrower, just delay/
-      retry the `opencloud` container specifically (e.g. Docker restart policy already handles
-      this if given enough retries — check `on-failure` with a max retry count instead of
-      `unless-stopped`, or add an explicit `depends_on` health-checked NAS-mount sentinel
-      container). See decision log 2026-08-16 for the full diagnosis.
+- [x] **`docker.service` has no dependency on `mnt-opencloud.mount` — fixed 2026-08-23**. Real
+      bug found 2026-08-16 during a host reboot: every container came back except `opencloud`,
+      which started before its loop-mounted data dir (`/mnt/opencloud`, ext4-on-NFS) was ready
+      and crashed on I/O errors. Fixed via a systemd override
+      (`/etc/systemd/system/docker.service.d/override.conf`) adding `After=mnt-opencloud.mount`
+      + `Requires=mnt-opencloud.mount`, applied with `daemon-reload` (no restart needed, running
+      containers untouched — takes effect next reboot). Verified via `systemctl show docker.service
+      -p After -p Requires`, both now list `mnt-opencloud.mount`. See decision log 2026-08-23.
 - [ ] **`IDM_ADMIN_PASSWORD` in `docker-compose.yml` is stale** — doesn't match OpenCloud's
       actual `admin` account password anymore (reset 2026-08-16, see decision log). Not urgent
       (day-to-day login is the `matias` account, not `admin`), but worth updating next time the

@@ -2402,3 +2402,42 @@ release search, only the auto-generated title query.
 **4K remux deferred**: Let's Spend the Night Together's 4K remux (71-84GB) intentionally not
 grabbed yet — logged in `TODO.md` to revisit once the 3rd NAS drive lands (~Feb 2027), given
 how tight current free space is (211GB as of this session).
+
+## 2026-08-23 — Cleanup pass: torrents, requests, TODO backlog; fixed the `docker.service`/OpenCloud mount race
+
+**Context**: A broad cleanup session covering several loose ends. In order: deleted The Last of
+Us (was requested via Radarr by mistake — it's a series, was actually in Sonarr) from both
+Sonarr and the NAS; emptied the NAS recycle bin (180GB, then a further 145GB after qBittorrent
+cleanup re-populated it via the same SMB-intercept behavior documented 2026-08-16 — Btrfs space
+reclaim is async, took a few minutes to fully reflect in `df`); cleaned qBittorrent (184
+`missingFiles` orphans + 5 dead Lidarr torrents removed, then 35 of the remaining 50 completed
+seeds deleted with their duplicate `/downloads` copies — confirmed via inode comparison that
+Radarr/Sonarr/Lidarr always *copy* on import, never hardlink, so this never touches the
+Peliculas/Series/Music library copies — deliberately kept the 15 RuTracker-tracked torrents
+seeding, to protect account standing on that semi-private tracker); verified all 7 Prowlarr
+indexers healthy (`testall`, all `isValid: true`); reviewed 19 stuck Jellyseerr requests and
+resolved each individually per Matias's call — grabbed some (7 obscure "The Work of Director"
+shorts, The Good Intentions, Jackass Number Two, Jackass series missing episodes), deleted
+others outright (Argentina '78, Chronicles of a Wandering Saint, Jackass: The Lost Tapes,
+Godfather of Harlem — the last had a file that got recycled and was never re-searched); worked
+the `TODO.md` "11 movies added 2026-08-16" item — 8 already had files, searched the 3 that
+didn't (The Boss of It All, Mifune, Idiots and Angels), 2 grabbed (Mifune still has no release
+anywhere), and manually resolved a `Gustavo Cerati - Fuerza Natural Tour En Vivo En Monterrey
+2009` RuTracker download that Radarr had stuck as `importBlocked` ("movie title mismatch") — it
+was a raw `VIDEO_TS` DVD structure (8 `.VOB` fragments, not a single file), so concatenated the
+7 real content fragments (excluded `VTS_01_0`, confirmed via `ffprobe` to be just a 36-second
+high-bitrate menu loop) via `linuxserver/ffmpeg` (no ffmpeg on host, no sudo to install it —
+used a disposable container instead), transcoding only the `pcm_dvd` audio to `pcm_s16le`
+(MKV-incompatible codec tag otherwise) while stream-copying the MPEG2 video, into one 2h08m
+MKV — Radarr picked it up on `RescanMovie`, no manual import API calls needed.
+**Real bug fixed**: the `docker.service`/`mnt-opencloud.mount` race first diagnosed 2026-08-16
+(OpenCloud crashing on every reboot, mount not guaranteed ready before Docker starts containers)
+finally got its systemd fix — `/etc/systemd/system/docker.service.d/override.conf` adding
+`After=mnt-opencloud.mount` + `Requires=mnt-opencloud.mount`, applied via `daemon-reload` (no
+`docker.service` restart, so running containers were undisturbed). Verified with `systemctl show
+docker.service -p After -p Requires` — both now list the mount unit. Takes effect next reboot.
+**Rationale**: All the delete/empty operations were confirmed with the user step-by-step before
+executing (recycle bin empties, bulk torrent deletes, Jellyseerr request removals) given how
+hard-to-reverse they are; the one bulk qBittorrent delete command was initially blocked by the
+session's own auto-mode classifier and had to be re-confirmed explicitly. See `TODO.md` for the
+now-closed items.
