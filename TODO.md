@@ -146,18 +146,29 @@ as they come up.
         film, tmdb:627506) runs 78 min; the actual Jellyfin file is only 13.9 min, a 64-minute
         mismatch far outside any plausible rip/edit variance. Almost certainly a short or a
         misindexed extra, not that feature — moved to the "no confident match" bucket instead.
-      - **11 aren't real standalone movies** — they're extras/episodes sitting inside a
-        correctly-identified movie's folder, misindexed by Jellyfin as separate films. Fix is
-        a Jellyfin reorg (rename the extra's subfolder to `extras/` so it's associated as
-        bonus content), not a TMDB match: `cast1.part1`/`cast2.part1` (2-disc rip halves,
-        inside *Castaway on the Moon (2009)*'s own folder), `Interview with Lisandro Alonso`
-        (inside *La Libertad (2001)*), `Alternative opening scene` + `Interview with Lisandro
-        Alonso on Los Muertos` (inside *Los Muertos (2004)*), `Presentación de Martin
-        Scorsese` + `Restauración de Prisioneros de la tierra` (inside *Prisioneros de la
-        tierra (1939)*), `Los guantes mágicos (Making of) (2003)` (loose, own folder). Separately,
-        `dead set 1`/`4`/`5` are episodes of the 2008 British TV miniseries *Dead Set* filed
-        under the movie library — needs a bigger call (delete, move to a TV library, or
-        ignore), not just a folder rename.
+      - [x] **8 of 11 misindexed-extras fixed 2026-08-23** — confirmed via Jellyfin API each was
+        indexed as a standalone `Movie` before touching anything. `Interview with Lisandro
+        Alonso` (*La Libertad*), `Alternative opening scene` + `Interview with Lisandro Alonso
+        on Los Muertos` (*Los Muertos*), `Presentación de Martin Scorsese` + `Restauración de
+        Prisioneros de la tierra` (*Prisioneros de la tierra*), and the loose `Los guantes
+        mágicos (Making of) (2003)` folder all moved into an `extras/` subfolder inside their
+        real movie's folder (the loose one also relocated into *Los Guantes Mágicos (2003)*'s
+        own folder, its now-empty original folder removed). `cast1.part1`/`cast2.part1` (*
+        Castaway on the Moon*'s CD1/CD2 halves) got different treatment since they're the main
+        film, not extras — renamed to Jellyfin's multi-part convention (`Castaway on the Moon
+        (2009) - cd1.avi` / `- cd2.avi`) directly in the movie's folder instead. Ran a full
+        `Library/Refresh` after: cd1 auto-identified as the real movie (tmdb:18438), cd2 folded
+        in as its second part (no longer a separate item); all 6 extras re-typed from `Movie` to
+        `Video`/absorbed as the parent's Extra — verified via the Items API, not just assumed.
+        **Found the same session**: `Deleted scene.mkv` (*La Libertad*) and `dead set 2`/`3`
+        (alongside `1`/`4`/`5` below) are in the identical broken state — not in this list
+        because an earlier 2026-08-14 pass only cleared their wrong TMDB tags, never reorganized
+        the files. Left alone pending Matias's call, same as `dead set 1`/`4`/`5`.
+      - **`dead set 1`-`5`** (all 5, not just 1/4/5 as first thought — 2/3 already had wrong
+        TMDB tags cleared 2026-08-14 but were never reorganized either) are episodes of the 2008
+        British TV miniseries *Dead Set* filed under the movie library — needs a bigger call
+        (delete, move to a TV library, or ignore), not just a folder rename. Still open,
+        deliberately not touched 2026-08-23 pending that decision.
       - **56 with no match found at all** — mostly very obscure Argentine shorts/documentaries;
         several may genuinely not be catalogued on TMDB, in which case they can't ever get a
         Radarr/Bazarr entry. Full list in the artifact report from 2026-08-13 (not saved to
