@@ -194,26 +194,40 @@ as they come up.
           **Workshop (1971) deliberately excluded again** despite a close-ish runtime match
           (11min file vs 16min candidate, tmdb:650842) — that candidate is a *2020* film, the
           same ~50-year mismatch flagged 2026-08-16. Still needs a real manual search.
-        - **12 ambiguous** (has a TMDB candidate but nothing confirms it — no runtime data to
-          cross-check, or multiple candidates with none matching well): Cautivame, Cómo llegar a
-          Piedrabuena, Fiesta Nibiru, Gustavo Cerati - Fuerza Natural Tour (the concert film
-          added this session — candidate had `rt=0`, i.e. TMDB has no runtime logged for it
-          either, so no way to verify; likely just isn't well-catalogued as a concert film),
-          Gustavo Leguizamón creando la Tierra, Juan Lamaglia y señora, La sangre brota, Los
-          pibes (already known, see above), Matar la tierra, Reflectorista, Siesta (3
-          candidates, none confirmed), Tres citas con el destino. Left unmatched — would need
-          plot/still-frame comparison or manual TMDB browsing, not just runtime.
-        - **26 with zero TMDB candidates at all** (the real "no match" bucket): 4 lonkos Vida
-          muerte y profanación, Cacho pallero el año del surubí, El día que nos conocimos, El
-          hombre que amaba los platillos voladores, En el país de las últimas cosas, Fantasmas de
-          Buenos Aires, Formoskate, Industria Argentna, Juana a las 12, Kombit, La chica de los
-          lunes, La idea del lago, La tumba sin nombre, Las Chicas de Flores, Les louves,
-          Lesbianas en Buenos Aires, Muñequita porteña, Partida la verdad no le teme a nada,
-          Premier mai, Rosario Bléfari en el CCK, Silvia Prieto (documental final), Soldado
-          argentino solo reconocido por Dios, Tertulia N° 250, Trece años y medio (documental
-          sobre Rapado), Tres hombres en el río, Zulay frente al siglo XXI. Mostly very obscure
-          Argentine shorts/documentaries, genuinely uncatalogued on TMDB as far as this search
-          can tell — can't get a Radarr/Bazarr entry unless that changes.
+        - [x] **All 12 "ambiguous" ones resolved 2026-08-23** — reviewed one by one with Matias.
+          6 applied (some needed an IMDb→TMDB lookup via Radarr's `movie/lookup?term=imdb:...`
+          since Jellyfin's own TMDB-plugin name search didn't surface them — turned out an OMDB
+          plugin is also installed on Jellyfin and was returning IMDb-only candidates with no
+          Tmdb id for these; Radarr's lookup resolved the real TMDB id from that IMDb id): Cómo
+          llegar a Piedrabuena/"Cómo llegar a Piedra Buena" (tmdb:1091816, 0.5min runtime diff),
+          Juan Lamaglia y señora/"Juan Lamaglia y Sra." (tmdb:613375, 1.3min diff), Tres citas con
+          el destino (tmdb:444281, 4.8min diff), La sangre brota/"Blood Appears" (tmdb:187165,
+          7.4min diff — double-confirmed via both direct TMDB search and IMDb lookup landing on
+          the same id), Fiesta Nibiru (tmdb:568316, 7.7min diff, the single available candidate),
+          Gustavo Cerati - Fuerza Natural Tour (tmdb:652817, no TMDB runtime data to verify but
+          it's today's own concatenated file so the title match alone was enough — already added
+          to Radarr earlier the same session). All confirmed `hasFile:true` via `RescanMovie`.
+          6 moved to the no-match bucket below: Cautivame, Gustavo Leguizamón creando la Tierra,
+          Los pibes, Matar la tierra, and Reflectorista all came back with **zero** Radarr/TMDB
+          hits even via IMDb lookup (OMDB knows them, TMDB genuinely doesn't). **Siesta**
+          specifically investigated further — Matias identified the real film as Julia
+          Solomonoff's 2018 short (FilmAffinity #580547); checked TMDB's two 2018-tagged "Siesta"
+          candidates via their full crew credits and neither is her (David Chacón and Azucena
+          Losana directed those) — Solomonoff's "Siesta" isn't catalogued on TMDB under this
+          title at all.
+        - **32 with zero real TMDB match** (up from 26 — the 6 from the ambiguous batch above
+          folded in): 4 lonkos Vida muerte y profanación, Cacho pallero el año del surubí,
+          Cautivame, El día que nos conocimos, El hombre que amaba los platillos voladores, En el
+          país de las últimas cosas, Fantasmas de Buenos Aires, Formoskate, Gustavo Leguizamón
+          creando la Tierra, Industria Argentna, Juana a las 12, Kombit, La chica de los lunes, La
+          idea del lago, La tumba sin nombre, Las Chicas de Flores, Les louves, Lesbianas en
+          Buenos Aires, Los pibes, Matar la tierra, Muñequita porteña, Partida la verdad no le
+          teme a nada, Premier mai, Reflectorista, Rosario Bléfari en el CCK, Siesta (2018,
+          Solomonoff), Silvia Prieto (documental final), Soldado argentino solo reconocido por
+          Dios, Tertulia N° 250, Trece años y medio (documental sobre Rapado), Tres hombres en el
+          río, Zulay frente al siglo XXI. Mostly very obscure Argentine shorts/documentaries,
+          genuinely uncatalogued on TMDB as far as this search can tell — can't get a
+          Radarr/Bazarr entry unless that changes.
 - [x] **58 movies in nested/multi-file folders** — reconstructed, fully triaged, and fully
       resolved 2026-08-14
       (wasn't saved anywhere before). Broke into 7 groups:
