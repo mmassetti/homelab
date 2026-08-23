@@ -160,15 +160,17 @@ as they come up.
         `Library/Refresh` after: cd1 auto-identified as the real movie (tmdb:18438), cd2 folded
         in as its second part (no longer a separate item); all 6 extras re-typed from `Movie` to
         `Video`/absorbed as the parent's Extra — verified via the Items API, not just assumed.
-        **Found the same session**: `Deleted scene.mkv` (*La Libertad*) and `dead set 2`/`3`
-        (alongside `1`/`4`/`5` below) are in the identical broken state — not in this list
-        because an earlier 2026-08-14 pass only cleared their wrong TMDB tags, never reorganized
-        the files. Left alone pending Matias's call, same as `dead set 1`/`4`/`5`.
-      - **`dead set 1`-`5`** (all 5, not just 1/4/5 as first thought — 2/3 already had wrong
-        TMDB tags cleared 2026-08-14 but were never reorganized either) are episodes of the 2008
-        British TV miniseries *Dead Set* filed under the movie library — needs a bigger call
-        (delete, move to a TV library, or ignore), not just a folder rename. Still open,
-        deliberately not touched 2026-08-23 pending that decision.
+      - [x] **`Deleted scene.mkv` (*La Libertad*) fixed 2026-08-23** — same as the 6 above, moved
+        into `extras/`. Confirmed `Type: Video` post-refresh.
+      - [x] **`dead set 1`-`5` fixed 2026-08-23** — moved out of the movie library entirely,
+        into `/mnt/nas/Series/Dead Set (2008)/Season 01/`, renamed to Sonarr/Jellyfin episode
+        convention (`Dead Set (2008) - S01E01.mp4` etc. — all 5, not just 1/4/5 as first
+        thought; 2/3 already had wrong TMDB tags cleared 2026-08-14 but were never reorganized).
+        Also found and deleted a leftover 36MB `sample/sample.mp4` release-sample file in the
+        old folder before removing it. Post-refresh, Jellyfin auto-identified it as a proper
+        `Series` with full metadata (imdb:tt1285482, tmdb:7831, tvdb:83427) — no longer 5 fake
+        standalone movies. This closes every item from the original "11 misindexed extras"
+        finding plus the 2 bonus ones found in the same pass (13 total).
       - **56 with no match found at all** — mostly very obscure Argentine shorts/documentaries;
         several may genuinely not be catalogued on TMDB, in which case they can't ever get a
         Radarr/Bazarr entry. Full list in the artifact report from 2026-08-13 (not saved to
