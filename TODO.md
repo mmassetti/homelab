@@ -219,19 +219,48 @@ as they come up.
           of the plot match too: TMDB already had Solomonoff credited as Director/Writer on
           630563, and its cached Jellyseerr `jellyfinMediaId` was already this exact file's item
           id from some earlier pass. Applied, added to Radarr, `hasFile:true` confirmed.
-        - **31 with zero real TMDB match** (up from 26 — 5 from the ambiguous batch folded in,
-          Siesta resolved instead of joining them): 4 lonkos Vida muerte y profanación, Cacho
-          pallero el año del surubí, Cautivame, El día que nos conocimos, El hombre que amaba los
-          platillos voladores, En el país de las últimas cosas, Fantasmas de Buenos Aires,
-          Formoskate, Gustavo Leguizamón creando la Tierra, Industria Argentna, Juana a las 12,
-          Kombit, La chica de los lunes, La idea del lago, La tumba sin nombre, Las Chicas de
-          Flores, Les louves, Lesbianas en Buenos Aires, Los pibes, Matar la tierra, Muñequita
-          porteña, Partida la verdad no le teme a nada, Premier mai, Reflectorista, Rosario
-          Bléfari en el CCK, Silvia Prieto (documental final), Soldado argentino solo reconocido
-          por Dios, Tertulia N° 250, Trece años y medio (documental sobre Rapado), Tres hombres en
-          el río, Zulay frente al siglo XXI. Mostly very obscure Argentine shorts/documentaries,
-          genuinely uncatalogued on TMDB as far as this search can tell — can't get a
-          Radarr/Bazarr entry unless that changes.
+        - [x] **18 of the remaining 31 resolved 2026-08-23**, reviewed one by one — Matias
+          supplied external cross-checks (Wikipedia, FilmAffinity, IMDb pages he pulled up
+          himself) for several, and once he pointed out this session could just search IMDb
+          directly, the rest were resolved via `WebSearch` + Radarr's `movie/lookup?term=imdb:`
+          without needing him to paste anything further. All applied via Jellyfin
+          `RemoteSearch/Apply`, added to Radarr (qualityProfileId 17), `hasFile:true` confirmed:
+          4 lonkos Vida muerte y profanación (tmdb:662516, runtime exact 78min, director Sebastián
+          Díaz confirmed), Cacho pallero/"Edgardo Cacho Pallero" (tmdb:979510, 82min exact), El
+          hombre que amaba los platillos voladores/"The Man Who Loved UFOs" (tmdb:1190469, IMDb
+          plot matched verbatim), En el país de las últimas cosas/"In the Country of Last Things"
+          (tmdb:766793), Fantasmas de Buenos Aires/"A Buenos Aires Ghost" (tmdb:72973, IMDb plot
+          matched verbatim), Industria Argentna/"Industria Argentina" (tmdb:270535, 100min vs
+          99.2min), Juana a las 12/"About 12" (tmdb:301520 — real title is "los", not "las", a
+          folder typo), Kombit (tmdb:626993, overview matched exactly), La chica de los
+          lunes/"Monday's Child" (tmdb:198793, director Torre Nilsson confirmed), La idea del
+          lago/"The Idea of a Lake" (tmdb:408198, real title is "un lago" not "del lago"), Las
+          Chicas de Flores/"Chicas de flores" (tmdb:916922, director Silvestre Byrón confirmed,
+          7min short), Les louves/"Demoniac" (tmdb:198337, director Luis Saslavsky, 101min vs
+          100.8min), Lesbianas en Buenos Aires/"Lesbians of Buenos Aires" (tmdb:349118, overview
+          matched verbatim), Partida (tmdb:1199369, year exact, no runtime to cross-check),
+          Premier mai (tmdb:79206, also director Saslavsky, 85min vs 81.7min), Soldado argentino
+          solo reconocido por Dios/"Argentine Soldier Only Known by God" (tmdb:451892, 102min vs
+          102.5min), Tres hombres en el río/"Tres hombres del río" (tmdb:467931, title had "del"
+          not "en el", exact year 1943). **Muñequita porteña** confirmed correct (tmdb:550426,
+          "Muñequitas porteñas", 49min exact) but turned out to already be a separate Radarr entry
+          (id 1659, a different file/folder — same film, different rip/edition, same situation as
+          "El gran dictador" dubbed vs. subtitled) — Jellyfin-tagged only, no new Radarr entry
+          needed or possible.
+        - **13 confirmed with zero real TMDB match, staying in this bucket**: Cautivame (IMDb
+          tt35224106 exists, TMDB doesn't have it even via that id), El día que nos conocimos
+          (checked by director name too, nothing), Formoskate (checked both directors' names,
+          nothing), Gustavo Leguizamón creando la Tierra, La tumba sin nombre (checked director
+          Arnaldo André too, nothing), Los pibes, Matar la tierra, Reflectorista (IMDb tt5151274
+          exists, not on TMDB), Rosario Bléfari en el CCK (a one-off cultural-center recording,
+          not a cataloguable film), Silvia Prieto (documental final) — not to be confused with
+          the real *Silvia Prieto* (1999, tmdb id already correctly in the library elsewhere) —
+          this is a much shorter making-of/reunion short about it, not independently catalogued,
+          Tertulia N° 250 (a recorded literary gathering at a Buenos Aires bookstore, not a film),
+          Trece años y medio (documental sobre Rapado) (a making-of short about *Rapado*, 1996,
+          not independently catalogued), Zulay frente al siglo XXI. Mostly very obscure Argentine
+          shorts/documentaries/one-off recordings, genuinely uncatalogued on TMDB as far as this
+          search can tell — can't get a Radarr/Bazarr entry unless that changes.
 - [x] **58 movies in nested/multi-file folders** — reconstructed, fully triaged, and fully
       resolved 2026-08-14
       (wasn't saved anywhere before). Broke into 7 groups:
