@@ -207,25 +207,29 @@ as they come up.
           Gustavo Cerati - Fuerza Natural Tour (tmdb:652817, no TMDB runtime data to verify but
           it's today's own concatenated file so the title match alone was enough — already added
           to Radarr earlier the same session). All confirmed `hasFile:true` via `RescanMovie`.
-          6 moved to the no-match bucket below: Cautivame, Gustavo Leguizamón creando la Tierra,
+          5 moved to the no-match bucket below: Cautivame, Gustavo Leguizamón creando la Tierra,
           Los pibes, Matar la tierra, and Reflectorista all came back with **zero** Radarr/TMDB
-          hits even via IMDb lookup (OMDB knows them, TMDB genuinely doesn't). **Siesta**
-          specifically investigated further — Matias identified the real film as Julia
-          Solomonoff's 2018 short (FilmAffinity #580547); checked TMDB's two 2018-tagged "Siesta"
-          candidates via their full crew credits and neither is her (David Chacón and Azucena
-          Losana directed those) — Solomonoff's "Siesta" isn't catalogued on TMDB under this
-          title at all.
-        - **32 with zero real TMDB match** (up from 26 — the 6 from the ambiguous batch above
-          folded in): 4 lonkos Vida muerte y profanación, Cacho pallero el año del surubí,
-          Cautivame, El día que nos conocimos, El hombre que amaba los platillos voladores, En el
-          país de las últimas cosas, Fantasmas de Buenos Aires, Formoskate, Gustavo Leguizamón
-          creando la Tierra, Industria Argentna, Juana a las 12, Kombit, La chica de los lunes, La
-          idea del lago, La tumba sin nombre, Las Chicas de Flores, Les louves, Lesbianas en
-          Buenos Aires, Los pibes, Matar la tierra, Muñequita porteña, Partida la verdad no le
-          teme a nada, Premier mai, Reflectorista, Rosario Bléfari en el CCK, Siesta (2018,
-          Solomonoff), Silvia Prieto (documental final), Soldado argentino solo reconocido por
-          Dios, Tertulia N° 250, Trece años y medio (documental sobre Rapado), Tres hombres en el
-          río, Zulay frente al siglo XXI. Mostly very obscure Argentine shorts/documentaries,
+          hits even via IMDb lookup (OMDB knows them, TMDB genuinely doesn't).
+          **Siesta resolved too** (tmdb:630563) — Matias's first guess of "2018" was off; the
+          real FilmAffinity entry (#580547) says 1998, 21min, Julia Solomonoff, Argentina, and its
+          synopsis (a gruff Polish man and a street girl meet briefly in a Buenos Aires park)
+          matches word-for-word the overview already sitting on tmdb:630563 — the same candidate
+          this session had found and discarded earlier over the year mismatch (TMDB lists 2005,
+          a real oddity for a 1998 short but content match is unambiguous). Confirmed independent
+          of the plot match too: TMDB already had Solomonoff credited as Director/Writer on
+          630563, and its cached Jellyseerr `jellyfinMediaId` was already this exact file's item
+          id from some earlier pass. Applied, added to Radarr, `hasFile:true` confirmed.
+        - **31 with zero real TMDB match** (up from 26 — 5 from the ambiguous batch folded in,
+          Siesta resolved instead of joining them): 4 lonkos Vida muerte y profanación, Cacho
+          pallero el año del surubí, Cautivame, El día que nos conocimos, El hombre que amaba los
+          platillos voladores, En el país de las últimas cosas, Fantasmas de Buenos Aires,
+          Formoskate, Gustavo Leguizamón creando la Tierra, Industria Argentna, Juana a las 12,
+          Kombit, La chica de los lunes, La idea del lago, La tumba sin nombre, Las Chicas de
+          Flores, Les louves, Lesbianas en Buenos Aires, Los pibes, Matar la tierra, Muñequita
+          porteña, Partida la verdad no le teme a nada, Premier mai, Reflectorista, Rosario
+          Bléfari en el CCK, Silvia Prieto (documental final), Soldado argentino solo reconocido
+          por Dios, Tertulia N° 250, Trece años y medio (documental sobre Rapado), Tres hombres en
+          el río, Zulay frente al siglo XXI. Mostly very obscure Argentine shorts/documentaries,
           genuinely uncatalogued on TMDB as far as this search can tell — can't get a
           Radarr/Bazarr entry unless that changes.
 - [x] **58 movies in nested/multi-file folders** — reconstructed, fully triaged, and fully
