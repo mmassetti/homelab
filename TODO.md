@@ -171,10 +171,49 @@ as they come up.
         `Series` with full metadata (imdb:tt1285482, tmdb:7831, tvdb:83427) — no longer 5 fake
         standalone movies. This closes every item from the original "11 misindexed extras"
         finding plus the 2 bonus ones found in the same pass (13 total).
-      - **56 with no match found at all** — mostly very obscure Argentine shorts/documentaries;
-        several may genuinely not be catalogued on TMDB, in which case they can't ever get a
-        Radarr/Bazarr entry. Full list in the artifact report from 2026-08-13 (not saved to
-        the repo — ask to regenerate if the link's gone stale).
+      - [x] **Regenerated the "no match" list from scratch 2026-08-23** (the 2026-08-13 report
+        was never saved to the repo). Ground truth via Jellyfin API: 59 movies had no `Tmdb`
+        provider id (not 56 — some drift since the original count). Ran the same
+        `RemoteSearch/Movie` + runtime cross-check as the weak-candidates batch above:
+        - [x] **20 confident matches found and applied** — nobody had actually searched these
+          with runtime verification before. All within 0-4.5 min of the TMDB runtime: A 40 años
+          (tmdb:1546886), Aguas verdes/"Green Waters" (tmdb:377928), Beto Nervio contra el poder
+          de las tinieblas (tmdb:613150), Camino del infierno/"Hell Road" (tmdb:342086), Chantal
+          Akerman una autobiografía (tmdb:1710231), Como corre Elisa (tmdb:684283), De noche
+          también se duerme (tmdb:722059), El cuento de las comadrejas/"The Weasel's Tale"
+          (tmdb:574088, folder said 2009 but the real film is 2019 — a folder-name typo, runtime
+          matched exactly at 129min so applied anyway), El grito de Celina/"Celina's Scream"
+          (tmdb:614543), El invierno llega después del otoño (tmdb:399302), El juego de la
+          silla/"Musical Chairs" (tmdb:457761), En ausencia (tmdb:1222723), Escuela trashumante
+          (tmdb:459586), Fontana la frontera interior (tmdb:713087), La Caracas (tmdb:452155), La
+          utilidad de un revistero (tmdb:525396), Lluvia de jaulas (tmdb:578495), Los hijos del
+          viento (tmdb:1017093), Memorias de Cortázar (tmdb:818389), Mengele el ángel de la
+          muerte (tmdb:274106). Applied via Jellyfin `RemoteSearch/Apply`, added to Radarr
+          (qualityProfileId 17, explicit `path` reused), confirmed `hasFile:true` via
+          `RescanMovie` for all 20.
+          **Workshop (1971) deliberately excluded again** despite a close-ish runtime match
+          (11min file vs 16min candidate, tmdb:650842) — that candidate is a *2020* film, the
+          same ~50-year mismatch flagged 2026-08-16. Still needs a real manual search.
+        - **12 ambiguous** (has a TMDB candidate but nothing confirms it — no runtime data to
+          cross-check, or multiple candidates with none matching well): Cautivame, Cómo llegar a
+          Piedrabuena, Fiesta Nibiru, Gustavo Cerati - Fuerza Natural Tour (the concert film
+          added this session — candidate had `rt=0`, i.e. TMDB has no runtime logged for it
+          either, so no way to verify; likely just isn't well-catalogued as a concert film),
+          Gustavo Leguizamón creando la Tierra, Juan Lamaglia y señora, La sangre brota, Los
+          pibes (already known, see above), Matar la tierra, Reflectorista, Siesta (3
+          candidates, none confirmed), Tres citas con el destino. Left unmatched — would need
+          plot/still-frame comparison or manual TMDB browsing, not just runtime.
+        - **26 with zero TMDB candidates at all** (the real "no match" bucket): 4 lonkos Vida
+          muerte y profanación, Cacho pallero el año del surubí, El día que nos conocimos, El
+          hombre que amaba los platillos voladores, En el país de las últimas cosas, Fantasmas de
+          Buenos Aires, Formoskate, Industria Argentna, Juana a las 12, Kombit, La chica de los
+          lunes, La idea del lago, La tumba sin nombre, Las Chicas de Flores, Les louves,
+          Lesbianas en Buenos Aires, Muñequita porteña, Partida la verdad no le teme a nada,
+          Premier mai, Rosario Bléfari en el CCK, Silvia Prieto (documental final), Soldado
+          argentino solo reconocido por Dios, Tertulia N° 250, Trece años y medio (documental
+          sobre Rapado), Tres hombres en el río, Zulay frente al siglo XXI. Mostly very obscure
+          Argentine shorts/documentaries, genuinely uncatalogued on TMDB as far as this search
+          can tell — can't get a Radarr/Bazarr entry unless that changes.
 - [x] **58 movies in nested/multi-file folders** — reconstructed, fully triaged, and fully
       resolved 2026-08-14
       (wasn't saved anywhere before). Broke into 7 groups:
