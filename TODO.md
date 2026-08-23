@@ -130,10 +130,22 @@ as they come up.
         Black Buenos Aires tmdb:109817. **Workshop (1971) deliberately skipped** — checked
         tmdb:650842 directly and it's a 2020 film, confirming the flagged ~50-year mismatch was
         real; still needs a proper manual TMDB search, not this candidate.
-      - **9 weak candidates** (no confident algorithmic match, need a manual themoviedb.org
-        search): Al centro de la tierra (2018), Anida y el circo flotante (2016), Antes del
-        estreno (2010), Cuando dejes de quererme (2019), El hombre del futuro (2020), La mala
-        verdad (2010), La playa del amor (1979), La vida por Perón (2004), Los pibes (2019).
+      - [x] **8 of 9 "weak candidates" resolved 2026-08-23** — matched via TMDB search +
+        cross-checked against each file's actual runtime (Jellyfin `RunTimeTicks`) before
+        applying, all within ~0.6-6 min of the TMDB-listed runtime: Al centro de la tierra
+        (2018→tmdb:367727, "To the Centre of the Earth"), Anida y el circo flotante
+        (tmdb:632674), Antes del estreno (tmdb:307247, "Before Opening Night"), Cuando dejes de
+        quererme (tmdb:502068), El hombre del futuro (tmdb:602008, "The Man of the Future"), La
+        mala verdad (tmdb:245734, "Bad Truth"), La playa del amor (tmdb:484880, "The Beach of
+        Love"), La vida por Perón (tmdb:174866). Applied via Jellyfin's `RemoteSearch/Movie` +
+        `RemoteSearch/Apply` (picked the exact TMDB-id match from the candidates rather than
+        just the first result), then added to Radarr (qualityProfileId 17 "2160p Efficient",
+        `minimumAvailability: released`, explicit `path` reused so Radarr didn't rename the
+        existing folder) and confirmed `hasFile:true` via `RescanMovie`.
+        **Los pibes (2019) deliberately left unmatched** — the only TMDB candidate found (a 2015
+        film, tmdb:627506) runs 78 min; the actual Jellyfin file is only 13.9 min, a 64-minute
+        mismatch far outside any plausible rip/edit variance. Almost certainly a short or a
+        misindexed extra, not that feature — moved to the "no confident match" bucket instead.
       - **11 aren't real standalone movies** — they're extras/episodes sitting inside a
         correctly-identified movie's folder, misindexed by Jellyfin as separate films. Fix is
         a Jellyfin reorg (rename the extra's subfolder to `extras/` so it's associated as
