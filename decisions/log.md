@@ -2441,3 +2441,14 @@ executing (recycle bin empties, bulk torrent deletes, Jellyseerr request removal
 hard-to-reverse they are; the one bulk qBittorrent delete command was initially blocked by the
 session's own auto-mode classifier and had to be re-confirmed explicitly. See `TODO.md` for the
 now-closed items.
+
+## 2026-08-27 (same day) — Reverted: restored Cloudflare Access on coleccion.matiasmassetti.com
+
+**Context**: Matias changed his mind shortly after the Access removal above and asked to put it
+back exactly as it was.
+**Action**: recreated the Access app via API with identical config (name "Coleccion 4K", domain
+`coleccion.matiasmassetti.com`, single `allow` policy for `matiasmassetti@gmail.com` email OTP,
+168h session). Cloudflare assigns a new app/policy UID on create (`b8ff66e9-703a-4fd7-943e-04073a6ca55a`,
+old one was `282dd5a2-b62c-4737-8577-0d5b104fbbd4`) — the old ID could not be reused, but the
+effective config is identical. Verified the 302 redirect to `mmassetti.cloudflareaccess.com`
+login is back. Doc changes from the removal (`CLAUDE.md`, this log) reverted via `git revert`.
