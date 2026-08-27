@@ -2441,19 +2441,3 @@ executing (recycle bin empties, bulk torrent deletes, Jellyseerr request removal
 hard-to-reverse they are; the one bulk qBittorrent delete command was initially blocked by the
 session's own auto-mode classifier and had to be re-confirmed explicitly. See `TODO.md` for the
 now-closed items.
-
-## 2026-08-27 — Removed Cloudflare Access from coleccion.matiasmassetti.com
-
-**Context**: Matias asked for `coleccion.matiasmassetti.com` to be reachable without Cloudflare
-Access. Checked first whether the app has its own login before opening it up — it doesn't;
-like its Vercel predecessor (`4k-tracking.vercel.app`), `media-tracker-app` has no auth layer of
-its own, so removing Access makes it fully unauthenticated, not just one layer lighter (unlike
-the ARR apps, which keep their own 401/403 even without Access).
-**Action**: deleted the Access application "Coleccion 4K" (`282dd5a2-b62c-4737-8577-0d5b104fbbd4`)
-via the Cloudflare API (`DELETE /accounts/{account}/access/apps/{id}`, same token, existing
-`Access: Apps and Policies: Edit` grant — no new permissions needed). Tunnel ingress and DNS
-CNAME untouched. Verified `/`, `/health`, `/api/media` all return 200 with no redirect to
-`*.cloudflareaccess.com` login.
-**Rationale**: this brings `coleccion` in line with `media.matiasmassetti.com` and
-`pedidos.matiasmassetti.com` as a deliberately-open hostname rather than an oversight — the data
-behind it (a personal media collection list) is low-sensitivity, same reasoning as the other two.
