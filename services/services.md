@@ -431,6 +431,14 @@ Log: `/tmp/morning-brief.log`
 
 Weekend mode: no calendar section, no tech/AI section.
 
+**RSS fetch resilience (added 2026-08-31)**: `rss_titles()` retries each feed up to 3x
+(3s backoff, 20s timeout per attempt) and logs `[rss_titles] <url> attempt N FAILED — HTTP
+<code>, body bytes: <n>` to stderr on failure, captured by the cron log. Added after the
+Argentina section (La Nación) went silently empty for several days with nothing useful in
+`/tmp/morning-brief.log` to diagnose it — the feed/DNS both checked out fine on manual
+testing, so next occurrence should show the actual HTTP status. See `decisions/log.md`
+2026-08-31.
+
 **Gotcha for future edits**: the football-matching and any other "what's today" logic must use
 `TZ="America/Argentina/Buenos_Aires" date` (or pass that computed date string into any embedded
 Python), never a bare `datetime.now()` — **the host's system timezone is UTC**, not Argentina,

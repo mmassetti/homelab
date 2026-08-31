@@ -44,14 +44,35 @@ BRIEF=""
 
 add() { BRIEF="${BRIEF}${1}"$'\n'; }
 
-# --- Helper: extract N article titles from RSS feed ---
+# --- Helper: extract N article titles from RSS feed (3 attempts, logs failures for diagnosis) ---
 rss_titles() {
     local url="$1" count="$2"
-    curl -sL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" --max-time 15 "$url" 2>/dev/null \
-        | sed -n '/<item>/,/<\/item>/p' \
-        | grep -oP '<title>(<!\[CDATA\[)?\K[^]<]+' \
-        | grep -vxE "LA NACION|www\..*" \
-        | head -n "$count" || true
+    local attempt body code titles
+
+    for attempt in 1 2 3; do
+        body=$(curl -sL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+            --max-time 20 -w '\n__HTTP_CODE__%{http_code}' "$url" 2>&1)
+        code=$(echo "$body" | grep -oP '__HTTP_CODE__\K\d+' | tail -1)
+        body=$(echo "$body" | sed 's/__HTTP_CODE__[0-9]*$//')
+
+        titles=$(echo "$body" \
+            | sed -n '/<item>/,/<\/item>/p' \
+            | grep -oP '<title>(<!\[CDATA\[)?\K[^]<]+' \
+            | grep -vxE "LA NACION|www\..*" \
+            | head -n "$count")
+
+        if [ -n "$titles" ]; then
+            [ "$attempt" -gt 1 ] && echo "[rss_titles] $url OK on attempt $attempt (HTTP ${code:-?})" >&2
+            echo "$titles"
+            return 0
+        fi
+
+        echo "[rss_titles] $url attempt $attempt FAILED — HTTP ${code:-?}, body bytes: $(echo "$body" | wc -c)" >&2
+        [ "$attempt" -lt 3 ] && sleep 3
+    done
+
+    echo "[rss_titles] $url exhausted all attempts, giving up" >&2
+    return 1
 }
 
 # --- Helper: decode common HTML entities ---

@@ -2452,3 +2452,35 @@ back exactly as it was.
 old one was `282dd5a2-b62c-4737-8577-0d5b104fbbd4`) — the old ID could not be reused, but the
 effective config is identical. Verified the 302 redirect to `mmassetti.cloudflareaccess.com`
 login is back. Doc changes from the removal (`CLAUDE.md`, this log) reverted via `git revert`.
+
+## 2026-08-31 — Diagnosed intermittent Argentina news failures in Resumen Matutino, added retry + logging
+
+**Context**: Matias reported the morning brief hasn't been able to fetch Argentina news
+("🇦🇷 Argentina" section, La Nación RSS) for a few days — falling back to "No se pudieron
+obtener noticias nacionales".
+
+**Investigation**: Feed URL (`https://www.lanacion.com.ar/arcio/rss/`, redirects to
+`/arc/outboundfeeds/rss/?outputType=xml`) returned HTTP 200 with 8 valid items on 5/5
+manual attempts, both isolated and via the full `rss_titles` parsing pipeline. Checked
+Pi-hole's FTL DB (`/opt/docker/configs/pihole/etc-pihole/pihole-FTL.db`) for DNS resolution
+at the exact cron time (11:00 UTC = 8:00 AM ART) on 2026-08-29/30/31 — all resolved cleanly
+(status 2/3, no blocks). Ruled out both the feed itself and DNS as the cause. Couldn't
+pin down the exact failure mode remotely since `rss_titles`'s `curl` had `2>/dev/null` and
+only prints to `$BRIEF` (the Telegram message body) on failure — nothing failure-specific
+ever reached `/tmp/morning-brief.log`, which only captured the final "Telegram send OK"
+line. Leading theory: a transient Cloudflare rate-limit/timeout on La Nación's side specific
+to their 8 AM ART traffic peak, since everything else about the pipeline checks out.
+
+**Decision**: Rather than guess further, made `rss_titles()` self-diagnosing and more
+resilient: 3 attempts per feed (3s backoff), timeout raised 15s→20s, and every failed
+attempt logs `[rss_titles] <url> attempt N FAILED — HTTP <code>, body bytes: <n>` to stderr
+(captured by the existing `>> /tmp/morning-brief.log 2>&1` cron redirect). This applies to
+all RSS sections (Bahía Blanca, Argentina, Tech/AI, Sports), not just La Nación. Next
+occurrence will have HTTP status + response size logged with a timestamp, turning this from
+a guess into a diagnosable failure. Verified the new function against both the live La
+Nación feed (parses correctly) and a nonexistent domain (3 logged failures, clean give-up,
+no script crash under `set -uo pipefail`).
+
+**Follow-up**: if the log shows repeated HTTP 403/429 at 11:00 UTC specifically, next fix is
+likely a `Referer` header and/or spacing out the RSS fetches instead of firing them back to
+back.
