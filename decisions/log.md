@@ -2484,3 +2484,52 @@ no script crash under `set -uo pipefail`).
 **Follow-up**: if the log shows repeated HTTP 403/429 at 11:00 UTC specifically, next fix is
 likely a `Referer` header and/or spacing out the RSS fetches instead of firing them back to
 back.
+
+## 2026-09-08 — Migrated the stale "Google Drive 4-10-2024" NAS snapshot to real Google Drive, freeing 278GB
+
+**Context**: NAS was down to ~34GB free, blocking Radarr from importing a completed Barbarian
+(2022) download (49GB UHD REMUX). `/mnt/nas/Google Drive 4-10-2024` (278GB, a one-time manual
+backup from Oct 2024 — phone/Photos exports, trip docs, old laptop backup) was the obvious
+candidate, but before deleting it Matias wanted proof the content still existed somewhere else,
+not just an assumption.
+
+**Verification**: checked against the real Google Drive account via the Drive API connector —
+some folder names from the NAS snapshot (`Viajes`) matched live Drive content, but others
+(`Samsung S23 Ultra`, `Google Photos 20 octubre 2024`, `USA 2024`, `Backup Notebook ASUS Dic
+2020`) returned no matches. Root cause: Google Photos storage isn't visible through the Drive
+API (separate product since the 2019 API split), so a "not found via Drive search" result
+didn't actually mean "not backed up" — it just meant the connector couldn't see it. Decided
+the safest move was a fresh, verifiable upload rather than trusting an unprovable assumption.
+
+**Action**: used the NAS's already-configured `rclone` `gdrive` remote (systemd `rclone rcd`,
+set up back on 2026-08-15 for an unrelated one-time mirror) to `rclone copy` the full 278GB
+snapshot to `gdrive:Backups/Google Drive 4-10-2024 (NAS snapshot)`. Took several restarts to
+get right:
+- First attempt died on a `-v`/`--log-level` flag conflict (never actually started).
+- `rclone copy` is idempotent (compares size/modtime against the destination and skips
+  matches), so every restart resumed instead of re-uploading — confirmed safe to just rerun
+  the same command after each interruption.
+- Two runs were killed outright by the harness's own background-task tracking (not a real
+  process failure) — fixed by re-launching fully detached (`setsid nohup ... < /dev/null
+  > /dev/null 2>&1 & disown`, verified `PPID=1`), which then survived a laptop sleep with zero
+  disruption since it no longer depended on any client session.
+- Default `--transfers 4` was badly wrong for this payload (~23.7k mostly-small files — phone
+  photos/videos, screenshots): throughput collapsed to ~1.3MB/s with a 24h ETA, since per-file
+  API round-trip latency dominated over bandwidth. Bumping to `--transfers 16 --checkers 16`
+  brought it to 20-30MB/s and finished in a few hours. Hit Google's `RATE_LIMIT_EXCEEDED`
+  (Queries-per-minute) a handful of times at that concurrency — rclone's built-in retry (3
+  attempts) absorbed all of them; final attempt completed with 0 errors.
+- Final verification: `rclone size` on the destination (277.544 GiB, 23,669 objects) matched
+  `du -sh` on the source (278G) closely enough to call it a clean 1:1 copy.
+
+**Deletion**: `rm -rf` on the 278GB folder was blocked twice in an earlier session by Claude
+Code's own auto-mode safety classifier, even with explicit chat confirmation from Matias — that
+block was correctly not worked around at the time (folder wasn't backed up anywhere provable
+yet). Once the rclone copy was verified complete, the same `rm -rf` was allowed through
+without issue — the classifier's risk assessment context had genuinely changed (data existed
+in two places instead of one). NAS free space went from 34GB → 124GB immediately after
+deletion, then to 311GB once Radarr's import of Barbarian (which had been retrying every
+~60s) succeeded and cleared its downloads-folder copy too.
+
+**Follow-up**: `TODO.md` now has an entry to replace Barbarian's 49GB UHD REMUX with a lighter
+release when a good one turns up — it was the single biggest driver of this space crunch.

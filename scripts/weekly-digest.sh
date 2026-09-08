@@ -6,6 +6,7 @@
 #
 # Sections (each optional, only appears if it has content):
 #   - Estrenos en cines esta semana (carteleraargentina.com.ar, scraped — no official API)
+#   - Bahía Blanca esta semana (Bahía Blanca Substack RSS, bahiablanca.substack.com/feed)
 #   - Se sumó al server de Masa (Radarr/Sonarr history, last 7 days)
 #   - Lo más visto esta semana (Jellyfin Playback Reporting plugin SQL query)
 #   - Tendencias que todavía no tenemos (Jellyseerr discover, with direct pedidos.matiasmassetti.com links)
@@ -76,6 +77,25 @@ for line in text.split(chr(10)):
 for t in out[:10]:
     print(t)
 " 2>/dev/null || true)
+
+# --- 1c. Bahía Blanca esta semana (Substack newsletter, last 3 posts, title + link) ---
+SUBSTACK_BB=$(curl -sL -A "$UA" --max-time 15 "https://bahiablanca.substack.com/feed" 2>/dev/null | python3 -c "
+import sys, re, html
+content = sys.stdin.read()
+items = re.split(r'<item>', content)[1:]
+n = 0
+for block in items:
+    if n >= 3:
+        break
+    t = re.search(r'<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>', block, re.S)
+    l = re.search(r'<link>(.*?)</link>', block, re.S)
+    if not t or not l:
+        continue
+    title = html.unescape(t.group(1)).strip()
+    link = l.group(1).strip()
+    print(f'{title}\t{link}')
+    n += 1
+" 2>/dev/null)
 
 # --- 2. Se sumó al server de Masa (Radarr movies + Sonarr series with new episodes) ---
 ADDED=$(python3 -c "
@@ -241,7 +261,7 @@ if [ -n "$NAS_USE" ]; then
 fi
 
 # --- Skip entirely if nothing to report ---
-if [ -z "$CARTELERA" ] && [ -z "$SIGUEN" ] && [ -z "$ADDED" ] && [ -z "$TOP_WATCHED" ] && [ -z "$SUGGESTIONS" ] && [ -z "$RESCUE" ]; then
+if [ -z "$CARTELERA" ] && [ -z "$SIGUEN" ] && [ -z "$SUBSTACK_BB" ] && [ -z "$ADDED" ] && [ -z "$TOP_WATCHED" ] && [ -z "$SUGGESTIONS" ] && [ -z "$RESCUE" ]; then
     echo "Nada para reportar esta semana, no se manda nada."
     exit 0
 fi
@@ -265,6 +285,14 @@ if [ -n "$SIGUEN" ]; then
     while IFS= read -r line; do
         add "• ${line}"
     done <<< "$SIGUEN"
+fi
+
+if [ -n "$SUBSTACK_BB" ]; then
+    add ""
+    add "📰 Bahía Blanca esta semana"
+    while IFS=$'\t' read -r title link; do
+        add "• ${title} — ${link}"
+    done <<< "$SUBSTACK_BB"
 fi
 
 if [ -n "$ADDED" ]; then

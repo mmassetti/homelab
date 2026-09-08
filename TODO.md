@@ -6,6 +6,12 @@ as they come up.
 
 ## Open
 
+- [ ] **Barbarian (2022) — find a lighter release** (2026-09-08). Current file is the
+      UHD BluRay 2160p REMUX (`Barbarian.2022.UHD.BluRay.2160p.DTS-HD.MA.5.1.DV.HDR10P.
+      HEVC.HYBRID.REMUX-FraMeSToR`, ~49GB) — it's what pushed the NAS to its free-space
+      limit and blocked Radarr's import until cleanup freed space. Swap for a smaller
+      1080p or lower-bitrate 2160p encode when one turns up on Prowlarr; old file should
+      auto-delete on grab (same as the Stop Making Sense upgrade above).
 - [x] **Stop Making Sense (1984) — upgraded to 2160p** (2026-08-20). Library already had a
       throwaway 1.33GB HDTV-1080p x264/AAC rip (tmdbId 24128, movieId 2090) — bumped its
       quality profile to "2160p Quality" (id 12, allows Bluray-2160p) and manually grabbed the

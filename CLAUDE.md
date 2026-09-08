@@ -196,7 +196,6 @@ in `services/services.md` § Documentation and `decisions/log.md`.
 | `/mnt/nas/` | NAS SMB mount (Peliculas, Series, Music, downloads, Libros, Backups) |
 | `/mnt/nas-nfs/` | NAS NFS mount (OpenCloud ext4 image file) |
 | `/mnt/opencloud/` | Loop mount of OpenCloud ext4 image (container volume) |
-| `/mnt/nas/Google Drive 4-10-2024/` | Google Drive backup (278GB, pending migration) |
 | `/DATA/Media/` | Seagate 4TB USB (legacy, 99% full) |
 | `/opt/images/` | Shared images dir (Nextcloud + image-server) |
 | `~/Code/` | All development projects (7 repos) |
