@@ -6,11 +6,47 @@
 
 **1890** películas del catálogo que no están en `/mnt/nas/Peliculas` (cruce por título + año, ver metodología al final).
 
-## Checklist de verificación (Feb 2027)
+## Checklist de verificacion (Feb 2027)
 
 - [ ] Volver a correr el cruce contra el NAS (por si ya se agregaron algunas)
-- [ ] Chequear cuáles links de Drive siguen respondiendo (no 404 / no 'archivo eliminado')
-- [ ] Priorizar por las marcadas en el artifact (si seguís teniendo ese link guardado)
+- [ ] Chequear cuales links de Drive siguen respondiendo (no 404 / no 'archivo eliminado')
+- [ ] Priorizar por las marcadas en el artifact (si seguis teniendo ese link guardado)
+
+---
+
+## Actualizacion 2026-09-13 - copia a Google Drive (matiasmassetti@gmail.com)
+
+Antes de que llegue el 3er disco, se copiaron server-to-server (sin pasar por la mini PC) las mejor puntuadas en Letterboxd (rating ponderado x cantidad de votos, entre las que tenian suficientes votos para tener promedio publico) a la carpeta de Drive "Cine Argentino - Info Real".
+
+- 245 copiadas, 737 GiB. Se corto porque el Drive se lleno de verdad (no por falta de candidatas) - el espacio libre real resulto menor a los 1.06TB reportados ese dia. Chequear cuota actual en drive.google.com/settings/storage antes de reintentar.
+- Cola de reserva (1543 titulos, orden alfabetico, sin rating suficiente en Letterboxd) quedo preparada para cuando haya espacio, pero no persistida en este repo (era un archivo temporal de esa sesion).
+
+### Links confirmados muertos (detectado 2026-09-13, no reintentar)
+
+- El santo (2023)
+- Derecho de familia (2006)
+- Cuando la miro (2022)
+- El deseo de vivir (1973)
+- Destino de un capricho (1972)
+- Operacion Rosa Rosa (1974)
+- Siempre te amare (1971)
+- Belgrano (2010)
+- Piedra noche (2021)
+- El eslabon podrido (2015)
+- El perfecto David (2021)
+- El vasco (2022)
+- El desvio (1998)
+- Dos mas dos (2012)
+- Ataud blanco (2016)
+- El hilo rojo (2016)
+
+### Fallaron por cupo lleno (candidatas prioritarias si se libera espacio)
+
+Sangre en la boca (2016), Abzurdah (2015), Susurro (2025), Reloca (2018), Homo Argentum (2025), The Souffleur (2026), Corazon delator (2025), Olaf (2022), Los hechiceros del reino perdido (1985), Snuff (1976)
+
+### Nota sobre calidad del catalogo fuente
+
+Info Real depende de links enviados por terceros y no esta 100% curado: dos titulos que aparecian en la lista de "populares" resultaron ser errores de carga - Cars (2006) y Ratatouille (2007), ambas peliculas de Pixar sin ninguna relacion con Argentina. Se excluyeron de la copia. Vale la pena tener esto en cuenta si se vuelve a cruzar el catalogo: puede haber mas basura suelta.
 
 ---
 
