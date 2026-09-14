@@ -54,6 +54,19 @@ Jellyseerr (request) → Radarr/Sonarr (search via Prowlarr) → qBittorrent/SAB
   true&skipRedownload=false` clears the dead one; a manual `POST /api/v3/release` with that
   release's `guid`+`indexerId` force-grabs a specific rejected release if there's a good reason
   to override the filter (e.g., a healthy YIFY release when nothing else has real seeders).
+- **SABnzbd auto-pauses on low disk space and does NOT auto-resume** (found 2026-09-08):
+  `download_free = 500M` in `/opt/docker/configs/sabnzbd/sabnzbd.ini` — when NAS free space
+  drops under that, SABnzbd force-pauses its *entire* queue (not per-download) and logs
+  `WARNING: Too little diskspace forcing PAUSE`. It stays paused even after space is freed up
+  again — nothing in the stack watches for this and resumes it automatically. This was the
+  real cause of two separate incidents: the original "poco espacio" warning on the Barbarian
+  download, and Silo (2023) sitting at 0% for hours after being requested/grabbed, both times
+  silently — Sonarr's queue just showed items stuck at "paused"/0% with no error, giving no
+  hint the download client itself was globally paused. Diagnose via SABnzbd's own API:
+  `GET /api/v1/api?mode=queue&output=json&apikey=<key>` → check top-level `"paused"` (global,
+  not per-item); fix with `mode=resume`. `download_free` value not currently in this repo's
+  secrets file, but the file path is `/opt/docker/configs/sabnzbd/sabnzbd.ini`. Considered
+  automating a resume-on-space-available check but not done yet — see TODO.md.
 
 ### Lidarr Notes (quality profiles + indexers set up 2026-08-17)
 

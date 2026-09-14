@@ -2533,3 +2533,31 @@ deletion, then to 311GB once Radarr's import of Barbarian (which had been retryi
 
 **Follow-up**: `TODO.md` now has an entry to replace Barbarian's 49GB UHD REMUX with a lighter
 release when a good one turns up — it was the single biggest driver of this space crunch.
+
+## 2026-09-08 (same day) — Root-caused the "poco espacio" / stuck-download pattern: SABnzbd auto-pauses on low disk space and never resumes itself
+
+**Context**: Matias approved a Jellyseerr request for Silo (2023) (all 4 seasons); Sonarr
+grabbed 3 season packs (S01-S03) but they sat in the queue at 0%/"paused" for hours with no
+error. Initial wrong guess was a qBittorrent issue (queueing config, WebUI login) — wasted
+effort there before checking the actual `protocol`/`downloadClient` fields on the queue records,
+which showed `usenet`/`SABnzbd`, not torrent at all.
+
+**Root cause**: SABnzbd's own queue API (`mode=queue`) showed a top-level `"paused":true` —
+the *entire* queue force-paused, not the individual Silo items. `sabnzbd.ini` has
+`download_free = 500M`; when NAS free space dropped near that floor (during the space crunch
+documented in the entry above), SABnzbd auto-paused everything and logged `WARNING: Too little
+diskspace forcing PAUSE`. It does not auto-resume once space is freed again — this is exactly
+what caused the original "poco espacio" warning on the Barbarian download at the very start of
+today's work, and it silently affected Silo too, days later, since nothing had resumed the
+queue in between. `mode=resume` fixed it immediately (queue went from 0% to actively
+downloading, 72GB total pending against 311GB free — comfortable margin).
+
+**Why it went unnoticed**: Sonarr's own queue view gives no indication that the *download
+client itself* is globally paused — individual items just show `paused`/0% forever, identical
+to what a client-side per-torrent pause would look like. The only place the real cause was
+visible was SABnzbd's own history/log (the "Too little diskspace forcing PAUSE" warning Matias
+found there).
+
+**Follow-up**: `TODO.md` has an entry to consider automating a resume-when-space-available
+check; until then, the fix is documented in `services/services.md` § Radarr/Sonarr Notes as
+the first thing to check whenever a download is stuck at 0% with no error.

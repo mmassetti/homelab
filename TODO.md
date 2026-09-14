@@ -6,12 +6,21 @@ as they come up.
 
 ## Open
 
-- [ ] **Barbarian (2022) — find a lighter release** (2026-09-08). Current file is the
-      UHD BluRay 2160p REMUX (`Barbarian.2022.UHD.BluRay.2160p.DTS-HD.MA.5.1.DV.HDR10P.
-      HEVC.HYBRID.REMUX-FraMeSToR`, ~49GB) — it's what pushed the NAS to its free-space
-      limit and blocked Radarr's import until cleanup freed space. Swap for a smaller
-      1080p or lower-bitrate 2160p encode when one turns up on Prowlarr; old file should
-      auto-delete on grab (same as the Stop Making Sense upgrade above).
+- [ ] **Auto-resume SABnzbd after it force-pauses on low disk space** (2026-09-08). SABnzbd
+      pauses its whole queue when NAS free space drops under `download_free` (500M) and never
+      un-pauses itself — caused two separate silent stalls (Barbarian import block, Silo stuck
+      at 0% for hours). Options: a cron/health-check script that polls `mode=queue` for
+      `"paused":true` + free space back above threshold and calls `mode=resume`; or just make
+      this a standard first check whenever a download looks stuck. See `services/services.md`
+      → Radarr/Sonarr Notes for the diagnosis command.
+- [x] **Barbarian (2022) — swapped for a lighter release** (2026-09-14). Was the UHD BluRay
+      2160p REMUX (`...HEVC.HYBRID.REMUX-FraMeSToR`, ~49GB) that pushed the NAS to its
+      free-space limit. Switched the movie's quality profile from "2160p Remux" to
+      "2160p Efficient" (the library default) and manually force-grabbed a clean 2160p
+      WEB-DL release (`Barbarian.2022.2160p.WEB-DL.DD5.1.H.265-EVO`, no DV/HDR10 complexity,
+      via NZBgeek) since automatic search won't downgrade an existing file on its own — old
+      REMUX auto-deleted on import (confirmed via Radarr history: `movieFileDeleted` +
+      `downloadFolderImported` both at 2026-09-14T20:43). Now 8.83GB, ~40GB freed.
 - [x] **Stop Making Sense (1984) — upgraded to 2160p** (2026-08-20). Library already had a
       throwaway 1.33GB HDTV-1080p x264/AAC rip (tmdbId 24128, movieId 2090) — bumped its
       quality profile to "2160p Quality" (id 12, allows Bluray-2160p) and manually grabbed the
