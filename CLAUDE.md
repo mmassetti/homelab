@@ -100,7 +100,7 @@ Account ID: `7dfee4d2de02fa195e6b9674de205fa6` · Tunnel ID: `7ddc3a66-cfbf-46b9
 | cinemateca.matiasmassetti.com | 192.168.1.239:8001 |
 | assets.matiasmassetti.com | 192.168.1.239:4010 (image-server) |
 | cen-api.matiasmassetti.com | 192.168.1.239:3003 (cen-dashboard) |
-| ricota-api.matiasmassetti.com | `ricota-caddy:80` (container hostname — cloudflared and ricota-caddy share `docker_homelab`) |
+| ricota-api.matiasmassetti.com | `ricota-caddy:80` (container hostname — cloudflared and ricota-caddy share `docker_homelab`). Cloudflare Access policy is **bypass** (public) on purpose — the public frontend tourricotero.vercel.app calls it from browsers (2026-10-20) |
 | coleccion.matiasmassetti.com | 192.168.1.239:3004 (media-tracker-app, added 2026-08-15) |
 | slskd.matiasmassetti.com | 192.168.1.239:5030 (added 2026-08-16) |
 | soularr.matiasmassetti.com | 192.168.1.239:8265 (added 2026-08-16) |

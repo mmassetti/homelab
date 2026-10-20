@@ -2561,3 +2561,17 @@ found there).
 **Follow-up**: `TODO.md` has an entry to consider automating a resume-when-space-available
 check; until then, the fix is documented in `services/services.md` § Radarr/Sonarr Notes as
 the first thing to check whenever a download is stuck at 0% with no error.
+
+## 2026-10-20 — Ricota API Access policy switched to bypass (tourricotero.vercel.app was broken)
+**Context**: tourricotero.vercel.app showed "Error al cargar evaluaciones: TypeError: Failed to fetch".
+Cause: the 2026-08-12 Access rollout put an email-OTP allow policy on `ricota-api.matiasmassetti.com`,
+but that hostname is the backend of a **public** Vercel frontend whose visitors' browsers call it
+directly. Unauthenticated requests got a 302 to `mmassetti.cloudflareaccess.com`, which CORS blocks.
+The app's hint to re-run `03-create-reviews-table-simple.sql` was a red herring; the DB was fine.
+**Decision**: changed the policy on Access app "Ricota API" (`0633219f-...`) to `decision: bypass`,
+include `everyone`. Ran it via the Cloudflare API (Matias ran the command; the agent's auto mode
+blocked it as a security-weakening change).
+**Rationale**: a public website can't sit behind a personal email login. This puts back the
+pre-2026-08-12 exposure: access is gated only by PostgREST roles/grants (anon key).
+Verified: `/rest/v1/reviews` returns 200 with data, and the CORS preflight returns 204.
+**Follow-up**: rotate the Cloudflare API token. It was printed to the terminal during a failed paste.
