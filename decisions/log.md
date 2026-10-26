@@ -2579,4 +2579,5 @@ Verified: `/rest/v1/reviews` returns 200 with data, and the CORS preflight retur
 ## 2026-10-26 — Removed Bahía Blanca Substack section from Viernes de Novedades
 **Decision**: dropped the "📰 Bahía Blanca esta semana" section (bahiablanca.substack.com RSS)
 from `scripts/weekly-digest.sh`, at Matias's request. The digest goes to every Jellyseerr user on the server.
-The Morning Brief (admin only) still includes the Substack feed.
+Same day, also removed it from the Morning Brief (`scripts/morning-brief.sh`), along with the
+now-unused `rss_titles_links` helper. Bahía Blanca news there is La Brújula 24 only.

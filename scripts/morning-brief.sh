@@ -14,7 +14,7 @@
 #   Sports (matches): promiedos.com.ar embedded JSON, TV-broadcast games only
 #   Twitter/X trends: trends24.in (Buenos Aires), scraped HTML — no official API
 #   Argentina: La Nación RSS
-#   Bahía Blanca: La Brújula 24 RSS + Bahía Blanca Substack RSS (bahiablanca.substack.com/feed)
+#   Bahía Blanca: La Brújula 24 RSS
 #   Jellyseerr: pending requests via its own API
 #   Downloads: Radarr/Sonarr history, last 24h imports
 #
@@ -76,30 +76,6 @@ rss_titles() {
     return 1
 }
 
-# --- Helper: extract N (title, link) pairs from an RSS feed, tab-separated ---
-rss_titles_links() {
-    local url="$1" count="$2"
-    curl -sL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" --max-time 20 "$url" 2>/dev/null \
-        | python3 -c "
-import sys, re, html
-content = sys.stdin.read()
-items = re.split(r'<item>', content)[1:]
-count = int('$count')
-n = 0
-for block in items:
-    if n >= count:
-        break
-    t = re.search(r'<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>', block, re.S)
-    l = re.search(r'<link>(.*?)</link>', block, re.S)
-    if not t or not l:
-        continue
-    title = html.unescape(t.group(1)).strip()
-    link = l.group(1).strip()
-    print(f'{title}\t{link}')
-    n += 1
-" 2>/dev/null
-}
-
 # --- Helper: decode common HTML entities ---
 decode_html() {
     sed "s/&#8217;/'/g; s/&#8216;/'/g; s/&#8220;/\"/g; s/&#8221;/\"/g; s/&amp;/\&/g; s/&#039;/'/g; s/&quot;/\"/g"
@@ -145,13 +121,6 @@ if [ -n "$LOCAL" ]; then
     done <<< "$LOCAL"
 else
     add "• No se pudieron obtener noticias locales"
-fi
-SUBSTACK_BB=$(rss_titles_links "https://bahiablanca.substack.com/feed" 2)
-if [ -n "$SUBSTACK_BB" ]; then
-    while IFS=$'\t' read -r title link; do
-        title=$(echo "$title" | decode_html)
-        add "• ${title} — ${link}"
-    done <<< "$SUBSTACK_BB"
 fi
 
 # --- 5. Argentina ---
