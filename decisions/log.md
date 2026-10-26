@@ -2575,3 +2575,8 @@ blocked it as a security-weakening change).
 pre-2026-08-12 exposure: access is gated only by PostgREST roles/grants (anon key).
 Verified: `/rest/v1/reviews` returns 200 with data, and the CORS preflight returns 204.
 **Follow-up**: rotate the Cloudflare API token. It was printed to the terminal during a failed paste.
+
+## 2026-10-26 — Removed Bahía Blanca Substack section from Viernes de Novedades
+**Decision**: dropped the "📰 Bahía Blanca esta semana" section (bahiablanca.substack.com RSS)
+from `scripts/weekly-digest.sh`, at Matias's request. The digest goes to every Jellyseerr user on the server.
+The Morning Brief (admin only) still includes the Substack feed.
