@@ -2581,3 +2581,16 @@ Verified: `/rest/v1/reviews` returns 200 with data, and the CORS preflight retur
 from `scripts/weekly-digest.sh`, at Matias's request. The digest goes to every Jellyseerr user on the server.
 Same day, also removed it from the Morning Brief (`scripts/morning-brief.sh`), along with the
 now-unused `rss_titles_links` helper. Bahía Blanca news there is La Brújula 24 only.
+
+## 2026-10-26 — NAS cleanup: duplicate downloads, fake .exe releases, Silo S3 import, Lanterns paused
+**Context**: NAS at 75GB free. Removed duplicate `/downloads` copies already in the library
+([REC], The Founder, The Hater, Lanterns S01E04, Furious S01E07, The Bear leftovers), emptied `#recycle`.
+Removed and blocklisted 3 fake Lanterns releases from Sonarr's queue (S01E05/07/08, `.exe` payloads).
+Imported Silo S03 (it sat in `/downloads`, never imported) via Sonarr manual import. Sonarr *copied*
+it even with `importMode: move`, so the source had to be deleted by hand. Lanterns is unmonitored in
+Sonarr at Matias's request (hasn't started watching it). 7 episodes stay in the library.
+**Gotcha**: `rm` over the CIFS mount reported success, but files that qBittorrent was still seeding were
+**not deleted** (old mtimes, still there minutes later, no space freed). Fix: `docker stop qbittorrent`,
+delete, `docker start qbittorrent`, then empty `#recycle`. Those torrents now show missing files in qBittorrent.
+**Result**: 75GB → 110GB free, after about 35GB of new Lanterns episodes were added. Seinfeld is 870GB
+(178 eps, ~4.9GB/ep). It's the obvious next target: re-grabbing at 1080p x265 would free ~780GB.
