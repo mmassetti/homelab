@@ -370,7 +370,7 @@ Router should point DNS to 192.168.1.239 for whole-network ad blocking.
 
 | Service | Container | Port | Network | Notes |
 |---------|-----------|------|---------|-------|
-| Cloudflare Tunnel | cloudflared | — | homelab | Exposes services to internet, no port forwarding needed. Token-based (`tunnel --token`) — ingress routing is in the Cloudflare Zero Trust dashboard, not a local file |
+| Cloudflare Tunnel | cloudflared | — | homelab | Exposes services to internet, no port forwarding needed. Token-based (`tunnel --token`) — ingress routing is in the Cloudflare Zero Trust dashboard, not a local file. Image pinned to `cloudflare/cloudflared:2026.10.4` (2026-10-27) |
 | Homepage | homepage | 3000 | homelab | Dashboard — **replaced Homarr** (removed from stack entirely; not even a stopped container remains) |
 | Uptime Kuma | uptime-kuma | 3001 | homelab | Service monitoring |
 | Glances | glances | — | host network | System monitoring (web: `-w` flag) |

@@ -62,7 +62,7 @@ Config base: `/opt/docker/configs/<service>/`
 ### Infrastructure (docker_homelab network)
 | Service | Port | Notes |
 |---------|------|-------|
-| cloudflared | — | Cloudflare Tunnel (runs via `tunnel --token`, no local `config.yml` — ingress/subdomain routing lives in the Cloudflare Zero Trust dashboard, not on disk) |
+| cloudflared | — | Cloudflare Tunnel (runs via `tunnel --token`, no local `config.yml` — ingress/subdomain routing lives in the Cloudflare Zero Trust dashboard, not on disk). Image **pinned to `2026.10.4`** since 2026-10-27 (was `latest`, stuck on 2026.1.2). Bump it deliberately; `--no-autoupdate` means it never updates itself |
 | homepage | 3000 | Dashboard — **replaced Homarr** (removed; container and its config no longer exist) |
 | uptime-kuma | 3001 | Monitoring |
 | glances | host | System stats |

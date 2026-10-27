@@ -2634,3 +2634,16 @@ stretching 60s records to 5 minutes. Together they can hand out IPs that left Do
 (RFC 8767: try upstream for 1.8s, serve stale only as a fallback, at most 1h old). Validated with
 `unbound-checkconf`, restarted (DNS back in ~1s, healthy), and Docker Hub test pull OK. Backup of the old
 config: none kept in-repo (`/opt/docker/configs/unbound/` is not under git). The previous values were the three lines above.
+
+## 2026-10-27 — cloudflared upgraded 2026.1.2 → 2026.10.4 (eMudhra intermediate certs)
+**Context**: Cloudflare emailed that cloudflared < 2026.10.2 trusts eight eMudhra (emSign) intermediate
+certs with weak private keys, which could be used to impersonate any site. Checked independently: our
+container was on 2026.1.2 (`latest` tag, last pulled in August), and releases 2026.10.2/.3/.4 exist on
+`github.com/cloudflare/cloudflared` and Docker Hub. The email's "check your HTTPS origins" caveat doesn't
+apply: all 23 ingress rules point at plain HTTP origins, and none use `noTLSVerify`.
+**Decision**: pinned `image: cloudflare/cloudflared:2026.10.4` in `/opt/docker/docker-compose.yml`
+(instead of `latest`, so the running version is explicit and a restart can't silently keep an old one).
+Pre-pulled the image, then `docker compose up -d --no-deps cloudflared`. Single replica, so there was a
+brief outage, back in ~1s. Verified via API: tunnel `healthy`, 4 QUIC connections (eze01/06/06/07), all on
+2026.10.4. `media.`/`pedidos.`/`home.`/`status.` respond. Old image removed.
+**Note**: the compose file isn't in git. A backup copy was taken to the session scratchpad before the edit.
