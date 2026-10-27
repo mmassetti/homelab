@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Pelis y series para bajar — suggestions from critic RSS feeds, sent to the admin via Telegram.
 
-Crontab: 0 21 * * 1,3,5 (21:00 UTC = 6:00 PM America/Argentina/Buenos_Aires, Mon/Wed/Fri)
+Crontab (21:00 UTC = 6:00 PM America/Argentina/Buenos_Aires):
+  0 21 * * 0,2,3,5,6  pelis-propuestas.py          → collect only (queue new suggestions)
+  0 21 * * 1,4        pelis-propuestas.py --send   → collect, then send the queue (Mon/Thu)
+Collection runs daily because Micropsia's feed only keeps its last ~10 posts (~2 days).
 
 Pulls recent reviews from a few critic feeds and extracts the reviewed title. Movies resolve via
 Radarr's lookup (TMDB-backed: year, genres, IMDb rating, digital/physical release dates, already
@@ -12,10 +15,12 @@ library?). The message has up to four short lists:
   - "Series nuevas": reviewed series not on the server, marked "completa" or "en emisión"
   - "Nuevas temporadas": a reviewed "Season N" of a series already on the server, with no files yet
 Floor: rating >= 6.5, except horror (often rated low but worth a look).
-Titles already sent (per section) are remembered in STATE_FILE and never repeated.
-If there's nothing new, no message is sent.
+STATE_FILE holds the pending queue and the keys already sent (per section), which are never
+repeated. At send time, queued items that reached the library or are older than PENDING_DAYS
+are dropped, and upcoming movies that are out by now move to "Para bajar ya". Items over a
+section's cap stay queued for the next send. If there's nothing new, no message is sent.
 
-DRY_RUN=1 ./pelis-propuestas.py  → prints the message, sends nothing, doesn't touch state.
+DRY_RUN=1 ./pelis-propuestas.py --send  → prints the message, sends nothing, doesn't touch state.
 
 Secrets (Telegram bot token/chat id, Radarr/Sonarr API keys) live in
 ~/.config/secrets/homelab_bots.env — NOT committed, this script is pushed to GitHub.
@@ -52,6 +57,7 @@ TV_FEEDS = {
 MIN_RATING = 6.5
 MAX_PER_SECTION = 5
 UPCOMING_DAYS = 60
+PENDING_DAYS = 30  # a collected suggestion not sent within this many days is dropped
 DRY_RUN = os.environ.get("DRY_RUN") == "1"
 
 
@@ -150,11 +156,11 @@ def passes_floor(item, rating):
     return "Horror" in item.get("genres", []) or (rating is not None and rating >= MIN_RATING)
 
 
-def line(item, rating, source, link, extra=""):
-    horror = " 👻" if "Horror" in item.get("genres", []) else ""
-    score = f" ⭐ {rating:.1f}" if rating else ""
-    text = f"• {clean_title(item['title'])} ({item['year']}){score}{horror}{extra} — {source}"
-    return f"{text}\n  {link}" if link else text
+def line(c):
+    horror = " 👻" if c["horror"] else ""
+    score = f" ⭐ {c['rating']:.1f}" if c["rating"] else ""
+    text = f"• {c['title']} ({c['year']}){score}{horror}{c['extra']} — {c['source']}"
+    return f"{text}\n  {c['link']}" if c["link"] else text
 
 
 def tv_link(series):
@@ -172,35 +178,41 @@ def send_telegram(text):
     print("Telegram send OK:", resp.status)
 
 
-def movie_sections(sent, api_key, today):
-    candidates = {}  # tmdbId → (movie, source)
+def candidate(section, key, item, rating, source, link, extra="", **fields):
+    """A suggestion as stored in the pending queue (plain JSON, so it survives between runs)."""
+    return {
+        "section": section, "key": key, "title": clean_title(item["title"]), "year": item["year"],
+        "rating": rating, "horror": "Horror" in item.get("genres", []), "source": source,
+        "link": link, "extra": extra, "found": date.today().isoformat(), **fields,
+    }
+
+
+def movie_candidates(api_key, today):
+    movies = {}  # tmdbId → (movie, source)
     for title, _, source in reviewed(MOVIE_FEEDS):
         try:
             movie = lookup_movie(title, api_key)
         except Exception as e:
             print(f"[{source}] movie lookup failed for {title!r}: {e}", file=sys.stderr)
             continue
-        if movie and movie["tmdbId"] not in candidates:
-            candidates[movie["tmdbId"]] = (movie, source)
+        if movie and movie["tmdbId"] not in movies:
+            movies[movie["tmdbId"]] = (movie, source)
 
-    ready, upcoming = [], []
-    for tmdb_id, (movie, source) in candidates.items():
-        if movie.get("id") or not passes_floor(movie, movie_rating(movie)):  # id > 0 → already in Radarr
+    for tmdb_id, (movie, source) in movies.items():
+        rating = movie_rating(movie)
+        if movie.get("id") or not passes_floor(movie, rating):  # id > 0 → already in Radarr
             continue
         released = release_date(movie)
-        if released and released <= today and f"ready:{tmdb_id}" not in sent:
-            ready.append((movie, source))
-        elif released and today < released <= today + timedelta(days=UPCOMING_DAYS) \
-                and f"upcoming:{tmdb_id}" not in sent:
-            upcoming.append((movie, source, released))
-
-    ready = sorted(ready, key=lambda item: -(movie_rating(item[0]) or 0))[:MAX_PER_SECTION]
-    upcoming = sorted(upcoming, key=lambda item: item[2])[:MAX_PER_SECTION]
-    return ready, upcoming
+        link = f"{PEDIDOS}/movie/{tmdb_id}"
+        if released and released <= today:
+            yield candidate("ready", f"ready:{tmdb_id}", movie, rating, source, link, tmdbId=tmdb_id)
+        elif released and released <= today + timedelta(days=UPCOMING_DAYS):
+            yield candidate("upcoming", f"upcoming:{tmdb_id}", movie, rating, source, link,
+                            tmdbId=tmdb_id, release=released.isoformat())
 
 
-def series_sections(sent, api_key):
-    new_series, new_seasons, seen = [], [], set()
+def series_candidates(api_key):
+    seen = set()
     for title, season, source in reviewed(TV_FEEDS):
         try:
             series = lookup_series(title, season, api_key)
@@ -212,58 +224,110 @@ def series_sections(sent, api_key):
         seen.add((series["tvdbId"], season))
         rating = series_rating(series)
         if series.get("id"):  # already in Sonarr: only a reviewed season we don't have yet is news
-            key = f"season:{series['tvdbId']}:{season}"
-            if season and key not in sent and not season_has_files(series["id"], season, api_key):
-                new_seasons.append((series, source, season, key))
-        elif passes_floor(series, rating) and f"series:{series['tvdbId']}" not in sent:
-            new_series.append((series, source, season))
+            if season and not season_has_files(series["id"], season, api_key):
+                yield candidate("season", f"season:{series['tvdbId']}:{season}", series, rating, source,
+                                tv_link(series), f" · T{season}", seriesId=series["id"], season=season)
+        elif passes_floor(series, rating):
+            status = " · completa" if series.get("status") == "ended" else " · en emisión"
+            yield candidate("series", f"series:{series['tvdbId']}", series, rating, source,
+                            tv_link(series), (f" · T{season}" if season else "") + status,
+                            tvdbId=series["tvdbId"])
 
-    new_series = sorted(new_series, key=lambda item: -(series_rating(item[0]) or 0))[:MAX_PER_SECTION]
-    return new_series, new_seasons
+
+def load_state():
+    if not STATE_FILE.exists():
+        return {"sent": [], "pending": {}}
+    state = json.loads(STATE_FILE.read_text())
+    return {"sent": state, "pending": {}} if isinstance(state, list) else state  # pre-queue format
+
+
+def collect(state, today):
+    """Add newly reviewed titles to the pending queue. Runs daily: Micropsia's feed only keeps ~2 days."""
+    sent, pending = set(state["sent"]), state["pending"]
+    added = 0
+    for c in [*movie_candidates(os.environ["RADARR_API_KEY"], today),
+              *series_candidates(os.environ["SONARR_API_KEY"])]:
+        if c["key"] not in sent and c["key"] not in pending:
+            pending[c["key"]] = c
+            added += 1
+    print(f"Collected {added} new suggestions, {len(pending)} pending.")
+
+
+def still_relevant(c, today):
+    """Drop stale suggestions and anything that reached the library since it was collected."""
+    if date.fromisoformat(c["found"]) < today - timedelta(days=PENDING_DAYS):
+        return False
+    if c["section"] in ("ready", "upcoming"):
+        movies = json.loads(fetch(f"{RADARR}/movie?tmdbId={c['tmdbId']}",
+                                  {"X-Api-Key": os.environ["RADARR_API_KEY"]}))
+        return not movies
+    if c["section"] == "series":
+        series = json.loads(fetch(f"{SONARR}/series?tvdbId={c['tvdbId']}",
+                                  {"X-Api-Key": os.environ["SONARR_API_KEY"]}))
+        return not series
+    return not season_has_files(c["seriesId"], c["season"], os.environ["SONARR_API_KEY"])
+
+
+def build_message(state, today):
+    """Pick what to send from the pending queue. Returns (text, sent keys) or (None, [])."""
+    sent, pending = set(state["sent"]), state["pending"]
+    for key, c in list(pending.items()):
+        if not still_relevant(c, today):
+            del pending[key]
+            continue
+        # An upcoming movie that's out by now moves to "Para bajar ya"
+        if c["section"] == "upcoming" and date.fromisoformat(c["release"]) <= today:
+            del pending[key]
+            ready_key = f"ready:{c['tmdbId']}"
+            if ready_key not in sent:
+                pending[ready_key] = {**c, "section": "ready", "key": ready_key}
+
+    def pick(section, order, limit=MAX_PER_SECTION):
+        items = sorted((c for c in pending.values() if c["section"] == section), key=order)
+        return items[:limit] if limit else items
+
+    by_rating = lambda c: -(c["rating"] or 0)
+    ready = pick("ready", by_rating)
+    upcoming = pick("upcoming", lambda c: c["release"])
+    new_series = pick("series", by_rating)
+    new_seasons = pick("season", by_rating, limit=None)
+    for c in upcoming:
+        c["extra"] = f" · sale {date.fromisoformat(c['release']):%d/%m}"
+
+    sections = [("🎬 Para bajar ya", ready), ("📅 Se viene", upcoming), ("📺 Series nuevas", new_series),
+                ("🔁 Nuevas temporadas de lo que ya tenés", new_seasons)]
+    if not any(items for _, items in sections):
+        return None, []
+    parts = ["🍿 Pelis y series para bajar"]
+    for header, items in sections:
+        if items:
+            parts += ["", header] + [line(c) for c in items]
+    return "\n".join(parts), [c["key"] for _, items in sections for c in items]
 
 
 def main():
     load_secrets()
-    sent = set(json.loads(STATE_FILE.read_text())) if STATE_FILE.exists() else set()
+    state = load_state()
     today = date.today()
+    collect(state, today)
 
-    ready, upcoming = movie_sections(sent, os.environ["RADARR_API_KEY"], today)
-    new_series, new_seasons = series_sections(sent, os.environ["SONARR_API_KEY"])
-
-    if not (ready or upcoming or new_series or new_seasons):
-        print("Nothing new to suggest, not sending.")
-        return
-
-    parts = ["🍿 Pelis y series para bajar"]
-    if ready:
-        parts += ["", "🎬 Para bajar ya"]
-        parts += [line(m, movie_rating(m), s, f"{PEDIDOS}/movie/{m['tmdbId']}") for m, s in ready]
-    if upcoming:
-        parts += ["", "📅 Se viene"]
-        parts += [line(m, movie_rating(m), s, f"{PEDIDOS}/movie/{m['tmdbId']}", f" · sale {d:%d/%m}")
-                  for m, s, d in upcoming]
-    if new_series:
-        parts += ["", "📺 Series nuevas"]
-        parts += [line(x, series_rating(x), s, tv_link(x),
-                       (f" · T{n}" if n else "") + (" · completa" if x.get("status") == "ended" else " · en emisión"))
-                  for x, s, n in new_series]
-    if new_seasons:
-        parts += ["", "🔁 Nuevas temporadas de lo que ya tenés"]
-        parts += [line(x, series_rating(x), s, tv_link(x), f" · T{n}") for x, s, n, _ in new_seasons]
-    text = "\n".join(parts)
+    if "--send" in sys.argv:
+        text, keys = build_message(state, today)
+        if not text:
+            print("Nothing new to suggest, not sending.")
+        elif DRY_RUN:
+            print("=== DRY RUN — no se manda nada ===")
+            print(text)
+        else:
+            send_telegram(text)
+            state["sent"] = sorted(set(state["sent"]) | set(keys))
+            for key in keys:
+                state["pending"].pop(key, None)
 
     if DRY_RUN:
-        print("=== DRY RUN — no se manda nada ===")
-        print(text)
         return
-
-    send_telegram(text)
-    sent |= {f"ready:{m['tmdbId']}" for m, _ in ready}
-    sent |= {f"upcoming:{m['tmdbId']}" for m, _, _ in upcoming}
-    sent |= {f"series:{x['tvdbId']}" for x, _, _ in new_series}
-    sent |= {key for _, _, _, key in new_seasons}
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(sorted(sent)))
+    STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=1))
 
 
 if __name__ == "__main__":

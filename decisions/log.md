@@ -2609,3 +2609,7 @@ Mon/Wed/Fri 6 PM ART. IMDb ≥ 6.5 floor, horror exempt by request. In testing, 
 via Sonarr. Two new sections: "Series nuevas" and "Nuevas temporadas de lo que ya tenés" (a reviewed
 season of a library show that has no files yet). Most reviewed shows are already airing, so there's
 no "Se viene" for series; they're marked "completa" or "en emisión" instead.
+**Update (same day)**: switched from Mon/Wed/Fri sends to collecting daily and sending Mon/Thu. Volume
+is ~3-4 movies + 2-3 series a week after filters, so 3 sends a week would often be thin or empty.
+Micropsia's feed only holds ~2 days, so it has to be polled daily even with fewer sends. State is now
+a pending queue plus sent keys.
