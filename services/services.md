@@ -528,6 +528,8 @@ Sections: "Para bajar ya" (movies already released for home viewing, not in the 
 Filter: IMDb ≥ 6.5 (falls back to the TMDB rating), **horror exempt** at Matias's request. Matches older than 2 years are skipped to avoid same-name old films.
 State: `~/.local/state/pelis-propuestas/sent.json` = `{"sent": [keys], "pending": {key: suggestion}}`, with keys `ready:<tmdbId>`, `upcoming:<tmdbId>`, `series:<tvdbId>` and `season:<tvdbId>:<n>`. At send time, pending items that reached the library or are older than 30 days are dropped, upcoming movies already out move to "Para bajar ya", and anything over a section's cap of 5 stays queued for the next send. A title is never repeated within a section, but an upcoming title can show up again once it's released. No new titles means no message.
 Log: `/tmp/pelis-propuestas.log`
+Feed health: if a feed yields no reviewed titles for 3 days (7 for IndieWire, which is mostly news), a one-off ⚠️ Telegram warning names it. The warning resets once the feed recovers. Health lives under `"feeds"` in the state file.
+Matching: movies and series both prefer an exact-name match (newest, then most popular for movies) over the first lookup result. A Spanish title (Micropsia) has no exact match and falls back to the first recent result, which works (e.g. "La caja del demonio" → Lockbox).
 Testing: `DRY_RUN=1 ./pelis-propuestas.py --send` prints without sending or touching state.
 Why not the X profile @LifeIsAFilmFest (the original ask): Nitter/xcancel/RSSHub are dead or blocked, the official API is paid, and `syndication.twitter.com` is blocked by Pi-hole and returns 429 to logged-out clients anyway.
 

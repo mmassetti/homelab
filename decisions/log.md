@@ -2613,3 +2613,5 @@ no "Se viene" for series; they're marked "completa" or "en emisión" instead.
 is ~3-4 movies + 2-3 series a week after filters, so 3 sends a week would often be thin or empty.
 Micropsia's feed only holds ~2 days, so it has to be polled daily even with fewer sends. State is now
 a pending queue plus sent keys.
+**Update (same day)**: added a feed-health warning (3 days without reviews, 7 for IndieWire), so a site
+change doesn't silently look like a quiet week. Movie matching now prefers exact-name matches, same as series.

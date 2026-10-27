@@ -19,6 +19,7 @@ STATE_FILE holds the pending queue and the keys already sent (per section), whic
 repeated. At send time, queued items that reached the library or are older than PENDING_DAYS
 are dropped, and upcoming movies that are out by now move to "Para bajar ya". Items over a
 section's cap stay queued for the next send. If there's nothing new, no message is sent.
+If a feed yields no reviews for FEED_ALERT_DAYS, a one-off warning is sent (reset on recovery).
 
 DRY_RUN=1 ./pelis-propuestas.py --send  → prints the message, sends nothing, doesn't touch state.
 
@@ -58,6 +59,9 @@ MIN_RATING = 6.5
 MAX_PER_SECTION = 5
 UPCOMING_DAYS = 60
 PENDING_DAYS = 30  # a collected suggestion not sent within this many days is dropped
+FEED_ALERT_DAYS = 3  # warn when a feed yields no reviews for this long
+# IndieWire's feed is mostly news with the odd review, so a few quiet days are normal there
+FEED_ALERT_DAYS_OVERRIDE = {"https://www.indiewire.com/feed/": 7}
 DRY_RUN = os.environ.get("DRY_RUN") == "1"
 
 
@@ -90,6 +94,9 @@ def reviewed_titles(feed_xml):
         yield title, int(season.group(1)) if season else None
 
 
+FEED_TITLES = {}  # feed url → reviewed titles found this run (0 if the fetch failed), for check_feeds()
+
+
 def reviewed(feeds):
     """Yield (title, season, source) across feeds, skipping feeds that fail."""
     for source, url in feeds.items():
@@ -97,16 +104,21 @@ def reviewed(feeds):
             titles = list(reviewed_titles(fetch(url)))
         except Exception as e:
             print(f"[{source}] feed failed: {e}", file=sys.stderr)
-            continue
+            titles = []
+        FEED_TITLES[url] = len(titles)
         for title, season in titles:
             yield title, season, source
 
 
 def lookup_movie(title, api_key):
-    """Best recent match from Radarr's TMDB-backed lookup (skips old films sharing the name)."""
+    """Best recent match from Radarr's TMDB-backed lookup. Like lookup_series, an exact-name match
+    wins over the first result, newest then most popular (skips old films sharing the name)."""
     results = json.loads(fetch(f"{RADARR}/movie/lookup?term={quote(title)}", {"X-Api-Key": api_key}))
     min_year = date.today().year - 2
-    return next((r for r in results if (r.get("year") or 0) >= min_year), None)
+    recent = [r for r in results if (r.get("year") or 0) >= min_year]
+    exact = [r for r in recent if clean_title(r["title"]).casefold() == title.casefold()]
+    return max(exact, key=lambda r: (r.get("year") or 0, r.get("popularity") or 0),
+               default=recent[0] if recent else None)
 
 
 def lookup_series(title, season, api_key):
@@ -253,6 +265,28 @@ def collect(state, today):
     print(f"Collected {added} new suggestions, {len(pending)} pending.")
 
 
+def check_feeds(state, today):
+    """Warn once when a feed has yielded no reviewed titles for FEED_ALERT_DAYS (site down or its
+    headline format changed). Without this, a dead feed just looks like a quiet week."""
+    health = state.setdefault("feeds", {})  # url → {"last_ok": date, "alerted": bool}
+    broken = []
+    for url, count in FEED_TITLES.items():
+        h = health.setdefault(url, {"last_ok": today.isoformat(), "alerted": False})
+        if count:
+            h.update(last_ok=today.isoformat(), alerted=False)
+        elif not h["alerted"] and date.fromisoformat(h["last_ok"]) <= \
+                today - timedelta(days=FEED_ALERT_DAYS_OVERRIDE.get(url, FEED_ALERT_DAYS)):
+            broken.append(url)
+            h["alerted"] = True
+    if not broken:
+        return
+    text = "⚠️ Pelis y series para bajar: estas fuentes no devuelven críticas hace " \
+           f"{FEED_ALERT_DAYS}+ días (¿cambió el sitio?)\n" + "\n".join(f"• {u}" for u in broken)
+    print(text, file=sys.stderr)
+    if not DRY_RUN:
+        send_telegram(text)
+
+
 def still_relevant(c, today):
     """Drop stale suggestions and anything that reached the library since it was collected."""
     if date.fromisoformat(c["found"]) < today - timedelta(days=PENDING_DAYS):
@@ -310,6 +344,7 @@ def main():
     state = load_state()
     today = date.today()
     collect(state, today)
+    check_feeds(state, today)
 
     if "--send" in sys.argv:
         text, keys = build_message(state, today)
