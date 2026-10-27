@@ -61,6 +61,7 @@ ssh matias@100.112.136.118  # fallback if MagicDNS resolution misbehaves
 - DNSSEC enabled
 - Conditional forwarding (reverse server) → router (192.168.1.1, 192.168.1.0/24) since 2026-08-13, so Top Clients shows device hostnames instead of bare IPs
 - Unbound `num-threads: 4` (raised from 1 on 2026-08-13) — fixes intermittent `Connection error ... TCP connection failed` bursts seen in FTL logs, correlated with host load spikes (see `decisions/log.md`)
+- Unbound cache (changed 2026-10-27): `cache-min-ttl: 0` (respect upstream TTLs) and `serve-expired` only as a fallback (`serve-expired-ttl: 3600`, `serve-expired-client-timeout: 1800`). The old `cache-min-ttl: 300` + unbounded `serve-expired` could hand out stale IPs for cloud services that rotate them (Docker Hub pulls failed against a recycled AWS IP owned by another customer).
 
 ### For the network
 - Router DNS should point to 192.168.1.239 (Pi-hole) for whole-network ad blocking

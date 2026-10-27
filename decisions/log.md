@@ -2621,3 +2621,16 @@ series, the specific season for a library show. Planned as a `python:3.12-slim` 
 Docker Hub pulls failed (TLS cert for `*.web.origin.aws.arc.pub` served for `registry-1.docker.io`),
 so it runs on the host under a cron + `flock` supervisor instead. Worth re-checking Docker Hub
 later, since a stuck pull would also block updating any Docker Hub image in the main stack.
+
+## 2026-10-27 — Unbound: stop serving stale DNS answers first (Docker Hub TLS failure)
+**Context**: `docker pull` failed with a TLS mismatch. `registry-1.docker.io` had resolved to
+`54.236.142.81`, an AWS IP now serving `*.connectiverx-qa.com`. Docker Hub rotates AWS ELB IPs on a
+60s TTL, and released IPs get reassigned to other AWS customers. When rechecked, all 35 IPs returned
+by Pi-hole, 1.1.1.1, 8.8.8.8 and 9.9.9.9 had the right cert, and pulls worked again, so the failure was transient.
+**Likely cause** (can't be proven after the fact, since the record was gone): Unbound had `serve-expired: yes`
+with no limit, which answers with expired records *before* re-resolving, plus `cache-min-ttl: 300`
+stretching 60s records to 5 minutes. Together they can hand out IPs that left Docker's pool.
+**Decision**: `cache-min-ttl: 0`, `serve-expired-ttl: 3600`, `serve-expired-client-timeout: 1800`
+(RFC 8767: try upstream for 1.8s, serve stale only as a fallback, at most 1h old). Validated with
+`unbound-checkconf`, restarted (DNS back in ~1s, healthy), and Docker Hub test pull OK. Backup of the old
+config: none kept in-repo (`/opt/docker/configs/unbound/` is not under git). The previous values were the three lines above.
