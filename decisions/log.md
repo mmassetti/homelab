@@ -2647,3 +2647,6 @@ Pre-pulled the image, then `docker compose up -d --no-deps cloudflared`. Single 
 brief outage, back in ~1s. Verified via API: tunnel `healthy`, 4 QUIC connections (eze01/06/06/07), all on
 2026.10.4. `media.`/`pedidos.`/`home.`/`status.` respond. Old image removed.
 **Note**: the compose file isn't in git. A backup copy was taken to the session scratchpad before the edit.
+**Follow-up (same day)**: checked the MacBook too, since the email asks for *every* cloudflared instance.
+`cloudflared` isn't installed there (`which -a cloudflared` finds nothing), so the server container was
+the only instance and the advisory is fully resolved.
