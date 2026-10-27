@@ -2615,3 +2615,9 @@ Micropsia's feed only holds ~2 days, so it has to be polled daily even with fewe
 a pending queue plus sent keys.
 **Update (same day)**: added a feed-health warning (3 days without reviews, 7 for IndieWire), so a site
 change doesn't silently look like a quiet week. Movie matching now prefers exact-name matches, same as series.
+**Update (same day)**: added "Pedir" inline buttons. `scripts/pelis-bot.py` long-polls the bot for
+button presses from the admin chat only and creates Jellyseerr requests: whole movies, T1 for a new
+series, the specific season for a library show. Planned as a `python:3.12-slim` container, but
+Docker Hub pulls failed (TLS cert for `*.web.origin.aws.arc.pub` served for `registry-1.docker.io`),
+so it runs on the host under a cron + `flock` supervisor instead. Worth re-checking Docker Hub
+later, since a stuck pull would also block updating any Docker Hub image in the main stack.

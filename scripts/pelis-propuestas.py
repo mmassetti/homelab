@@ -171,20 +171,34 @@ def passes_floor(item, rating):
 def line(c):
     horror = " 👻" if c["horror"] else ""
     score = f" ⭐ {c['rating']:.1f}" if c["rating"] else ""
-    text = f"• {c['title']} ({c['year']}){score}{horror}{c['extra']} — {c['source']}"
-    return f"{text}\n  {c['link']}" if c["link"] else text
+    return f"• {c['title']} ({c['year']}){score}{horror}{c['extra']} — {c['source']}"
+
+
+def button(c):
+    """Inline "Pedir" button handled by pelis-bot.py (see its docstring for the callback_data format)."""
+    if c["section"] in ("ready", "upcoming"):
+        data = f"req:movie:{c['tmdbId']}"
+    elif not c["link"]:  # series without a TMDB id can't be requested through Jellyseerr
+        return None
+    else:
+        tmdb_id = c["link"].rsplit("/", 1)[1]
+        # A new series asks for T1 only: "all" on something like American Horror Story is 13 seasons
+        season = c["season"] if c["section"] == "season" else 1
+        data = f"req:tv:{tmdb_id}:{season}"
+    title = c["title"] if len(c["title"]) <= 30 else c["title"][:29] + "…"
+    suffix = f" T{c['season']}" if c["section"] == "season" else " (T1)" if c["section"] == "series" else ""
+    return {"text": f"Pedir {title}{suffix}", "callback_data": data}
 
 
 def tv_link(series):
     return f"{PEDIDOS}/tv/{series['tmdbId']}" if series.get("tmdbId") else ""
 
 
-def send_telegram(text):
-    data = urlencode({
-        "chat_id": os.environ["TELEGRAM_CHAT_ID"],
-        "text": text,
-        "disable_web_page_preview": "true",
-    }).encode()
+def send_telegram(text, buttons=None):
+    params = {"chat_id": os.environ["TELEGRAM_CHAT_ID"], "text": text, "disable_web_page_preview": "true"}
+    if buttons:
+        params["reply_markup"] = json.dumps({"inline_keyboard": [[b] for b in buttons]})
+    data = urlencode(params).encode()
     url = f"https://api.telegram.org/bot{os.environ['TELEGRAM_BOT_TOKEN']}/sendMessage"
     resp = urlopen(Request(url, data=data), timeout=15)
     print("Telegram send OK:", resp.status)
@@ -303,7 +317,7 @@ def still_relevant(c, today):
 
 
 def build_message(state, today):
-    """Pick what to send from the pending queue. Returns (text, sent keys) or (None, [])."""
+    """Pick what to send from the pending queue. Returns (text, buttons, sent keys) or (None, [], [])."""
     sent, pending = set(state["sent"]), state["pending"]
     for key, c in list(pending.items()):
         if not still_relevant(c, today):
@@ -331,12 +345,14 @@ def build_message(state, today):
     sections = [("🎬 Para bajar ya", ready), ("📅 Se viene", upcoming), ("📺 Series nuevas", new_series),
                 ("🔁 Nuevas temporadas de lo que ya tenés", new_seasons)]
     if not any(items for _, items in sections):
-        return None, []
+        return None, [], []
     parts = ["🍿 Pelis y series para bajar"]
     for header, items in sections:
         if items:
             parts += ["", header] + [line(c) for c in items]
-    return "\n".join(parts), [c["key"] for _, items in sections for c in items]
+    chosen = [c for _, items in sections for c in items]
+    buttons = [b for b in map(button, chosen) if b]
+    return "\n".join(parts), buttons, [c["key"] for c in chosen]
 
 
 def main():
@@ -347,14 +363,16 @@ def main():
     check_feeds(state, today)
 
     if "--send" in sys.argv:
-        text, keys = build_message(state, today)
+        text, buttons, keys = build_message(state, today)
         if not text:
             print("Nothing new to suggest, not sending.")
         elif DRY_RUN:
             print("=== DRY RUN — no se manda nada ===")
             print(text)
+            print("--- Botones ---")
+            print("\n".join(f"[{b['text']}]  {b['callback_data']}" for b in buttons))
         else:
-            send_telegram(text)
+            send_telegram(text, buttons)
             state["sent"] = sorted(set(state["sent"]) | set(keys))
             for key in keys:
                 state["pending"].pop(key, None)
