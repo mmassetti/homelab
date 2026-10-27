@@ -2594,3 +2594,14 @@ Sonarr at Matias's request (hasn't started watching it). 7 episodes stay in the 
 delete, `docker start qbittorrent`, then empty `#recycle`. Those torrents now show missing files in qBittorrent.
 **Result**: 75GB → 110GB free, after about 35GB of new Lanterns episodes were added. Seinfeld is 870GB
 (178 eps, ~4.9GB/ep). It's the obvious next target: re-grabbing at 1080p x265 would free ~780GB.
+
+## 2026-10-27 — "Pelis para bajar": critic-feed movie suggestions instead of an X profile
+**Context**: Matias wanted suggestions to download, three times a week, from the X profile
+@LifeIsAFilmFest. It can't be read reliably: Nitter/xcancel/RSSHub are dead or blocked, the API is
+paid, and `syndication.twitter.com` is blocked by Pi-hole (left as is) and returns 429 logged-out.
+**Decision**: `scripts/pelis-propuestas.py` reads critic review RSS feeds instead (Micropsia, Slant,
+THR, IndieWire; RogerEbert.com dropped because it only had bundled festival coverage). It resolves
+each reviewed title through Radarr's lookup (no separate TMDB key needed; it also says whether the
+movie is already in the library) and sends the admin only "Para bajar ya" / "Se viene" lists,
+Mon/Wed/Fri 6 PM ART. IMDb ≥ 6.5 floor, horror exempt by request. In testing, 27 of 29 titles matched.
+**Next**: Matias wants to look at series suggestions next, which needs different sources.

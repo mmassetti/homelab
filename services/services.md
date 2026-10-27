@@ -512,6 +512,23 @@ instead of the real run whenever testing changes, so edits don't spam every link
   percent-used — this NAS runs at ~96% used by design (large array, redundancy headroom) so a
   percent-based threshold would falsely alarm every week
 
+## Pelis para bajar (Host Crontab)
+
+Added 2026-10-27. Movie suggestions for the admin only, sent Mon/Wed/Fri.
+
+| Job | Schedule (UTC) | Local time | Delivery |
+|-----|----------------|------------|----------|
+| Pelis para bajar | `0 21 * * 1,3,5` | 6:00 PM America/Argentina/Buenos_Aires | Telegram Bot API `sendMessage` to `TELEGRAM_CHAT_ID` (admin) |
+
+Script: `~/homelab/scripts/pelis-propuestas.py` (committed, no secrets)
+Sources: review headlines from Micropsia (Spanish), Slant, The Hollywood Reporter, and IndieWire RSS. The quoted title in each review headline is resolved via Radarr's `movie/lookup` (TMDB-backed), which gives the year, genres, IMDb rating, digital/physical release dates, and whether the movie is already in the library.
+Sections: "Para bajar ya" (already released for home viewing, not in the library) and "Se viene" (home release within 60 days). Max 5 each, with `pedidos.matiasmassetti.com/movie/<tmdbId>` links.
+Filter: IMDb ≥ 6.5 (falls back to the TMDB rating), **horror exempt** at Matias's request. Matches older than 2 years are skipped to avoid same-name old films.
+State: `~/.local/state/pelis-propuestas/sent.json` (`ready:<tmdbId>` / `upcoming:<tmdbId>`). A title is never repeated within a section, but an upcoming title can show up again once it's released. No new titles means no message.
+Log: `/tmp/pelis-propuestas.log`
+Testing: `DRY_RUN=1 ./pelis-propuestas.py` prints without sending or touching state.
+Why not the X profile @LifeIsAFilmFest (the original ask): Nitter/xcancel/RSSHub are dead or blocked, the official API is paid, and `syndication.twitter.com` is blocked by Pi-hole and returns 429 to logged-out clients anyway.
+
 ## Project Containers (Separate Compose Files)
 
 | Service | Container | Port | Compose File | Running 2026-08-11? | Notes |
