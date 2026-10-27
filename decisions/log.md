@@ -2650,3 +2650,14 @@ brief outage, back in ~1s. Verified via API: tunnel `healthy`, 4 QUIC connection
 **Follow-up (same day)**: checked the MacBook too, since the email asks for *every* cloudflared instance.
 `cloudflared` isn't installed there (`which -a cloudflared` finds nothing), so the server container was
 the only instance and the advisory is fully resolved.
+
+## 2026-10-27 — Imports are server-side Btrfs clones: deleting download copies frees ~nothing
+**Observation**: emptying a 20GB `#recycle` (download copies of just-imported Norm/The Cycle) freed 0GB.
+Radarr imported Norm (17.8GB) in under a minute, while the mini PC's NIC is 1Gb/s (~118MB/s max, so
+≥2.5 min over the wire). The copy was done server-side (SMB copychunk via the CIFS mount), which the
+Synology turns into a Btrfs clone: the download copy and the library copy share the same extents.
+**Implications**: a freshly imported movie/episode costs its size once, not twice. Deleting the
+`/downloads` copy or emptying the recycle bin afterward reclaims nothing until both copies are gone.
+The 2026-10-26 cleanup's 75→110GB gain came from old copies that weren't clones, probably imported
+before this behavior or via a different path. When the NAS is tight, look at library content and old
+download leftovers, not at recent import duplicates.
