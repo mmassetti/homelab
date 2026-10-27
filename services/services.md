@@ -512,9 +512,9 @@ instead of the real run whenever testing changes, so edits don't spam every link
   percent-used — this NAS runs at ~96% used by design (large array, redundancy headroom) so a
   percent-based threshold would falsely alarm every week
 
-## Pelis para bajar (Host Crontab)
+## Pelis y series para bajar (Host Crontab)
 
-Added 2026-10-27. Movie suggestions for the admin only, sent Mon/Wed/Fri.
+Added 2026-10-27 (movies), series added the same day. Suggestions for the admin only, sent Mon/Wed/Fri.
 
 | Job | Schedule (UTC) | Local time | Delivery |
 |-----|----------------|------------|----------|
@@ -522,9 +522,10 @@ Added 2026-10-27. Movie suggestions for the admin only, sent Mon/Wed/Fri.
 
 Script: `~/homelab/scripts/pelis-propuestas.py` (committed, no secrets)
 Sources: review headlines from Micropsia (Spanish), Slant, The Hollywood Reporter, and IndieWire RSS. The quoted title in each review headline is resolved via Radarr's `movie/lookup` (TMDB-backed), which gives the year, genres, IMDb rating, digital/physical release dates, and whether the movie is already in the library.
-Sections: "Para bajar ya" (already released for home viewing, not in the library) and "Se viene" (home release within 60 days). Max 5 each, with `pedidos.matiasmassetti.com/movie/<tmdbId>` links.
+Series sources: Micropsia's series category, Slant TV, THR TV reviews (Decider was tested and left out because its "Stream It Or Skip It" mixes movies and series). Series resolve via Sonarr's `series/lookup`: a library match wins, a "Season N" review needs a show with that many seasons, otherwise the newest exact-name show from the last 2 years wins (namesakes like *Minimum Wage* 2012/2017/2024 vs. 2026).
+Sections: "Para bajar ya" (movies already released for home viewing, not in the library), "Se viene" (movies with a home release within 60 days), "Series nuevas" (not in Sonarr, marked "completa"/"en emisión" and the reviewed season if any), "Nuevas temporadas de lo que ya tenés" (a reviewed season of a library show with 0 episode files, no cap). Max 5 each otherwise, with `pedidos.matiasmassetti.com/{movie,tv}/<tmdbId>` links.
 Filter: IMDb ≥ 6.5 (falls back to the TMDB rating), **horror exempt** at Matias's request. Matches older than 2 years are skipped to avoid same-name old films.
-State: `~/.local/state/pelis-propuestas/sent.json` (`ready:<tmdbId>` / `upcoming:<tmdbId>`). A title is never repeated within a section, but an upcoming title can show up again once it's released. No new titles means no message.
+State: `~/.local/state/pelis-propuestas/sent.json` (`ready:<tmdbId>`, `upcoming:<tmdbId>`, `series:<tvdbId>`, `season:<tvdbId>:<n>`). A title is never repeated within a section, but an upcoming title can show up again once it's released. No new titles means no message.
 Log: `/tmp/pelis-propuestas.log`
 Testing: `DRY_RUN=1 ./pelis-propuestas.py` prints without sending or touching state.
 Why not the X profile @LifeIsAFilmFest (the original ask): Nitter/xcancel/RSSHub are dead or blocked, the official API is paid, and `syndication.twitter.com` is blocked by Pi-hole and returns 429 to logged-out clients anyway.

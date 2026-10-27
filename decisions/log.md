@@ -2605,3 +2605,7 @@ each reviewed title through Radarr's lookup (no separate TMDB key needed; it als
 movie is already in the library) and sends the admin only "Para bajar ya" / "Se viene" lists,
 Mon/Wed/Fri 6 PM ART. IMDb ≥ 6.5 floor, horror exempt by request. In testing, 27 of 29 titles matched.
 **Next**: Matias wants to look at series suggestions next, which needs different sources.
+**Update (same day)**: added series. Sources are Micropsia series, Slant TV and THR TV reviews, resolved
+via Sonarr. Two new sections: "Series nuevas" and "Nuevas temporadas de lo que ya tenés" (a reviewed
+season of a library show that has no files yet). Most reviewed shows are already airing, so there's
+no "Se viene" for series; they're marked "completa" or "en emisión" instead.
